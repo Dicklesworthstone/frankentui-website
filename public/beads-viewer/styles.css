@@ -567,6 +567,104 @@
     background: var(--bv-bg-secondary);
 }
 
+/* Responsive "ledger" tables enhanced by viewer.js (bv-table + data-label) */
+@media (max-width: 640px) {
+    .prose table.bv-table {
+        border-collapse: separate;
+        border: 0;
+    }
+
+    .prose table.bv-table,
+    .prose table.bv-table tbody,
+    .prose table.bv-table tr,
+    .prose table.bv-table td,
+    .prose table.bv-table th {
+        box-sizing: border-box;
+    }
+
+    /* Hide headers visually but keep them in the accessibility tree */
+    .prose table.bv-table thead {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+    }
+
+    .prose table.bv-table tbody,
+    .prose table.bv-table tr {
+        display: block;
+        width: 100%;
+    }
+
+    /* Card row */
+    .prose table.bv-table tr {
+        background: var(--bv-bg-secondary);
+        border: 1px solid var(--bv-border);
+        border-radius: 12px;
+        padding: 0.75em 0.85em;
+        margin: 0.75em 0;
+    }
+
+    /* Remove zebra striping on card layouts */
+    .prose table.bv-table tr:nth-child(even) {
+        background: var(--bv-bg-secondary);
+    }
+
+    .prose table.bv-table td,
+    .prose table.bv-table th {
+        border: 0;
+        padding: 0;
+        text-align: left;
+    }
+
+    .prose table.bv-table td {
+        display: block;
+        width: 100%;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+
+    /* 2-col: key on top, value below */
+    .prose table.bv-table--2col td:first-child {
+        font-weight: 700;
+        color: var(--bv-fg);
+        margin-bottom: 0.35em;
+    }
+
+    .prose table.bv-table--2col td:last-child {
+        color: var(--bv-fg-muted);
+        line-height: 1.45;
+    }
+
+    /* n-col: label/value grid per cell */
+    .prose table.bv-table--ncol td {
+        display: grid;
+        grid-template-columns: minmax(7rem, 40%) 1fr;
+        gap: 0.75em;
+        padding: 0.35em 0;
+        align-items: start;
+    }
+
+    .prose table.bv-table--ncol td::before {
+        content: attr(data-label);
+        font-weight: 700;
+        color: var(--bv-fg-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        font-size: 0.72em;
+        line-height: 1.25;
+    }
+
+    .prose table.bv-table--ncol td[data-label=""]::before {
+        content: "";
+    }
+}
+
 /* Images */
 .prose img {
     max-width: 100%;

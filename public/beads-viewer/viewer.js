@@ -2149,18 +2149,81 @@ function formatJsonWithHighlight(obj) {
   }
 }
 
-/**
- * Render markdown safely
- */
-function renderMarkdown(text) {
-  if (!text) return '';
-  try {
-    const html = marked.parse(text);
-    return DOMPurify.sanitize(html);
-  } catch {
-    return DOMPurify.sanitize(text);
-  }
-}
+	/**
+	 * Render markdown safely
+	 */
+	function enhanceTables(root) {
+	  if (!root || typeof root.querySelectorAll !== 'function') return;
+
+	  const tables = root.querySelectorAll('table');
+	  if (!tables.length) return;
+
+	  const norm = (s) => (s || '').replace(/\s+/g, ' ').trim();
+
+	  tables.forEach((table) => {
+	    try {
+	      // Extract headers from thead (first row) if present.
+	      const headers = [];
+	      const headerRow = table.querySelector('thead tr');
+	      if (headerRow) {
+	        headerRow.querySelectorAll('th').forEach((th) => {
+	          headers.push(norm(th.textContent));
+	        });
+	      }
+
+	      // Determine column count (prefer max of header and first row).
+	      let colCount = headers.length;
+	      const firstRow = table.querySelector('tbody tr') || table.querySelector('tr');
+	      if (firstRow) {
+	        const cells = firstRow.querySelectorAll('th, td');
+	        colCount = Math.max(colCount, cells.length);
+	      }
+
+	      table.classList.add('bv-table');
+	      if (colCount === 2) table.classList.add('bv-table--2col');
+	      else if (colCount >= 3) table.classList.add('bv-table--ncol');
+	      else table.classList.add('bv-table--unknown');
+
+	      // Marker for debugging / diagnostics.
+	      table.setAttribute('data-bv-table', '1');
+
+	      // Apply header-derived labels to each data cell in tbody.
+	      table.querySelectorAll('tbody tr').forEach((row) => {
+	        row.querySelectorAll('td').forEach((td, idx) => {
+	          const label = headers[idx] || '';
+	          td.setAttribute('data-label', label);
+	        });
+	      });
+	    } catch (err) {
+	      // Never fail markdown rendering due to table enhancement.
+	      console.warn('[renderMarkdown] enhanceTables failed:', err);
+	    }
+	  });
+	}
+
+	function renderMarkdown(text) {
+	  if (!text) return '';
+	  try {
+	    const html = marked.parse(text);
+	    const sanitized = DOMPurify.sanitize(html, { RETURN_DOM_FRAGMENT: true });
+	    if (typeof sanitized === 'string') return sanitized;
+	    enhanceTables(sanitized);
+	    const container = document.createElement('div');
+	    container.appendChild(sanitized);
+	    return container.innerHTML;
+	  } catch {
+	    try {
+	      const sanitized = DOMPurify.sanitize(text, { RETURN_DOM_FRAGMENT: true });
+	      if (typeof sanitized === 'string') return sanitized;
+	      enhanceTables(sanitized);
+	      const container = document.createElement('div');
+	      container.appendChild(sanitized);
+	      return container.innerHTML;
+	    } catch {
+	      return DOMPurify.sanitize(text);
+	    }
+	  }
+	}
 
 /**
  * Render markdown as inline HTML (no block elements) for excerpts
