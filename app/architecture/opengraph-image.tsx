@@ -10,8 +10,8 @@ export default function Image() {
   const headBuffer = readFileSync(join(process.cwd(), "franken_favicon.png"));
   const headUri = `data:image/png;base64,${headBuffer.toString("base64")}`;
 
-  const bgBuffer = readFileSync(join(process.cwd(), "public", "screenshots", "code_explorer_syntax_highlighting.webp"));
-  const bgUri = `data:image/webp;base64,${bgBuffer.toString("base64")}`;
+  const bgBuffer = readFileSync(join(process.cwd(), "public", "screenshots", "code_explorer_syntax_highlighting_og.png"));
+  const bgUri = `data:image/png;base64,${bgBuffer.toString("base64")}`;
 
   return new ImageResponse(
     (
@@ -37,7 +37,7 @@ export default function Image() {
             opacity: 0.5,
           }}
         />
-        
+
         {/* Background Screenshot */}
         <img
           src={bgUri}
@@ -64,21 +64,22 @@ export default function Image() {
 
           <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-              <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#22c55e" }} />
-              <span style={{ fontSize: "14px", fontWeight: 900, color: "#22c55e", letterSpacing: "4px" }}>ARCHITECTURE_PROBE</span>
+              <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#22c55e", display: "flex" }} />
+              <span style={{ fontSize: "14px", fontWeight: 900, color: "#22c55e", letterSpacing: "4px", display: "flex" }}>ARCHITECTURE_PROBE</span>
             </div>
-            <div style={{ fontSize: "80px", fontWeight: 900, color: "white", lineHeight: 0.9, letterSpacing: "-4px", display: "flex" }}>
-              Inside the <br /> Machine.
+            <div style={{ fontSize: "80px", fontWeight: 900, color: "white", lineHeight: 0.9, letterSpacing: "-4px", display: "flex", flexDirection: "column" }}>
+              <span style={{ display: "flex" }}>Inside the</span>
+              <span style={{ display: "flex" }}>Machine.</span>
             </div>
-            <div style={{ fontSize: "24px", fontWeight: 700, color: "#4ade80", marginTop: "24px", letterSpacing: "1px", textTransform: "uppercase" }}>
-              16-Byte Cell Model & Bayesian Diff Engine
+            <div style={{ fontSize: "24px", fontWeight: 700, color: "#4ade80", marginTop: "24px", letterSpacing: "1px", display: "flex" }}>
+              16-Byte Cell Model &amp; Bayesian Diff Engine
             </div>
           </div>
         </div>
 
         {/* Footer HUD */}
-        <div style={{ position: "absolute", bottom: "40px", right: "40px", display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(34, 197, 94, 0.05)", padding: "8px 20px", borderRadius: "full", border: "1px solid rgba(34, 197, 94, 0.1)" }}>
-          <span style={{ fontSize: "18px", fontWeight: 900, color: "#4ade80" }}>FRANKENTUI / ARCH</span>
+        <div style={{ position: "absolute", bottom: "40px", right: "40px", display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(34, 197, 94, 0.05)", padding: "8px 20px", borderRadius: "9999px", border: "1px solid rgba(34, 197, 94, 0.1)" }}>
+          <span style={{ fontSize: "18px", fontWeight: 900, color: "#4ade80", display: "flex" }}>FRANKENTUI / ARCH</span>
         </div>
       </div>
     ),

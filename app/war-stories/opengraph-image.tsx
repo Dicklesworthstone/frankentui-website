@@ -10,8 +10,8 @@ export default function Image() {
   const headBuffer = readFileSync(join(process.cwd(), "franken_favicon.png"));
   const headUri = `data:image/png;base64,${headBuffer.toString("base64")}`;
 
-  const bgBuffer = readFileSync(join(process.cwd(), "public", "screenshots", "visual_effects_clifford_attractor.webp"));
-  const bgUri = `data:image/webp;base64,${bgBuffer.toString("base64")}`;
+  const bgBuffer = readFileSync(join(process.cwd(), "public", "screenshots", "visual_effects_clifford_attractor_og.png"));
+  const bgUri = `data:image/png;base64,${bgBuffer.toString("base64")}`;
 
   return new ImageResponse(
     (
@@ -67,8 +67,9 @@ export default function Image() {
               <div style={{ width: "8px", height: "8px", borderRadius: "50%", backgroundColor: "#ef4444" }} />
               <span style={{ fontSize: "14px", fontWeight: 900, color: "#ef4444", letterSpacing: "4px" }}>BATTLE_LOG_EXTRACT</span>
             </div>
-            <div style={{ fontSize: "80px", fontWeight: 900, color: "white", lineHeight: 0.9, letterSpacing: "-4px", display: "flex" }}>
-              War <br /> Stories.
+            <div style={{ fontSize: "80px", fontWeight: 900, color: "white", lineHeight: 0.9, letterSpacing: "-4px", display: "flex", flexDirection: "column" }}>
+              <span style={{ display: "flex" }}>War</span>
+              <span style={{ display: "flex" }}>Stories.</span>
             </div>
             <div style={{ fontSize: "24px", fontWeight: 700, color: "#f87171", marginTop: "24px", letterSpacing: "1px", textTransform: "uppercase" }}>
               Forensic analysis of critical system failures.
@@ -77,7 +78,7 @@ export default function Image() {
         </div>
 
         {/* Footer HUD */}
-        <div style={{ position: "absolute", bottom: "40px", right: "40px", display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(239, 68, 68, 0.05)", padding: "8px 20px", borderRadius: "full", border: "1px solid rgba(239, 68, 68, 0.1)" }}>
+        <div style={{ position: "absolute", bottom: "40px", right: "40px", display: "flex", alignItems: "center", gap: "12px", backgroundColor: "rgba(239, 68, 68, 0.05)", padding: "8px 20px", borderRadius: "9999px", border: "1px solid rgba(239, 68, 68, 0.1)" }}>
           <span style={{ fontSize: "18px", fontWeight: 900, color: "#ef4444" }}>FRANKENTUI / WARS</span>
         </div>
       </div>

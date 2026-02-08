@@ -11,8 +11,8 @@ export default function Image() {
   const headBuffer = readFileSync(join(process.cwd(), "franken_favicon.png"));
   const headUri = `data:image/png;base64,${headBuffer.toString("base64")}`;
 
-  const bgBuffer = readFileSync(join(process.cwd(), "public", "screenshots", "dashboard_fullscreen_overview.webp"));
-  const bgUri = `data:image/webp;base64,${bgBuffer.toString("base64")}`;
+  const bgBuffer = readFileSync(join(process.cwd(), "public", "screenshots", "dashboard_fullscreen_overview_og.png"));
+  const bgUri = `data:image/png;base64,${bgBuffer.toString("base64")}`;
 
   return new ImageResponse(
     (
@@ -271,7 +271,7 @@ export default function Image() {
             gap: "12px",
             backgroundColor: "rgba(34, 197, 94, 0.05)",
             padding: "8px 20px",
-            borderRadius: "full",
+            borderRadius: "9999px",
             border: "1px solid rgba(34, 197, 94, 0.1)",
           }}
         >
