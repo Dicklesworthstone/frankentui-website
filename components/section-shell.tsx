@@ -24,7 +24,6 @@ import {
   Zap,
   Activity,
 } from "lucide-react";
-import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { cn } from "@/lib/utils";
 import { FrankenStitch } from "./franken-elements";
 import FrankenGlitch from "./franken-glitch";
@@ -80,16 +79,13 @@ export default function SectionShell({
 }: Props) {
   const Icon = icon ? sectionIcons[icon] : undefined;
   const HeadingTag = `h${headingLevel}` as const;
-  const { ref, isIntersecting } = useIntersectionObserver({ threshold: 0.05 });
   const prefersReducedMotion = useReducedMotion();
+  const skipAnim = forceReveal || prefersReducedMotion;
 
   const headingId = id ? `${id}-heading` : undefined;
-  // Important: reduced-motion users or forced-reveal sections must still see content.
-  const reveal = forceReveal || prefersReducedMotion ? true : isIntersecting;
 
   return (
     <section
-      ref={ref as React.RefObject<HTMLElement>}
       data-section
       id={id}
       aria-labelledby={headingId}
@@ -99,13 +95,14 @@ export default function SectionShell({
       )}
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start">
-        
+
         {/* SIDEBAR HEADER (Stripe Style) */}
         <div className="lg:col-span-4 lg:sticky lg:top-32 space-y-10">
           <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, x: -20 }}
-            animate={reveal ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
-            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+            initial={skipAnim ? false : { opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, amount: 0.05 }}
+            transition={skipAnim ? { duration: 0 } : { duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
           >
             {eyebrow && (
               <div className="inline-flex items-center gap-3 mb-8">
@@ -151,10 +148,11 @@ export default function SectionShell({
         {/* CONTENT AREA */}
         <div className="lg:col-span-8">
           <motion.div
-            initial={prefersReducedMotion ? false : { opacity: 0, y: 40 }}
-            animate={reveal ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+            initial={skipAnim ? false : { opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.05 }}
             transition={
-              prefersReducedMotion
+              skipAnim
                 ? { duration: 0 }
                 : { duration: 1, ease: [0.19, 1, 0.22, 1], delay: 0.2 }
             }
