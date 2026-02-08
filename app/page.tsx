@@ -112,13 +112,13 @@ export default function HomePage() {
 
           {/* Full-Width Video — the centrepiece */}
           <div className="relative mt-16 w-full group">
-            {/* Floating Peeking Eye */}
-            <div className="absolute top-[-80px] right-[10%] z-20 hidden lg:block animate-bounce transition-all duration-1000">
-              <FrankenEye className="scale-150 rotate-12 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
+            {/* Floating Peeking Eye - Now visible on mobile with adjusted positioning */}
+            <div className="absolute -top-12 right-4 md:top-[-80px] md:right-[10%] z-20 animate-bounce transition-all duration-1000">
+              <FrankenEye className="scale-100 md:scale-150 rotate-12 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
             </div>
 
             <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-            <FrankenContainer withBolts={false} className="relative glass-modern p-2 md:p-3 overflow-hidden shadow-2xl w-full">
+            <FrankenContainer withBolts={false} className="relative glass-modern p-2 lg:p-0 overflow-hidden shadow-2xl w-full">
               <BorderBeam />
 
               {/* Auto-playing Rio Recording */}
@@ -129,9 +129,10 @@ export default function HomePage() {
                   loop
                   playsInline
                   poster="/screenshots/visual_effects_clifford_attractor.webp"
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 block w-full h-full object-cover"
                  >
                   <source src="/videos/frankentui-rio-crt.webm" type="video/webm" />
+                  <source src="/videos/frankentui-rio-crt.mp4" type="video/mp4" />
                  </video>
 
                  {/* Console Metadata Overlay */}
@@ -142,11 +143,11 @@ export default function HomePage() {
               </div>
             </FrankenContainer>
 
-            {/* Embedded Stats Card */}
-            <div className="absolute -bottom-10 left-6 z-30 glass-modern p-6 rounded-2xl border border-green-500/20 shadow-2xl animate-float hidden md:flex">
+            {/* Embedded Stats Card - Now visible on mobile with responsive sizing */}
+            <div className="absolute -bottom-6 left-4 md:-bottom-10 md:left-6 z-30 glass-modern p-4 md:p-6 rounded-2xl border border-green-500/20 shadow-2xl animate-float flex">
               <div className="flex flex-col text-left">
-                <span className="text-4xl font-black text-green-400 tabular-nums tracking-tighter">100h</span>
-                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Build Time</span>
+                <span className="text-2xl md:text-4xl font-black text-green-400 tabular-nums tracking-tighter">100h</span>
+                <span className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Build Time</span>
               </div>
             </div>
           </div>
@@ -194,7 +195,7 @@ export default function HomePage() {
         title="Screenshot Gallery"
         kicker="From dashboards to data visualization, file browsers to visual effects. Every screenshot is a real terminal render -- no mocked designs."
       >
-        <ScreenshotGallery screenshots={screenshots.slice(0, 6)} columns={3} />
+        <ScreenshotGallery screenshots={screenshots.slice(0, 9)} columns={3} />
 
         <div className="mt-10 flex justify-center">
           <Link
