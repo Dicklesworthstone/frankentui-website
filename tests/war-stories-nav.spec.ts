@@ -114,11 +114,24 @@ async function runStaticSpecEvolutionSmoke(
 
     await page.locator('[data-tab="snapshot"]').click();
     await expect(page.locator("#snapshotTarget")).toBeVisible();
-    await expect
-      .poll(() => page.locator("#snapshotTarget table").count(), {
-        timeout: 60_000,
-      })
-      .toBeGreaterThan(0);
+
+    // Some commits have markdown tables while others don't. Find one deterministically
+    // so the snapshot-table assertions are meaningful across dataset revisions.
+    const commitRows = page.locator("#commitList [data-commit-idx]");
+    const commitCount = await commitRows.count();
+    const maxScan = Math.min(commitCount, 80);
+    let foundSnapshotTable = false;
+
+    for (let idx = 0; idx < maxScan; idx++) {
+      await commitRows.nth(idx).click();
+      await page.waitForTimeout(120);
+      if ((await page.locator("#snapshotTarget table").count()) > 0) {
+        foundSnapshotTable = true;
+        break;
+      }
+    }
+
+    expect(foundSnapshotTable).toBe(true);
 
     if (viewportName === "mobile") {
       const mobileSnapshotTableState = await page.evaluate(() => {
@@ -257,9 +270,11 @@ test("spec evolution lab: loads and renders core UI without console errors", asy
 });
 
 test("spec evolution static html: desktop smoke + diagnostics logging", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
   await runStaticSpecEvolutionSmoke(page, testInfo, { width: 1440, height: 900 }, "desktop");
 });
 
 test("spec evolution static html: mobile smoke + diagnostics logging", async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
   await runStaticSpecEvolutionSmoke(page, testInfo, { width: 390, height: 844 }, "mobile");
 });
