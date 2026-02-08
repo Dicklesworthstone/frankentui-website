@@ -17,6 +17,7 @@ import SectionShell from "@/components/section-shell";
 import RustCodeBlock from "@/components/rust-code-block";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
+import DecodingText from "@/components/decoding-text";
 
 export default function GettingStartedPage() {
   const [copied, setCopied] = useState(false);
@@ -37,26 +38,34 @@ export default function GettingStartedPage() {
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-start"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+          <div className="flex flex-col items-start">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8"
+            >
               <Rocket className="h-3 w-3" />
               Quick Start Protocol
-            </div>
+            </motion.div>
             
             <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 leading-none">
-              Get <br /><span className="text-animate-green">Started.</span>
+              <DecodingText text="Get" delay={0.2} /> <br />
+              <span className="text-animate-green">
+                <DecodingText text="Started." delay={0.6} />
+              </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed text-left">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed text-left"
+            >
               Install the kernel, write your first model, 
               and breathe life into your terminal in under 
               five minutes.
-            </p>
-          </motion.div>
+            </motion.p>
+          </div>
         </div>
 
         {/* Floating Peeking Eye */}

@@ -1,22 +1,23 @@
+"use client";
+
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Skull } from "lucide-react";
+import { Skull } from "lucide-react";
+import { motion } from "framer-motion";
 import { warStories, warStoriesExtended, optimizations, performanceSLAs } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
 import WarStoryCard from "@/components/war-story-card";
 import OptimizationCard from "@/components/optimization-card";
-import { motion } from "framer-motion";
 import FrankenEye from "@/components/franken-eye";
-
-export const metadata: Metadata = {
-  title: "War Stories & Optimizations",
-  description:
-    "Critical bugs fought and performance milestones achieved during the 5-day build of FrankenTUI.",
-};
+import WarStoriesMap from "@/components/war-stories-map";
 
 export default function WarStoriesPage() {
   return (
-    <main id="main-content" className="relative min-h-screen bg-black overflow-x-hidden">
+    <main 
+      id="main-content" 
+      className="relative min-h-screen bg-black overflow-x-hidden"
+      data-flashlight="true"
+    >
       {/* ── CINEMATIC HEADER ─────────────────────────────────── */}
       <header className="relative pt-44 pb-20 overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 z-0">
@@ -25,7 +26,11 @@ export default function WarStoriesPage() {
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-          <div className="flex flex-col items-start text-left">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-start text-left"
+          >
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/20 bg-red-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 mb-8">
               <Skull className="h-3 w-3" />
               Battle Reports
@@ -40,7 +45,7 @@ export default function WarStoriesPage() {
               synchronized output deadlocks, battling character 
               collisions, and optimizing allocations into oblivion.
             </p>
-          </div>
+          </motion.div>
         </div>
 
         {/* Floating Peeking Eye */}
@@ -49,33 +54,20 @@ export default function WarStoriesPage() {
         </div>
       </header>
 
-      {/* ── War Stories ──────────────────────────────────────── */}
+import WarStoriesMap from "@/components/war-stories-map";
+
+// ... inside the component, replace the story sections with:
+
+      {/* ── War Stories Tactical Map ────────────────────────── */}
       <SectionShell
-        id="bugs"
-        eyebrow="Critical Defects"
-        title="Battle Reports"
-        kicker="The most dangerous defects encountered and neutralized during development."
+        id="tactical-map"
+        eyebrow="Visualized Intelligence"
+        title="Tactical Map"
+        kicker="Select an active conflict node to extract a detailed battle report from the core logs."
       >
-        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-          {warStories.map((story) => (
-            <WarStoryCard key={story.title} story={story} />
-          ))}
-        </div>
+        <WarStoriesMap />
       </SectionShell>
 
-      {/* ── Extended War Stories ──────────────────────────────── */}
-      <SectionShell
-        id="deep-fixes"
-        eyebrow="Technical Debt"
-        title="Deep Fixes"
-        kicker="Subtle, multi-layered bugs that required understanding terminal internals and Unicode edge cases."
-      >
-        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
-          {warStoriesExtended.map((story) => (
-            <WarStoryCard key={story.title} story={story} />
-          ))}
-        </div>
-      </SectionShell>
 
       {/* ── Performance SLAs ───────────────────────────────────── */}
       <SectionShell
@@ -84,7 +76,12 @@ export default function WarStoriesPage() {
         title="Quality Guards"
         kicker="Hard performance targets enforced in CI. Violations are test failures, not warnings."
       >
-        <div className="overflow-x-auto glass-modern rounded-3xl p-1">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.98 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="overflow-x-auto glass-modern rounded-3xl p-1"
+        >
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="border-b border-white/10 bg-white/5">
@@ -105,7 +102,7 @@ export default function WarStoriesPage() {
               ))}
             </tbody>
           </table>
-        </div>
+        </motion.div>
       </SectionShell>
 
       {/* ── Optimizations ────────────────────────────────────── */}
@@ -116,15 +113,28 @@ export default function WarStoriesPage() {
         kicker="Key architectural decisions that ensure FrankenTUI runs at 60 FPS even on legacy hardware."
       >
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {optimizations.map((opt) => (
-            <OptimizationCard key={opt.name} opt={opt} />
+          {optimizations.map((opt, i) => (
+            <motion.div
+              key={opt.name}
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
+            >
+              <OptimizationCard opt={opt} />
+            </motion.div>
           ))}
         </div>
       </SectionShell>
 
       {/* ── CTA section ──────────────────────────────────────── */}
       <section className="relative mx-auto max-w-7xl px-6 pb-40">
-        <div className="relative overflow-hidden rounded-[3rem] border border-red-900/40 bg-gradient-to-br from-red-950/20 via-black to-black p-12 md:p-24 text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative overflow-hidden rounded-[3rem] border border-red-900/40 bg-gradient-to-br from-red-950/20 via-black to-black p-12 md:p-24 text-center"
+        >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.05),transparent_70%)]" />
 
           <div className="relative z-10 max-w-2xl mx-auto">
@@ -151,7 +161,7 @@ export default function WarStoriesPage() {
               </Link>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
     </main>
   );

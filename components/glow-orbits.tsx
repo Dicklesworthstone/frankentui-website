@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 
 export default function GlowOrbits() {
   const rootRef = useRef<HTMLDivElement>(null);
+  const { ref: observerRef, isIntersecting } = useIntersectionObserver<HTMLDivElement>({
+    threshold: 0,
+    triggerOnce: false,
+  });
 
   useEffect(() => {
     if (!rootRef.current) return;
@@ -46,14 +51,33 @@ export default function GlowOrbits() {
     };
   }, []);
 
+  // Sync animation state with visibility to save GPU
+  useEffect(() => {
+    if (!rootRef.current) return;
+    const rings = rootRef.current.querySelectorAll<HTMLElement>(".glow-ring");
+    rings.forEach((ring) => {
+      const animations = ring.getAnimations();
+      animations.forEach((anim) => {
+        if (isIntersecting) {
+          if (anim.playState === 'paused') anim.play();
+        } else {
+          if (anim.playState === 'running') anim.pause();
+        }
+      });
+    });
+  }, [isIntersecting]);
+
   return (
     <div
-      ref={rootRef}
+      ref={(node) => {
+        rootRef.current = node;
+        observerRef.current = node;
+      }}
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
     >
-      <div className="glow-ring absolute -top-32 -left-10 h-72 w-72 rounded-[999px] bg-gradient-to-tr from-green-500/40 via-emerald-500/20 to-transparent blur-2xl md:blur-3xl will-change-transform" />
-      <div className="glow-ring absolute -bottom-40 -right-4 h-80 w-80 rounded-[999px] bg-gradient-to-tr from-lime-400/40 via-green-500/20 to-transparent blur-2xl md:blur-3xl will-change-transform" />
-      <div className="glow-ring absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-[999px] bg-gradient-to-tr from-emerald-500/35 via-green-500/15 to-transparent blur-2xl md:blur-3xl will-change-transform" />
+      <div className="glow-ring absolute -top-32 -left-10 h-72 w-72 rounded-[999px] bg-gradient-to-tr from-green-500/40 via-emerald-500/20 to-transparent blur-2xl md:blur-3xl" />
+      <div className="glow-ring absolute -bottom-40 -right-4 h-80 w-80 rounded-[999px] bg-gradient-to-tr from-lime-400/40 via-green-500/20 to-transparent blur-2xl md:blur-3xl" />
+      <div className="glow-ring absolute top-1/2 left-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-[999px] bg-gradient-to-tr from-emerald-500/35 via-green-500/15 to-transparent blur-2xl md:blur-3xl" />
     </div>
   );
 }

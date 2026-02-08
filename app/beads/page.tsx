@@ -2,9 +2,11 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Network, Share2, Info, Binary, GitBranch, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { ArrowRight, Network, Share2, Binary, GitBranch, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import { FrankenContainer } from "@/components/franken-elements";
 import FrankenEye from "@/components/franken-eye";
+import BeadHUD from "@/components/bead-hud";
+import DecodingText from "@/components/decoding-text";
 
 const VIEWER_REPO = "https://github.com/Dicklesworthstone/beads-for-frankentui";
 
@@ -26,26 +28,34 @@ export default function BeadsPage() {
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-start text-left"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+          <div className="flex flex-col items-start text-left">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8"
+            >
               <Network className="h-3 w-3" />
               Infrastructure Visualization
-            </div>
+            </motion.div>
 
             <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              Project <br /><span className="text-animate-green">Graph.</span>
+              <DecodingText text="Project" delay={0.2} /> <br />
+              <span className="text-animate-green">
+                <DecodingText text="Graph." delay={0.6} />
+              </span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed"
+            >
               The entire FrankenTUI build was tracked as a directed acyclic graph
               of &ldquo;beads&rdquo;&mdash;interconnected tasks with explicit
               dependencies, priorities, and completion states.
-            </p>
-          </motion.div>
+            </motion.p>
+          </div>
         </div>
 
         {/* Floating Peeking Eye */}
@@ -58,11 +68,13 @@ export default function BeadsPage() {
       <div className="border-b border-white/5 bg-white/[0.01]">
         <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {graphStats.map((stat) => (
+            {graphStats.map((stat, i) => (
               <motion.div
                 key={stat.label}
                 initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                viewport={{ once: true }}
                 className="flex items-center gap-4"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/5 border border-green-500/20 text-green-400">
@@ -83,7 +95,12 @@ export default function BeadsPage() {
         <div className="grid lg:grid-cols-12 gap-8 items-start">
           {/* Sidebar */}
           <div className="lg:col-span-3 space-y-6">
-            <div className="space-y-4 text-left">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-4 text-left"
+            >
               <h2 className="text-2xl font-black text-white tracking-tight">
                 Live Viewer
               </h2>
@@ -91,17 +108,23 @@ export default function BeadsPage() {
                 Explore the full dependency graph interactively. Filter by status,
                 priority, and dependency depth. Hover nodes to trace connections.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="flex flex-col gap-3">
-              <Link
-                href="/beads-viewer/"
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="flex flex-col gap-3"
+            >
+              <a
+                href="/beads-viewer/index.html"
                 target="_blank"
+                rel="noopener noreferrer"
                 className="group flex items-center justify-between p-4 rounded-2xl bg-green-500 text-black font-black text-sm shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
               >
                 <span>OPEN FULLSCREEN</span>
                 <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </Link>
+              </a>
               <a
                 href={VIEWER_REPO}
                 target="_blank"
@@ -111,9 +134,14 @@ export default function BeadsPage() {
                 <Share2 className="h-3.5 w-3.5" />
                 <span>VIEW REPO</span>
               </a>
-            </div>
+            </motion.div>
 
-            <div className="p-5 rounded-2xl border border-white/5 bg-white/[0.02] text-left">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="p-5 rounded-2xl border border-white/5 bg-white/[0.02] text-left"
+            >
               <div className="flex items-center gap-2 mb-3 text-yellow-500/80">
                 <AlertTriangle className="h-3.5 w-3.5" />
                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Note</span>
@@ -122,31 +150,38 @@ export default function BeadsPage() {
                 The viewer loads a SQLite database via WASM. First load may
                 take a moment. For mobile, use the fullscreen link above.
               </p>
-            </div>
+            </motion.div>
           </div>
 
           {/* Embedded Viewer */}
           <div className="lg:col-span-9">
-            <FrankenContainer className="bg-black/60 p-1 overflow-hidden shadow-2xl">
-              <div className="bg-black/80 rounded-xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/5">
-                  <div className="flex gap-1.5">
-                    <div className="h-2.5 w-2.5 rounded-full bg-red-500/50" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/50" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-green-500/50" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+            >
+              <FrankenContainer className="bg-black/60 p-1 overflow-hidden shadow-2xl relative">
+                <BeadHUD />
+                <div className="bg-black/80 rounded-xl overflow-hidden relative z-0">
+                  <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/5">
+                    <div className="flex gap-1.5">
+                      <div className="h-2.5 w-2.5 rounded-full bg-red-500/50" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/50" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-green-500/50" />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">beads_viewer</span>
                   </div>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">beads_viewer</span>
+                  <div className="aspect-[16/10] w-full">
+                    <iframe
+                      title="Beads project graph viewer"
+                      src="/beads-viewer/index.html"
+                      loading="lazy"
+                      className="h-full w-full border-0"
+                    />
+                  </div>
                 </div>
-                <div className="aspect-[16/10] w-full">
-                  <iframe
-                    title="Beads project graph viewer"
-                    src="/beads-viewer/"
-                    loading="lazy"
-                    className="h-full w-full border-0"
-                  />
-                </div>
-              </div>
-            </FrankenContainer>
+              </FrankenContainer>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -154,18 +189,34 @@ export default function BeadsPage() {
       {/* ── WHAT ARE BEADS ────────────────────────────────────── */}
       <section className="mx-auto max-w-7xl px-6 lg:px-8 py-16 md:py-24 border-t border-white/5">
         <div className="max-w-3xl space-y-8 text-left">
-          <div className="inline-flex items-center gap-3">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="inline-flex items-center gap-3"
+          >
             <div className="h-px w-8 bg-green-500/40" />
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500/80">
               Methodology
             </span>
-          </div>
+          </motion.div>
 
-          <h2 className="text-3xl md:text-4xl font-black tracking-tight text-white">
+          <motion.h2 
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-3xl md:text-4xl font-black tracking-tight text-white"
+          >
             What are Beads?
-          </h2>
+          </motion.h2>
 
-          <div className="space-y-4 text-base text-slate-400 font-medium leading-relaxed">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="space-y-4 text-base text-slate-400 font-medium leading-relaxed"
+          >
             <p>
               During the 5-day sprint that produced FrankenTUI, every unit of
               work was modeled as a <strong className="text-white">bead</strong>&mdash;a
@@ -183,13 +234,18 @@ export default function BeadsPage() {
               SQLite database, letting you explore how a complex 12-crate Rust
               workspace was orchestrated from scratch in under a week.
             </p>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* ── CTA ───────────────────────────────────────────────── */}
       <section className="relative mx-auto max-w-7xl px-4 pb-32 pt-8 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-green-900/40 bg-gradient-to-br from-green-950/50 via-emerald-950/30 to-black p-10 md:p-16">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="relative overflow-hidden rounded-3xl border border-green-900/40 bg-gradient-to-br from-green-950/50 via-emerald-950/30 to-black p-10 md:p-16"
+        >
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-green-900/15 via-transparent to-transparent" />
 
           <div className="relative z-10 flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
@@ -211,7 +267,7 @@ export default function BeadsPage() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
     </main>
   );

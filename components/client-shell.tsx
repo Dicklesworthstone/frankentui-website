@@ -1,16 +1,21 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import SiteHeader from "@/components/site-header";
 import SiteFooter from "@/components/site-footer";
 import ErrorBoundary from "@/components/error-boundary";
 import ScrollToTop from "@/components/scroll-to-top";
+import CustomCursor from "@/components/custom-cursor";
+import { SiteProvider } from "@/lib/site-state";
+import MemoryDump from "@/components/memory-dump";
+import SiteTerminal from "@/components/site-terminal";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const prefersReducedMotion = useReducedMotion();
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -18,23 +23,72 @@ export default function ClientShell({ children }: { children: React.ReactNode })
 
   return (
     <ErrorBoundary>
-      <div className="flex min-h-screen flex-col">
-        <SiteHeader />
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={pathname}
-            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: 20, filter: "blur(4px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -16, filter: "blur(4px)" }}
-            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.35, ease: [0.33, 1, 0.68, 1] }}
-            className="flex-1"
+      <SiteProvider>
+        <div className="flex min-h-screen flex-col overflow-x-hidden relative">
+          <MemoryDump />
+          <SiteTerminal />
+          <CustomCursor />
+          
+          <SiteHeader />
+          
+          <AnimatePresence 
+            mode="wait" 
+            onExitComplete={() => setIsTransitioning(false)}
           >
-            {children}
-          </motion.div>
-        </AnimatePresence>
-        <SiteFooter />
-        <ScrollToTop />
-      </div>
+            <motion.div
+              key={pathname}
+              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.98, filter: "brightness(0)" }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1, 
+                filter: "brightness(1)",
+                transition: {
+                  duration: 0.5,
+                  ease: [0.22, 1, 0.36, 1],
+                  delay: 0.1
+                }
+              }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { 
+                opacity: 0, 
+                scale: 1.02, 
+                filter: "brightness(2) contrast(1.2)",
+                transition: {
+                  duration: 0.3,
+                  ease: [0.32, 0, 0.67, 0]
+                }
+              }}
+              onAnimationStart={() => setIsTransitioning(true)}
+              className="flex-1 relative"
+            >
+              {/* Transition Noise & Flicker Overlay */}
+              <AnimatePresence>
+                {isTransitioning && !prefersReducedMotion && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: [0, 0.1, 0.05, 0.15, 0] }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4, times: [0, 0.2, 0.4, 0.6, 1] }}
+                      className="fixed inset-0 z-50 pointer-events-none bg-white/10 mix-blend-overlay"
+                    />
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 0.1 }}
+                      exit={{ opacity: 0 }}
+                      className="fixed inset-0 z-50 pointer-events-none mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')] bg-repeat opacity-20"
+                    />
+                  </>
+                )}
+              </AnimatePresence>
+
+              {children}
+            </motion.div>
+          </AnimatePresence>
+          
+          <SiteFooter />
+          <ScrollToTop />
+        </div>
+      </SiteProvider>
     </ErrorBoundary>
   );
 }

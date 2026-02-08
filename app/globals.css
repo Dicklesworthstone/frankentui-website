@@ -2,17 +2,21 @@
 
 /* ==========================================================================
    FrankenTUI - Global Styles
-   Green / Lime / Emerald Frankenstein theme
+   Stripe-Grade Monster Technical Design System
    ========================================================================== */
-
-/* --------------------------------------------------------------------------
-   1. Custom Properties (Design Tokens)
-   -------------------------------------------------------------------------- */
 
 :root {
   /* -- Font Stacks -------------------------------------------------------- */
   --font-sans: "Inter", var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", var(--font-jetbrains), ui-monospace, monospace;
+
+  /* -- Refined Typography (Stripe-Grade) -------------------------------- */
+  --tracking-tightest: -0.04em;
+  --tracking-tighter: -0.02em;
+  --tracking-tight: -0.01em;
+  --tracking-normal: 0em;
+  --tracking-wide: 0.025em;
+  --tracking-widest: 0.1em;
 
   /* -- Refined Palette (Franken-High-End) -------------------------------- */
   --color-bg: #020a02;
@@ -36,92 +40,93 @@
 }
 
 /* --------------------------------------------------------------------------
-   2. Base Styles & Resets
+   2. Typography System
    -------------------------------------------------------------------------- */
 
-html {
-  scroll-behavior: smooth;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-}
-
-::selection {
-  background: rgba(34, 197, 94, 0.2);
-  color: #f1f5f9;
-}
-
-::-moz-selection {
-  background: rgba(34, 197, 94, 0.2);
-  color: #f1f5f9;
-}
-
 body {
-  background-color: #020a02;
+  background-color: var(--color-bg);
   color: #f1f5f9;
   font-family: var(--font-sans);
-  font-size: var(--text-base);
-  line-height: 1.7;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
+  line-height: 1.6;
+  letter-spacing: var(--tracking-tight);
   overflow-x: hidden;
 }
 
+h1, h2, h3, h4 {
+  letter-spacing: var(--tracking-tighter);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+code, pre {
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-normal);
+}
+
 /* --------------------------------------------------------------------------
-   3. Scrollbar Styling
+   3. Global Effects
    -------------------------------------------------------------------------- */
 
-/* Webkit / Blink */
+/* Static noise texture (more efficient than dynamic SVG filter) */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url("https://res.cloudinary.com/dz3vsvuad/image/upload/v1603209355/grain_vqc9ik.png");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 9999;
+  contain: strict;
+  will-change: auto;
+}
+
+/* Custom Selection */
+::selection {
+  background: rgba(34, 197, 94, 0.3);
+  color: #fff;
+}
+
+/* --------------------------------------------------------------------------
+   4. Scrollbar Styling
+   -------------------------------------------------------------------------- */
+
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: #010501;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(34, 197, 94, 0.3);
-  border-radius: var(--radius-full);
+  background: #1a2e1a;
+  border: 2px solid #010501;
+  border-radius: 10px;
+  transition: background 0.3s;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(34, 197, 94, 0.5);
-}
-
-/* Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(34, 197, 94, 0.3) transparent;
+  background: var(--color-green-prime);
 }
 
 /* --------------------------------------------------------------------------
-   4. Components
+   5. Design Components
    -------------------------------------------------------------------------- */
 
-/* Stripe-style adaptive glass
-   NOTE: no permanent will-change here — it creates unnecessary compositor
-   layers on every glass element. Let the browser promote only when needed. */
+/* Stripe-style adaptive glass */
 .glass-modern {
   background: rgba(5, 18, 5, 0.8);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px) saturate(120%);
+  -webkit-backdrop-filter: blur(12px) saturate(120%);
+  border: 1px solid rgba(34, 197, 94, 0.12);
+  box-shadow: 
+    0 4px 24px -1px rgba(0, 0, 0, 0.4),
+    inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 /* Kinetic Hover Effect */
@@ -155,11 +160,31 @@ body {
   to { background-position: 300% center; }
 }
 
+/* Smooth float animation */
+@keyframes float {
+  0% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(1.5deg); }
+  100% { transform: translateY(0px) rotate(0deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+/* Border beam sweep (CSS-only, compositor-friendly) */
+@keyframes borderBeam {
+  0% { top: -100%; left: -100%; }
+  100% { top: 100%; left: 100%; }
+}
+
+.animate-border-beam {
+  animation: borderBeam 4s linear infinite;
+}
+
 /* --------------------------------------------------------------------------
-   5. Utility Classes
+   6. Utilities
    -------------------------------------------------------------------------- */
 
-/* Green gradient text */
 .text-gradient-franken {
   background: linear-gradient(135deg, #4ade80 0%, #bef264 50%, #34d399 100%);
   -webkit-background-clip: text;
@@ -167,72 +192,11 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* Green glow */
 .glow-green {
-  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3),
-    0 0 60px rgba(34, 197, 94, 0.1),
-    0 0 100px rgba(34, 197, 94, 0.05);
-}
-
-/* Hero section gradient background */
-.bg-gradient-franken-hero {
-  background: var(--gradient-hero-bg);
-  position: relative;
-}
-
-.bg-gradient-franken-hero::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 30% 20%,
-    rgba(34, 197, 94, 0.08) 0%,
-    transparent 50%
-  ),
-  radial-gradient(
-    circle at 70% 60%,
-    rgba(163, 230, 53, 0.05) 0%,
-    transparent 50%
-  );
-  pointer-events: none;
-}
-
-/* Glass morphism card */
-.glass-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(var(--glass-blur));
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--elevation-2);
-}
-
-/* --------------------------------------------------------------------------
-   6. Accessibility
-   -------------------------------------------------------------------------- */
-
-.skip-link {
-  position: absolute;
-  top: -100%;
-  left: var(--space-md);
-  z-index: var(--z-skip-link);
-  padding: var(--space-sm) var(--space-md);
-  background: #22c55e;
-  color: #020a02;
-  font-weight: 600;
-  font-size: var(--text-sm);
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-  text-decoration: none;
-  transition: top 0.2s var(--ease-out-expo);
-}
-
-.skip-link:focus {
-  top: 0;
-  outline: 2px solid #a3e635;
-  outline-offset: 2px;
+  box-shadow: 0 0 40px rgba(34, 197, 94, 0.15);
 }
 
 :focus-visible {
-  outline: 2px solid rgba(34, 197, 94, 0.6);
-  outline-offset: 2px;
+  outline: 2px solid var(--color-green-prime);
+  outline-offset: 4px;
 }

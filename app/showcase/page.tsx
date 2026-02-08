@@ -1,17 +1,15 @@
-import type { Metadata } from "next";
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, Eye } from "lucide-react";
+import { motion } from "framer-motion";
 import { screenshots, videos } from "@/lib/content";
 import type { Video } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
 import ScreenshotGallery from "@/components/screenshot-gallery";
 import VideoPlayer from "@/components/video-player";
 import FrankenEye from "@/components/franken-eye";
-
-export const metadata: Metadata = {
-  title: "Showcase",
-  description: "Screenshots and demos of FrankenTUI terminal UI framework",
-};
+import DecodingText from "@/components/decoding-text";
 
 export default function ShowcasePage() {
   return (
@@ -25,20 +23,32 @@ export default function ShowcasePage() {
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex flex-col items-start text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8"
+            >
               <Eye className="h-3 w-3" />
               Visual Gallery
-            </div>
+            </motion.div>
             
             <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              The <br /><span className="text-animate-green">Showcase.</span>
+              <DecodingText text="The" delay={0.2} /> <br />
+              <span className="text-animate-green">
+                <DecodingText text="Showcase." delay={0.6} />
+              </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed"
+            >
               Explore dashboards, data visualizations, 
               and complex visual effects rendered entirely 
               within the terminal grid.
-            </p>
+            </motion.p>
           </div>
         </div>
 
@@ -49,32 +59,59 @@ export default function ShowcasePage() {
       </header>
 
       {/* ── Screenshot gallery section ───────────────────────── */}
-      <SectionShell
-        id="screenshots"
-        icon="eye"
-        title="Screenshots"
-        kicker="All ten showcase views — dashboards, widgets, visual effects, data visualization, and more. Click any image to enlarge."
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
       >
-        <ScreenshotGallery screenshots={screenshots} columns={2} />
-      </SectionShell>
+        <SectionShell
+          id="screenshots"
+          icon="eye"
+          title="Screenshots"
+          kicker="All ten showcase views — dashboards, widgets, visual effects, data visualization, and more. Click any image to enlarge."
+        >
+          <ScreenshotGallery screenshots={screenshots} columns={2} />
+        </SectionShell>
+      </motion.div>
 
       {/* ── Video demos section ──────────────────────────────── */}
-      <SectionShell
-        id="video-demos"
-        icon="play"
-        title="Video Demos"
-        kicker="Watch FrankenTUI running live in real terminal emulators with resize handling, CRT effects, and full interactivity."
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: "easeOut", delay: 0.2 }}
       >
-        <div className="mx-auto max-w-4xl space-y-8">
-          {videos.map((video: Video) => (
-            <VideoPlayer key={video.title} video={video} />
-          ))}
-        </div>
-      </SectionShell>
+        <SectionShell
+          id="video-demos"
+          icon="play"
+          title="Video Demos"
+          kicker="Watch FrankenTUI running live in real terminal emulators with resize handling, CRT effects, and full interactivity."
+        >
+          <div className="mx-auto max-w-4xl space-y-8">
+            {videos.map((video: Video, i: number) => (
+              <motion.div
+                key={video.title}
+                initial={{ opacity: 0, scale: 0.98 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.2 }}
+              >
+                <VideoPlayer video={video} />
+              </motion.div>
+            ))}
+          </div>
+        </SectionShell>
+      </motion.div>
 
       {/* ── CTA section ──────────────────────────────────────── */}
       <section className="relative mx-auto max-w-7xl px-4 pb-32 pt-8 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-green-900/40 bg-gradient-to-br from-green-950/50 via-emerald-950/30 to-black p-10 md:p-16">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="relative overflow-hidden rounded-3xl border border-green-900/40 bg-gradient-to-br from-green-950/50 via-emerald-950/30 to-black p-10 md:p-16"
+        >
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-green-900/15 via-transparent to-transparent" />
 
           <div className="relative z-10 flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
@@ -96,7 +133,7 @@ export default function ShowcasePage() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
-        </div>
+        </motion.div>
       </section>
     </main>
   );

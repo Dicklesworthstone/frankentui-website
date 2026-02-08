@@ -13,6 +13,9 @@
   <meta name="theme-color" content="#22c55e" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#1f2937" media="(prefers-color-scheme: dark)">
 
+  <!-- Base href ensures relative paths resolve correctly when served under /beads-viewer/ -->
+  <base href="/beads-viewer/">
+
   <!-- Early theme detection - MUST be first to prevent flash -->
   <script>
     (function() {
@@ -27,11 +30,11 @@
   <!-- Security: Content Security Policy - fully self-contained for offline use -->
   <meta http-equiv="Content-Security-Policy" content="
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline';
-    font-src 'self';
-    img-src 'self' data: blob:;
-    connect-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net;
+    style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net;
+    font-src 'self' https://cdn.jsdelivr.net data:;
+    img-src 'self' data: blob: https://cdn.jsdelivr.net;
+    connect-src 'self' blob: https://cdn.jsdelivr.net;
     worker-src 'self' blob:;
   ">
 

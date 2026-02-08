@@ -1,18 +1,16 @@
+"use client";
+
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
+import { motion } from "framer-motion";
 import { changelog, tweets, buildLogLines, devSessionInsights, devProcessStats } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
 import Timeline from "@/components/timeline";
 import TweetWall from "@/components/tweet-wall";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
-
-export const metadata: Metadata = {
-  title: "Built in 5 Days",
-  description:
-    "How FrankenTUI was built from scratch in 5 days — the full changelog and community reactions",
-};
+import DecodingText from "@/components/decoding-text";
 
 const keyStats = [
   {
@@ -53,20 +51,32 @@ export default function HowItWasBuiltPage() {
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
           <div className="flex flex-col items-start text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8"
+            >
               <Clock className="h-3 w-3" />
               100-Hour Sprint
-            </div>
+            </motion.div>
             
             <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              Built in <br /><span className="text-animate-green">5 Days.</span>
+              <DecodingText text="Built in" delay={0.2} /> <br />
+              <span className="text-animate-green">
+                <DecodingText text="5 Days." delay={0.6} />
+              </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl leading-relaxed text-left">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl leading-relaxed text-left"
+            >
               From zero lines of code to a published Rust crate. 
               The granular story of how FrankenTUI was stitched 
               together in a single intense engineering cycle.
-            </p>
+            </motion.p>
           </div>
         </div>
 
@@ -84,9 +94,13 @@ export default function HowItWasBuiltPage() {
         kicker="The numbers behind the sprint. Every hour counted."
       >
         <dl className="grid gap-px overflow-hidden rounded-2xl border border-green-900/40 bg-green-900/20 text-sm text-slate-200 shadow-xl shadow-green-950/20 sm:grid-cols-2 lg:grid-cols-4">
-          {keyStats.map((stat) => (
-            <div
+          {keyStats.map((stat, i) => (
+            <motion.div
               key={stat.label}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.1 }}
               className="group relative bg-[#020a02]/60 px-6 py-6 backdrop-blur transition-colors hover:bg-[#020a02]/40"
             >
               <div
@@ -109,20 +123,27 @@ export default function HowItWasBuiltPage() {
               <p className="mt-2 text-xs font-medium leading-relaxed text-slate-400/80">
                 {stat.detail}
               </p>
-            </div>
+            </motion.div>
           ))}
         </dl>
       </SectionShell>
 
       {/* ── Full Timeline ─────────────────────────────────────── */}
-      <SectionShell
-        id="timeline"
-        icon="clock"
-        title="Full Timeline"
-        kicker="Selected milestones timestamped from the real commit history (2026-01-31 → 2026-02-05)."
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
       >
-        <Timeline items={changelog} />
-      </SectionShell>
+        <SectionShell
+          id="timeline"
+          icon="clock"
+          title="Full Timeline"
+          kicker="Selected milestones timestamped from the real commit history (2026-01-31 → 2026-02-05)."
+        >
+          <Timeline items={changelog} />
+        </SectionShell>
+      </motion.div>
 
       {/* ── The Making Of (Grounded Highlights) ─────────────── */}
       <SectionShell
@@ -133,9 +154,13 @@ export default function HowItWasBuiltPage() {
       >
         <div className="space-y-8">
           <dl className="grid gap-px overflow-hidden rounded-2xl border border-green-900/40 bg-green-900/20 text-sm text-slate-200 shadow-xl shadow-green-950/20 sm:grid-cols-2 lg:grid-cols-3">
-            {devProcessStats.map((stat) => (
-              <div
+            {devProcessStats.map((stat, i) => (
+              <motion.div
                 key={stat.label}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
                 className="group relative bg-[#020a02]/60 px-6 py-6 backdrop-blur transition-colors hover:bg-[#020a02]/40"
               >
                 <dt className="text-xs font-bold uppercase tracking-widest text-slate-500 transition-colors group-hover:text-green-400/70">
@@ -147,12 +172,12 @@ export default function HowItWasBuiltPage() {
                 <p className="mt-2 text-xs font-medium leading-relaxed text-slate-400/80">
                   {stat.detail}
                 </p>
-              </div>
+              </motion.div>
             ))}
           </dl>
 
           <div className="space-y-4">
-            {devSessionInsights.map((insight) => {
+            {devSessionInsights.map((insight, i) => {
               const flavorStyles: Record<string, string> = {
                 breakthrough: "border-green-500/30 bg-green-950/20",
                 decision: "border-lime-500/30 bg-lime-950/15",
@@ -176,8 +201,12 @@ export default function HowItWasBuiltPage() {
               };
 
               return (
-                <div
+                <motion.div
                   key={`${insight.date}-${insight.title}`}
+                  initial={{ opacity: 0, x: -20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
                   className={`rounded-xl border p-5 transition-colors ${flavorStyles[insight.flavor]}`}
                 >
                   <div className="mb-3 flex flex-wrap items-center gap-3">
@@ -199,7 +228,7 @@ export default function HowItWasBuiltPage() {
                   <p className="text-sm leading-relaxed text-slate-400">
                     {insight.description}
                   </p>
-                </div>
+                </motion.div>
               );
             })}
           </div>
@@ -207,45 +236,52 @@ export default function HowItWasBuiltPage() {
       </SectionShell>
 
       {/* ── Sprint Git Log (Selected) ───────────────────────────── */}
-      <SectionShell
-        id="session-log"
-        icon="activity"
-        title="Sprint Git Log"
-        kicker="Selected, timestamped commit messages from the sprint (local tz)."
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
       >
-        <FrankenContainer className="bg-black/60 p-0 overflow-hidden">
-          <div className="flex items-center gap-3 border-b border-white/5 bg-white/5 px-4 py-3">
-            <div className="flex gap-1.5">
-              <div className="h-3 w-3 rounded-full bg-red-500/60" />
-              <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
-              <div className="h-3 w-3 rounded-full bg-green-500/60" />
+        <SectionShell
+          id="session-log"
+          icon="activity"
+          title="Sprint Git Log"
+          kicker="Selected, timestamped commit messages from the sprint (local tz)."
+        >
+          <FrankenContainer className="bg-black/60 p-0 overflow-hidden shadow-2xl border-white/5">
+            <div className="flex items-center gap-3 border-b border-white/5 bg-white/5 px-4 py-3">
+              <div className="flex gap-1.5">
+                <div className="h-3 w-3 rounded-full bg-red-500/60" />
+                <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
+                <div className="h-3 w-3 rounded-full bg-green-500/60" />
+              </div>
+              <span className="text-xs font-mono text-slate-500">git log --oneline (selected)</span>
             </div>
-            <span className="text-xs font-mono text-slate-500">git log --oneline (selected)</span>
-          </div>
-          <div className="p-6 font-mono text-[13px] leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
-            <div className="space-y-1">
-              {buildLogLines.map((line, i) => {
-                const isPublishLine =
-                  /\bpublish\b/i.test(line) ||
-                  /\bcrates\.io\b/i.test(line) ||
-                  /\bchangelog\b/i.test(line);
-                return (
-                  <p
-                    key={i}
-                    className={
-                      isPublishLine
-                        ? "text-green-400 font-bold"
-                        : "text-slate-400 hover:text-slate-200 transition-colors"
-                    }
-                  >
-                    {line}
-                  </p>
-                );
-              })}
+            <div className="p-6 font-mono text-[13px] leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
+              <div className="space-y-1">
+                {buildLogLines.map((line, i) => {
+                  const isPublishLine =
+                    /\bpublish\b/i.test(line) ||
+                    /\bcrates\.io\b/i.test(line) ||
+                    /\bchangelog\b/i.test(line);
+                  return (
+                    <p
+                      key={i}
+                      className={
+                        isPublishLine
+                          ? "text-green-400 font-bold"
+                          : "text-slate-400 hover:text-slate-200 transition-colors"
+                      }
+                    >
+                      {line}
+                    </p>
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        </FrankenContainer>
-      </SectionShell>
+          </FrankenContainer>
+        </SectionShell>
+      </motion.div>
 
       {/* ── What People Said ──────────────────────────────────── */}
       <SectionShell
@@ -259,7 +295,12 @@ export default function HowItWasBuiltPage() {
 
       {/* ── CTA section ──────────────────────────────────────── */}
       <section className="relative mx-auto max-w-7xl px-4 pb-32 pt-8 sm:px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-green-900/40 bg-gradient-to-br from-green-950/50 via-emerald-950/30 to-black p-10 md:p-16">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          className="relative overflow-hidden rounded-3xl border border-green-900/40 bg-gradient-to-br from-green-950/50 via-emerald-950/30 to-black p-10 md:p-16"
+        >
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-green-900/15 via-transparent to-transparent" />
 
           <div className="relative z-10 flex flex-col items-start gap-8 md:flex-row md:items-center md:justify-between">
@@ -290,7 +331,7 @@ export default function HowItWasBuiltPage() {
               </Link>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
     </main>
   );

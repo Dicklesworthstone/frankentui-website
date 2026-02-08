@@ -8,6 +8,7 @@ export default function FrankenEye({ className }: { className?: string }) {
   const eyeRef = useRef<HTMLDivElement>(null);
   const rectRef = useRef<DOMRect | null>(null);
   const frameRef = useRef<number | null>(null);
+  const isVisibleRef = useRef(false);
 
   // Cache the position to avoid getBoundingClientRect during mousemove
   const updateRect = useCallback(() => {
@@ -16,27 +17,27 @@ export default function FrankenEye({ className }: { className?: string }) {
     }
   }, []);
 
+  // Only attach mousemove when the eye is actually visible on screen
   useEffect(() => {
-    updateRect();
-    window.addEventListener("scroll", updateRect, { passive: true });
-    window.addEventListener("resize", updateRect, { passive: true });
-    
+    const el = eyeRef.current;
+    if (!el) return;
+
     const handleMouseMove = (e: MouseEvent) => {
-      if (frameRef.current) return;
+      if (!isVisibleRef.current || frameRef.current) return;
 
       frameRef.current = requestAnimationFrame(() => {
         if (!rectRef.current) {
           frameRef.current = null;
           return;
         }
-        
+
         const rect = rectRef.current;
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        
+
         const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
         const distance = Math.min(rect.width / 4, Math.hypot(e.clientX - centerX, e.clientY - centerY) / 10);
-        
+
         setMousePos({
           x: Math.cos(angle) * distance,
           y: Math.sin(angle) * distance,
@@ -45,8 +46,21 @@ export default function FrankenEye({ className }: { className?: string }) {
       });
     };
 
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting;
+        if (entry.isIntersecting) updateRect();
+      },
+      { threshold: 0 }
+    );
+    observer.observe(el);
+
+    updateRect();
+    window.addEventListener("scroll", updateRect, { passive: true });
+    window.addEventListener("resize", updateRect, { passive: true });
     window.addEventListener("mousemove", handleMouseMove, { passive: true });
     return () => {
+      observer.disconnect();
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("scroll", updateRect);
       window.removeEventListener("resize", updateRect);

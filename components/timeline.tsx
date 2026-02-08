@@ -23,7 +23,7 @@ export default function Timeline({ items }: { items: ChangelogEntry[] }) {
             >
               {/* Kinetic Node */}
               <div className="absolute left-[-4.5px] md:left-[27.5px] top-2 flex h-2.5 w-2.5 items-center justify-center">
-                <div className="absolute h-5 w-5 rounded-full bg-green-500/20 animate-ping" />
+                <div className="absolute h-5 w-5 rounded-full bg-green-500/20 group-hover:animate-ping" />
                 <div className="relative h-2.5 w-2.5 rounded-full bg-green-500 border border-black shadow-[0_0_15px_#22c55e]" />
               </div>
 

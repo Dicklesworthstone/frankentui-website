@@ -3,25 +3,32 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Github } from "lucide-react";
+import { Menu, X, Github, Terminal as TerminalIcon, Eye, Zap } from "lucide-react";
 import { useState, useEffect } from "react";
 import { navItems, siteConfig } from "@/lib/content";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { cn } from "@/lib/utils";
 import { FrankenBolt } from "./franken-elements";
+import { useSite } from "@/lib/site-state";
 
 export default function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+  const { setTerminalOpen, toggleAnatomyMode, isAnatomyMode, isAudioEnabled, toggleAudio } = useSite();
 
   useBodyScrollLock(open);
 
   useEffect(() => {
+    let ticking = false;
     const handleScroll = () => {
-      const isScrolled = window.scrollY > 20;
-      setScrolled(isScrolled);
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        setScrolled(window.scrollY > 20);
+        ticking = false;
+      });
     };
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
@@ -44,7 +51,7 @@ export default function SiteHeader() {
         <header
           className={cn(
             "absolute top-6 left-1/2 -translate-x-1/2 flex items-center transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)] pointer-events-auto",
-            "w-[95%] lg:w-[1100px] h-16 px-8 rounded-full border border-white/5 will-change-[transform,background-color,backdrop-filter]",
+            "w-[95%] lg:w-[1200px] h-16 px-8 rounded-full border border-white/5",
             scrolled ? "glass-modern shadow-2xl scale-[0.98]" : "bg-transparent border-transparent"
           )}
         >
@@ -60,7 +67,7 @@ export default function SiteHeader() {
                 <span className="text-xl font-black text-black select-none">F</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-sm font-black tracking-tight text-white uppercase leading-none">
+                <span className="text-base font-black tracking-tight text-white uppercase leading-none">
                   {siteConfig.name}
                 </span>
                 <div className="flex items-center gap-1.5 mt-1">
@@ -85,7 +92,7 @@ export default function SiteHeader() {
                     onMouseLeave={() => setHoveredItem(null)}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "relative px-4 py-2 text-[10px] font-black transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black uppercase tracking-[0.2em]",
+                      "relative px-4 py-2 text-sm font-bold transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black uppercase tracking-wide",
                       active ? "text-green-400" : "text-slate-400 hover:text-white"
                     )}
                   >
@@ -110,15 +117,43 @@ export default function SiteHeader() {
               })}
             </nav>
 
-            {/* Primary CTA */}
-            <div className="flex items-center gap-4">
+            {/* Primary CTA & Tools */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTerminalOpen(true)}
+                className="p-2 rounded-full hover:bg-white/5 text-slate-400 hover:text-green-400 transition-colors"
+                title="Open Terminal ( ` )"
+              >
+                <TerminalIcon className="h-4 w-4" />
+              </button>
+              <button
+                onClick={toggleAnatomyMode}
+                className={cn(
+                  "p-2 rounded-full transition-colors",
+                  isAnatomyMode ? "bg-green-500/20 text-green-400" : "hover:bg-white/5 text-slate-400 hover:text-white"
+                )}
+                title="Toggle Anatomy Mode (Ctrl+Shift+X)"
+              >
+                <Eye className="h-4 w-4" />
+              </button>
+              <button
+                onClick={toggleAudio}
+                className={cn(
+                  "p-2 rounded-full transition-colors",
+                  isAudioEnabled ? "bg-green-500/20 text-green-400" : "hover:bg-white/5 text-slate-400 hover:text-white"
+                )}
+                title="Toggle Galvanic Audio"
+              >
+                <Zap className={cn("h-4 w-4", isAudioEnabled && "animate-pulse")} />
+              </button>
+              <div className="w-px h-4 bg-white/10 mx-1" />
               <a
                 href={siteConfig.github}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center gap-2 px-5 py-2 rounded-full bg-white text-black text-[10px] font-black hover:bg-green-400 transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                className="group flex items-center gap-2 px-6 py-2.5 rounded-full bg-white text-black text-sm font-bold hover:bg-green-400 transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
-                <Github className="h-3.5 w-3.5" />
+                <Github className="h-4 w-4" />
                 <span>GITHUB</span>
               </a>
             </div>
@@ -137,15 +172,23 @@ export default function SiteHeader() {
             <span className="text-[10px] font-black tracking-[0.2em] text-white uppercase">{siteConfig.name}</span>
           </Link>
           
-          <button
-            type="button"
-            onClick={() => setOpen(!open)}
-            aria-label={open ? "Close navigation menu" : "Open navigation menu"}
-            aria-expanded={open}
-            className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-green-500 active:scale-90 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-          >
-            {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTerminalOpen(true)}
+              className="p-2 text-green-500"
+            >
+              <TerminalIcon className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setOpen(!open)}
+              aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={open}
+              className="h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 text-green-500 active:scale-90 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            >
+              {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </header>
       </div>
 
@@ -180,6 +223,28 @@ export default function SiteHeader() {
                     <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
                   </Link>
                 ))}
+                
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <button
+                    onClick={() => { toggleAnatomyMode(); setOpen(false); }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 p-4 rounded-2xl border transition-all font-bold text-sm",
+                      isAnatomyMode ? "bg-green-500/20 border-green-500/40 text-green-400" : "bg-white/5 border-white/5 text-white"
+                    )}
+                  >
+                    <Eye className="h-4 w-4" /> ANATOMY
+                  </button>
+                  <button
+                    onClick={() => { toggleAudio(); setOpen(false); }}
+                    className={cn(
+                      "flex items-center justify-center gap-2 p-4 rounded-2xl border transition-all font-bold text-sm",
+                      isAudioEnabled ? "bg-green-500/20 border-green-500/40 text-green-400" : "bg-white/5 border-white/5 text-white"
+                    )}
+                  >
+                    <Zap className="h-4 w-4" /> AUDIO
+                  </button>
+                </div>
+
                 <a
                   href={siteConfig.github}
                   target="_blank"

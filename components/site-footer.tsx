@@ -1,9 +1,10 @@
 "use client";
 
-import { Github, Twitter, ArrowUp } from "lucide-react";
+import { Github, Twitter, ArrowUp, Activity } from "lucide-react";
 import Link from "next/link";
 import { siteConfig, navItems } from "@/lib/content";
-import { FrankenStitch } from "./franken-elements";
+import { FrankenContainer } from "./franken-elements";
+import { Magnetic } from "./motion-wrapper";
 
 const socialLinks = [
   { href: siteConfig.social.github, icon: Github, label: "GitHub" },
@@ -12,119 +13,108 @@ const socialLinks = [
 
 export default function SiteFooter() {
   const handleBackToTop = () => {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
     <footer
-      className="relative mt-32"
+      className="relative mt-40 pb-20 overflow-hidden"
       role="contentinfo"
       aria-label="Site footer"
     >
-      <div className="h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent" aria-hidden="true" />
-      
-      <div className="absolute top-0 left-0 right-0 h-10 flex items-center justify-center overflow-hidden opacity-10 pointer-events-none">
-        <FrankenStitch className="w-[110%] rotate-1 scale-125" color="green" />
+      <div className="absolute inset-0 z-0">
+         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-green-500/5 rounded-full blur-[100px]" />
       </div>
 
-      <div className="absolute inset-x-0 top-0 h-40 bg-[radial-gradient(ellipse_at_center,rgba(34,197,94,0.04),transparent_70%)] pointer-events-none" aria-hidden="true" />
+      <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+        <FrankenContainer withBolts={false} className="glass-modern p-12 md:p-16">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
+            
+            {/* BRAND & STATUS */}
+            <div className="md:col-span-5 space-y-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center font-black text-black text-xs">F</div>
+                  <span className="text-xl font-black text-white uppercase tracking-tighter">{siteConfig.name}</span>
+                </div>
+                <p className="text-slate-400 font-medium leading-relaxed max-w-xs text-left">
+                  The monster technical kernel for Rust. 
+                  Built for architectural purity and deterministic performance.
+                </p>
+              </div>
 
-      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        {/* Desktop: 3-column layout */}
-        <div className="hidden lg:grid lg:grid-cols-3 lg:gap-12">
-          <div className="space-y-3">
-            <p className="text-lg font-bold tracking-tight text-slate-100">
-              {siteConfig.name}
-            </p>
-            <p className="text-sm leading-relaxed text-slate-500" suppressHydrationWarning>
-              Minimal, high-performance terminal UI kernel for Rust.
-              <br />
-              &copy; {new Date().getFullYear()} Jeffrey Emanuel. MIT License.
-            </p>
-          </div>
-
-          <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-4">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-md text-sm text-slate-500 transition-colors hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex flex-col items-end gap-6">
-            <div className="flex items-center gap-3">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noreferrer noopener"
-                  className="group relative flex h-10 w-10 items-center justify-center rounded-full border border-white/5 bg-white/5 text-slate-400 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                  aria-label={social.label}
-                >
-                  <social.icon className="h-4 w-4 transition-transform group-hover:rotate-12" aria-hidden="true" />
-                </a>
-              ))}
+              <div className="flex flex-col gap-3">
+                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-green-500/60">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <span>All Systems Operational</span>
+                 </div>
+                 <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">
+                    <Activity className="h-3 w-3" />
+                    <span>Kernel v0.1.1 Active</span>
+                 </div>
+              </div>
             </div>
-            <button
-              type="button"
-              onClick={handleBackToTop}
-              className="inline-flex items-center gap-2 rounded-md text-xs font-bold uppercase tracking-widest text-slate-500 transition-colors hover:text-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-              aria-label="Back to top"
-            >
-              Back to top
-              <ArrowUp className="h-3.5 w-3.5" />
-            </button>
-          </div>
-        </div>
 
-        {/* Mobile layout */}
-        <div className="flex flex-col gap-10 lg:hidden">
-          <div className="space-y-2">
-            <p className="text-lg font-bold tracking-tight text-slate-100">
-              {siteConfig.name}
-            </p>
-            <p className="text-sm leading-relaxed text-slate-500">
-              Minimal, high-performance terminal UI kernel for Rust.
-            </p>
-          </div>
+            {/* NAVIGATION */}
+            <div className="md:col-span-4 grid grid-cols-2 gap-8 text-left">
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Library</h4>
+                <nav className="flex flex-col gap-4">
+                  {navItems.slice(0, 4).map((item) => (
+                    <Link key={item.href} href={item.href} className="text-sm font-bold text-slate-500 hover:text-green-400 transition-colors uppercase tracking-widest">
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+              <div className="space-y-6">
+                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-white/20">Resources</h4>
+                <nav className="flex flex-col gap-4">
+                  {navItems.slice(4).map((item) => (
+                    <Link key={item.href} href={item.href} className="text-sm font-bold text-slate-500 hover:text-green-400 transition-colors uppercase tracking-widest">
+                      {item.label}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            </div>
 
-          <nav aria-label="Footer navigation" className="grid grid-cols-2 gap-3">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="rounded-md text-sm text-slate-500 transition-colors hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+            {/* SOCIAL & ACTION */}
+            <div className="md:col-span-3 flex flex-col items-end gap-10">
+              <div className="flex items-center gap-4">
+                {socialLinks.map((social) => (
+                  <Magnetic key={social.label} strength={0.2}>
+                    <a
+                      href={social.href}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-green-500/40 transition-all"
+                    >
+                      <social.icon className="h-5 w-5" />
+                    </a>
+                  </Magnetic>
+                ))}
+              </div>
+
+              <button
+                onClick={handleBackToTop}
+                className="group flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 hover:text-white transition-colors"
               >
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-
-          <div className="flex items-center gap-5">
-            {socialLinks.map((social) => (
-              <a
-                key={social.label}
-                href={social.href}
-                target="_blank"
-                rel="noreferrer noopener"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-white/5 bg-white/5 text-slate-400 transition-all hover:border-white/10 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                aria-label={social.label}
-              >
-                <social.icon className="h-5 w-5" aria-hidden="true" />
-              </a>
-            ))}
+                <span>Back to top</span>
+                <ArrowUp className="h-3 w-3 group-hover:-translate-y-1 transition-transform" />
+              </button>
+            </div>
           </div>
 
-          <p className="text-xs text-slate-600" suppressHydrationWarning>
-            &copy; {new Date().getFullYear()} Jeffrey Emanuel. MIT License.
-          </p>
-        </div>
+          <div className="mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
+             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest">
+               &copy; {new Date().getFullYear()} Jeffrey Emanuel. MIT License.
+             </p>
+             <div className="flex gap-8">
+                <span className="text-[10px] font-black text-white/5 uppercase tracking-[0.5em] select-none">MADE IN 5 DAYS</span>
+             </div>
+          </div>
+        </FrankenContainer>
       </div>
     </footer>
   );

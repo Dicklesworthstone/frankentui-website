@@ -1,11 +1,14 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
 import {
   Github,
   ArrowRight,
   Rocket,
   Package,
+  Terminal,
 } from "lucide-react";
+import { motion } from "framer-motion";
 
 import SectionShell from "@/components/section-shell";
 import StatsGrid from "@/components/stats-grid";
@@ -18,6 +21,8 @@ import Timeline from "@/components/timeline";
 import TweetWall from "@/components/tweet-wall";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
+import { Magnetic, BorderBeam } from "@/components/motion-wrapper";
+import DecodingText from "@/components/decoding-text";
 import {
   siteConfig,
   heroStats,
@@ -35,7 +40,7 @@ export default function HomePage() {
       {/* ================================================================
           1. LIVING HERO (Stripe-Grade Visuals)
           ================================================================ */}
-      <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-20 overflow-hidden text-left">
+      <section className="relative flex flex-col items-center pt-24 pb-10 overflow-hidden text-left">
         {/* Living Background Layers */}
         <div className="absolute inset-0 z-0">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[80px]" />
@@ -44,36 +49,42 @@ export default function HomePage() {
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8 w-full mt-12 md:mt-0">
-          <div className="grid items-center gap-16 lg:grid-cols-12 lg:gap-8">
-            
-            {/* LEFT: Massive Typography & CTAs */}
-            <div className="lg:col-span-7 flex flex-col items-start text-left">
-              <div
-                className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/30 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.2em] text-green-400 mb-8"
-              >
-                <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-ping" />
-                V0.1.1 Alive on Crates.io
-              </div>
+          {/* Hero Text & CTAs */}
+          <div className="flex flex-col items-start max-w-4xl">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/30 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8"
+            >
+              <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-ping" />
+              V0.1.1 Alive on Crates.io
+            </motion.div>
 
-              <h1 className="text-[clamp(3.5rem,10vw,7rem)] font-black tracking-tight leading-[0.85] text-white mb-10">
-                The <span className="text-animate-green">Monster</span> <br /> 
-                Terminal Kernel.
-              </h1>
+            <h1 className="text-[clamp(3.5rem,10vw,7rem)] font-black tracking-tight leading-[0.85] text-white mb-10">
+              <DecodingText text="The" delay={0.2} /> <span className="text-animate-green">
+                <DecodingText text="Monster" delay={0.6} />
+              </span> <br />
+              <DecodingText text="Terminal Kernel." delay={1} />
+            </h1>
 
-              <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mb-12">
-                Stitched together from the finest Rust algorithms and 
-                brought to life with deterministic math. Minimal, high-performance,
-                and architecturally pure.
-              </p>
+            <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mb-12">
+              Stitched together from the finest Rust algorithms and
+              brought to life with deterministic math. Minimal, high-performance,
+              and architecturally pure.
+            </p>
 
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+              <Magnetic strength={0.1}>
                 <Link
                   href="/getting-started"
-                  className="px-10 py-5 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
+                  className="px-10 py-5 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
                 >
                   <Rocket className="h-5 w-5" />
                   GET STARTED
                 </Link>
+              </Magnetic>
+              <Magnetic strength={0.1}>
                 <a
                   href={siteConfig.github}
                   target="_blank"
@@ -83,36 +94,47 @@ export default function HomePage() {
                   <Github className="h-5 w-5" />
                   VIEW SOURCE
                 </a>
-              </div>
+              </Magnetic>
+            </div>
+          </div>
+
+          {/* Full-Width Video — the centrepiece */}
+          <div className="relative mt-16 w-full group">
+            {/* Floating Peeking Eye */}
+            <div className="absolute top-[-80px] right-[10%] z-20 hidden lg:block animate-bounce transition-all duration-1000">
+              <FrankenEye className="scale-150 rotate-12 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
             </div>
 
-            {/* RIGHT: High-Impact Visual */}
-            <div className="hidden lg:flex lg:col-span-5 relative justify-end">
-              {/* Floating Peeking Eye */}
-              <div className="absolute top-[-100px] right-[20%] z-20">
-                <FrankenEye className="scale-150 rotate-12 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
-              </div>
+            <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
+            <FrankenContainer withBolts={false} className="relative glass-modern p-2 md:p-3 overflow-hidden shadow-2xl w-full">
+              <BorderBeam />
 
-              <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-                <FrankenContainer className="relative glass-modern p-2 overflow-hidden shadow-2xl transition-transform duration-700 hover:scale-[1.02] hover:-rotate-1">
-                  <Image
-                    src="/images/frankentui_illustration.webp"
-                    alt="FrankenTUI Kernel"
-                    width={600}
-                    height={450}
-                    className="rounded-2xl border border-white/10 shadow-2xl"
-                    priority
-                  />
-                </FrankenContainer>
-                
-                {/* Embedded Stats Card */}
-                <div className="absolute -bottom-12 -left-12 glass-modern p-8 rounded-[2rem] border border-green-500/20 shadow-2xl">
-                  <div className="flex flex-col">
-                    <span className="text-4xl font-black text-green-400 tabular-nums">100h</span>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Build Time</span>
-                  </div>
-                </div>
+              {/* Auto-playing Rio Recording */}
+              <div className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                 <video
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  poster="/screenshots/visual_effects_clifford_attractor.webp"
+                  className="w-full h-full object-cover"
+                 >
+                  <source src="/videos/frankentui-rio-crt.webm" type="video/webm" />
+                 </video>
+
+                 {/* Console Metadata Overlay */}
+                 <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-md bg-black/60 backdrop-blur-md border border-white/10 opacity-60 group-hover:opacity-100 transition-opacity">
+                    <Terminal className="h-3.5 w-3.5 text-green-500" />
+                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Rio_CRT_Active</span>
+                 </div>
+              </div>
+            </FrankenContainer>
+
+            {/* Embedded Stats Card */}
+            <div className="absolute -bottom-10 left-6 glass-modern p-6 rounded-2xl border border-green-500/20 shadow-2xl animate-float hidden md:flex">
+              <div className="flex flex-col text-left">
+                <span className="text-4xl font-black text-green-400 tabular-nums tracking-tighter">100h</span>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Build Time</span>
               </div>
             </div>
           </div>
@@ -259,13 +281,12 @@ export default function HomePage() {
           </div>
 
           <h2
-            className="font-bold tracking-tighter text-white"
-            style={{ fontSize: "clamp(1.875rem, 5vw, 3.75rem)" }}
+            className="font-bold tracking-tighter text-white text-4xl md:text-6xl"
           >
             Ready to Build?
           </h2>
 
-          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-400 md:text-xl">
+          <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-400 md:text-xl font-medium">
             Add FrankenTUI to your Rust project with a single command. Ship
             terminal interfaces with correctness guarantees from day one.
           </p>
@@ -280,14 +301,14 @@ export default function HomePage() {
                   <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
                   <div className="h-3 w-3 rounded-full bg-green-500/60" />
                 </div>
-                <span className="text-xs text-slate-600">terminal</span>
+                <span className="text-xs text-slate-600 font-bold uppercase tracking-widest">terminal</span>
               </div>
 
               {/* Command */}
               <div className="px-6 py-5">
                 <div className="flex items-center gap-3 font-mono text-sm">
-                  <span className="select-none text-green-500">$</span>
-                  <code className="text-slate-200">cargo add ftui</code>
+                  <span className="select-none text-green-500 font-bold">$</span>
+                  <code className="text-slate-200 font-bold tracking-tight">cargo add ftui</code>
                 </div>
               </div>
             </div>
@@ -295,8 +316,8 @@ export default function HomePage() {
 
           {/* MIT badge + CTA link */}
           <div className="mt-10 flex flex-col items-center gap-6">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-widest text-slate-400">
-              <Package className="h-3.5 w-3.5 text-green-400" />
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+              <Package className="h-3 w-3 text-green-400" />
               MIT License &middot; Free &amp; Open Source
             </div>
 

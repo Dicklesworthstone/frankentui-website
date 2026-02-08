@@ -7,6 +7,7 @@ import { getAllJargon, searchJargon, type JargonTerm } from "@/lib/jargon";
 import BottomSheet from "@/components/ui/bottom-sheet";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
+import DecodingText from "@/components/decoding-text";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -116,25 +117,33 @@ export default function GlossaryPage() {
         </div>
 
         <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex flex-col items-start"
-          >
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+          <div className="flex flex-col items-start">
+            <motion.div 
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8"
+            >
               <Binary className="h-3 w-3" />
               Machine Lexicon
-            </div>
+            </motion.div>
             
             <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              The <br /><span className="text-animate-green">Glossary.</span>
+              <DecodingText text="The" delay={0.2} /> <br />
+              <span className="text-animate-green">
+                <DecodingText text="Glossary." delay={0.6} />
+              </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed text-left">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed text-left"
+            >
               {totalCount}+ technical terms, demystified. 
               The language of the FrankenTUI kernel.
-            </p>
-          </motion.div>
+            </motion.p>
+          </div>
         </div>
 
         {/* Floating Peeking Eye */}

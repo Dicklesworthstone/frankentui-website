@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import { Terminal, Cpu, Lock, Shield, Blocks, Sparkles, Activity } from "lucide-react";
 import type { Feature } from "@/lib/content";
 import { FrankenBolt } from "./franken-elements";
@@ -18,15 +19,17 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
 
-  function handleMouseMove({
+  const background = useMotionTemplate`radial-gradient(600px circle at ${mouseX}px ${mouseY}px, rgba(34, 197, 94, 0.1), transparent 80%)`;
+
+  const handleMouseMove = useCallback(({
     currentTarget,
     clientX,
     clientY,
-  }: React.MouseEvent) {
-    let { left, top } = currentTarget.getBoundingClientRect();
+  }: React.MouseEvent) => {
+    const { left, top } = currentTarget.getBoundingClientRect();
     mouseX.set(clientX - left);
     mouseY.set(clientY - top);
-  }
+  }, [mouseX, mouseY]);
 
   const Icon = iconMap[feature.icon] || Sparkles;
 
@@ -38,15 +41,7 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
       {/* Monster-Tech Glow Overlay - Hardware Accelerated */}
       <motion.div
         className="pointer-events-none absolute -inset-px rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-          background: useMotionTemplate`
-            radial-gradient(
-              600px circle at ${mouseX}px ${mouseY}px,
-              rgba(34, 197, 94, 0.1),
-              transparent 80%
-            )
-          `,
-        }}
+        style={{ background }}
       />
 
       <div className="relative z-10 flex flex-col h-full">

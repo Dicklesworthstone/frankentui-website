@@ -20,9 +20,12 @@ export default function ScrollToTop() {
 
   const handleScroll = useCallback(() => {
     const scrollY = window.scrollY;
-    const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-    setIsVisible(scrollY > 400);
-    setProgress(maxScroll > 0 ? Math.min(scrollY / maxScroll, 1) : 0);
+    const visible = scrollY > 400;
+    setIsVisible(visible);
+    if (visible) {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(maxScroll > 0 ? Math.min(scrollY / maxScroll, 1) : 0);
+    }
   }, []);
 
   useEffect(() => {

@@ -66,7 +66,7 @@ async function initHybridWasmScorer(issueCount) {
   }
 
   try {
-    const wasmModule = await import('./wasm/bv_hybrid_scorer.js');
+    const wasmModule = await import('./vendor/bv_hybrid_scorer.js');
     await wasmModule.default();
     HybridWasmCtor = wasmModule.HybridScorer;
     HYBRID_WASM_STATE.ready = true;

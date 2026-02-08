@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { Terminal, Activity } from "lucide-react";
 
@@ -61,14 +61,28 @@ function renderLine(line: TerminalLine, partial?: string) {
     case "green": return <span className="text-green-400/80">{content}</span>;
     case "dashboard-border": return <span className="text-green-500/60">{content}</span>;
     case "dashboard-mixed": {
+      // Batch consecutive characters with the same style into single spans
+      const chars = [...content];
+      const getClass = (ch: string) => {
+        if ("│┌┐└┘├┤┬┴┼─".includes(ch)) return "text-green-500/60";
+        if ("█▓▒░".includes(ch)) return "text-green-400";
+        if (/\d/.test(ch) || ch === "%") return "text-white font-bold";
+        return "text-slate-500";
+      };
+      const spans: { cls: string; text: string }[] = [];
+      for (const ch of chars) {
+        const cls = getClass(ch);
+        if (spans.length > 0 && spans[spans.length - 1].cls === cls) {
+          spans[spans.length - 1].text += ch;
+        } else {
+          spans.push({ cls, text: ch });
+        }
+      }
       return (
         <span>
-          {[...content].map((ch, i) => {
-            if ("│┌┐└┘├┤┬┴┼─".includes(ch)) return <span key={i} className="text-green-500/60">{ch}</span>;
-            if ("█▓▒░".includes(ch)) return <span key={i} className="text-green-400">{ch}</span>;
-            if (/\d/.test(ch) || ch === "%") return <span key={i} className="text-white font-bold">{ch}</span>;
-            return <span key={i} className="text-slate-500">{ch}</span>;
-          })}
+          {spans.map((s, i) => (
+            <span key={i} className={s.cls}>{s.text}</span>
+          ))}
         </span>
       );
     }
@@ -92,21 +106,26 @@ export default function TerminalDemo() {
   const hasStarted = useRef(false);
   const timerRef = useRef<number | null>(null);
 
-  const advanceLine = (lineIdx: number) => {
+  const advanceLine = useCallback(function advanceLineFn(lineIdx: number) {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
     if (lineIdx >= LINES.length) {
       setAnimationDone(true);
       return;
     }
 
     const line = LINES[lineIdx];
-    
-    setTimeout(() => {
+
+    timerRef.current = window.setTimeout(() => {
       setVisibleLineIndex(lineIdx);
       setCurrentLineChars(0);
 
       if (!line.typed || line.text.length === 0) {
         setCurrentLineChars(line.text.length);
-        advanceLine(lineIdx + 1);
+        advanceLineFn(lineIdx + 1);
         return;
       }
 
@@ -118,12 +137,12 @@ export default function TerminalDemo() {
         if (charIdx < line.text.length) {
           timerRef.current = window.setTimeout(typeChar, TYPING_SPEED_BASE);
         } else {
-          advanceLine(lineIdx + 1);
+          advanceLineFn(lineIdx + 1);
         }
       };
       timerRef.current = window.setTimeout(typeChar, TYPING_SPEED_BASE);
     }, line.delay);
-  };
+  }, []);
 
   useEffect(() => {
     if (isIntersecting && !hasStarted.current) {
@@ -131,9 +150,12 @@ export default function TerminalDemo() {
       advanceLine(0);
     }
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [isIntersecting]);
+  }, [isIntersecting, advanceLine]);
 
   const renderedLines = useMemo(() => {
     const result: React.ReactNode[] = [];
@@ -158,7 +180,7 @@ export default function TerminalDemo() {
 
   return (
     <div ref={ref} className="w-full max-w-3xl mx-auto group">
-      <div className="relative glass-modern rounded-3xl overflow-hidden shadow-2xl border border-white/5 bg-black/60 will-change-transform transition-all duration-700 hover:scale-[1.01] hover:bg-black/80">
+      <div className="relative glass-modern rounded-3xl overflow-hidden shadow-2xl border border-white/5 bg-black/60 transition-all duration-700 hover:scale-[1.01] hover:bg-black/80">
         {/* Terminal Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-white/5 border-b border-white/5">
           <div className="flex items-center gap-4">
