@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { createPortal } from "react-dom";
 import { 
   Binary, 
   Activity, 
@@ -17,7 +18,7 @@ import {
   User,
   AlertTriangle,
   Info,
-  ExternalLink
+  X
 } from "lucide-react";
 import { FrankenContainer, NeuralPulse } from "@/components/franken-elements";
 import FrankenGlitch from "@/components/franken-glitch";
@@ -76,6 +77,15 @@ function StatusPill({ status }: { status: string }) {
       {status.replace("_", " ")}
     </span>
   );
+}
+
+/**
+ * Portal component for Modals to avoid parent transform issues
+ */
+function Portal({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? createPortal(children, document.body) : null;
 }
 
 // --- Main Component ---
@@ -249,7 +259,7 @@ export default function BeadsView() {
         .linkDirectionalParticleWidth(2)
         .backgroundColor("rgba(0,0,0,0)")
         .width(containerRef.current.clientWidth)
-        .height(containerRef.current.clientHeight)
+        .height(containerRef.current.clientHeight || 600)
         .nodeCanvasObject((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
           const size = (5 - node.priority) * 2 + 4;
           
@@ -296,17 +306,28 @@ export default function BeadsView() {
         });
 
       graphRef.current = Graph;
+
+      // Handle Resize
+      const resizeObserver = new ResizeObserver(() => {
+        if (containerRef.current && Graph) {
+          Graph.width(containerRef.current.clientWidth);
+          Graph.height(containerRef.current.clientHeight || 600);
+        }
+      });
+      resizeObserver.observe(containerRef.current);
+
+      return () => resizeObserver.disconnect();
     } catch (err) {
       console.error("Graph render error:", err);
     }
   }, [db, forceGraphLoaded]);
 
   useEffect(() => {
-    if (!loading && db && forceGraphLoaded) {
+    if (!loading && db && forceGraphLoaded && d3Loaded) {
       const timer = setTimeout(renderGraph, 500);
       return () => clearTimeout(timer);
     }
-  }, [loading, db, forceGraphLoaded, renderGraph]);
+  }, [loading, db, forceGraphLoaded, d3Loaded, renderGraph]);
 
   const filteredIssues = useMemo(() => {
     if (!searchQuery) return issues;
@@ -402,9 +423,9 @@ export default function BeadsView() {
 
       {/* --- 2. MAIN VISTA (GRAPH + LOG) --- */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch">
-        <div className="xl:col-span-2 min-h-[600px] relative rounded-[2.5rem] border border-green-500/10 overflow-hidden bg-[#010501] shadow-2xl">
+        <div className="xl:col-span-2 min-h-[650px] relative rounded-[2.5rem] border border-green-500/10 overflow-hidden bg-[#010501] shadow-2xl">
           <NeuralPulse className="opacity-20" />
-          <div ref={containerRef} className="w-full h-full" />
+          <div ref={containerRef} className="w-full h-full min-h-[650px]" />
           
           <BeadHUD />
 
@@ -537,155 +558,157 @@ export default function BeadsView() {
       {/* --- Detailed Synapse Portal (Modal) --- */}
       <AnimatePresence>
         {selectedIssue && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 md:p-12">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setSelectedIssue(null)}
-              className="absolute inset-0 bg-black/95 backdrop-blur-2xl"
-            />
-            
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 40 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 40 }}
-              className="relative w-full max-w-5xl max-h-full overflow-hidden shadow-[0_0_100px_rgba(34,197,94,0.15)]"
-            >
-              <FrankenContainer withPulse={true} className="bg-[#020a02] border-green-500/20 overflow-hidden flex flex-col max-h-[90vh]">
-                {/* Protocol Header */}
-                <div className="p-10 border-b border-white/5 flex items-start justify-between bg-white/[0.02] relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
-                     <Binary className="h-64 w-64 rotate-12" />
-                  </div>
-                  
-                  <div className="space-y-6 relative z-10">
-                    <div className="flex items-center gap-4">
-                      <span className="px-4 py-1.5 rounded-xl bg-green-500 text-black text-[11px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20">{selectedIssue.id}</span>
-                      <StatusPill status={selectedIssue.status} />
-                      <div className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest border-l border-white/10 pl-4 ml-2">
-                         <Activity className="h-3 w-3" />
-                         Priority_P{selectedIssue.priority}
-                      </div>
+          <Portal>
+            <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-12">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedIssue(null)}
+                className="absolute inset-0 bg-black/95 backdrop-blur-2xl"
+              />
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 40 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 40 }}
+                className="relative w-full max-w-5xl max-h-full overflow-hidden shadow-[0_0_100px_rgba(34,197,94,0.15)]"
+              >
+                <FrankenContainer withPulse={true} className="bg-[#020a02] border-green-500/20 overflow-hidden flex flex-col max-h-[90vh]">
+                  {/* Protocol Header */}
+                  <div className="p-10 border-b border-white/5 flex items-start justify-between bg-white/[0.02] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-2 opacity-5 pointer-events-none">
+                       <Binary className="h-64 w-64 rotate-12" />
                     </div>
-                    <FrankenGlitch trigger="always" intensity="low">
-                      <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight max-w-3xl">{selectedIssue.title}</h2>
-                    </FrankenGlitch>
+                    
+                    <div className="space-y-6 relative z-10">
+                      <div className="flex items-center gap-4">
+                        <span className="px-4 py-1.5 rounded-xl bg-green-500 text-black text-[11px] font-black uppercase tracking-widest shadow-lg shadow-green-500/20">{selectedIssue.id}</span>
+                        <StatusPill status={selectedIssue.status} />
+                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-600 uppercase tracking-widest border-l border-white/10 pl-4 ml-2">
+                           <Activity className="h-3 w-3" />
+                           Priority_P{selectedIssue.priority}
+                        </div>
+                      </div>
+                      <FrankenGlitch trigger="always" intensity="low">
+                        <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight max-w-3xl">{selectedIssue.title}</h2>
+                      </FrankenGlitch>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedIssue(null)}
+                      className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:bg-white/10 hover:text-white transition-all group"
+                    >
+                      <X className="h-7 w-7 group-hover:rotate-90 transition-transform duration-500" />
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => setSelectedIssue(null)}
-                    className="h-14 w-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-500 hover:bg-white/10 hover:text-white transition-all group"
-                  >
-                    <Binary className="h-7 w-7 rotate-45 group-hover:rotate-90 transition-transform duration-500" />
-                  </button>
-                </div>
 
-                {/* Substrate Body */}
-                <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
-                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-16">
-                    <div className="xl:col-span-2 space-y-12">
-                      <div className="space-y-6">
-                        <div className="flex items-center gap-3">
-                           <Info className="h-4 w-4 text-green-500/60" />
-                           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Synapse_Descriptor</h4>
-                        </div>
-                        <div className="text-slate-300 text-xl leading-relaxed font-medium">
-                          {selectedIssue.description || "System log empty. Descriptor required for complete synchronization."}
-                        </div>
-                      </div>
-
-                      {/* Technical Blueprint Table */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/5 rounded-[2rem] overflow-hidden border border-white/5">
-                        <div className="p-6 bg-black/40">
-                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Type</span>
-                          <p className="text-sm font-bold text-white mt-2 capitalize">{selectedIssue.issue_type}</p>
-                        </div>
-                        <div className="p-6 bg-black/40">
-                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Impact</span>
-                          <p className="text-sm font-bold text-green-400 mt-2">+{selectedIssue.blocks_count || 0} Nodes</p>
-                        </div>
-                        <div className="p-6 bg-black/40">
-                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Born</span>
-                          <p className="text-sm font-bold text-slate-400 mt-2">{formatDate(selectedIssue.created_at)}</p>
-                        </div>
-                        <div className="p-6 bg-black/40">
-                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Updated</span>
-                          <p className="text-sm font-bold text-slate-400 mt-2">{formatDate(selectedIssue.updated_at)}</p>
-                        </div>
-                      </div>
-                      
-                      {/* Labels / Fragments */}
-                      {selectedIssue.labels && (
-                        <div className="space-y-4">
-                           <h4 className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Neural_Fragments</h4>
-                           <div className="flex flex-wrap gap-3">
-                            {(() => {
-                              try {
-                                const labels = JSON.parse(selectedIssue.labels);
-                                return Array.isArray(labels) ? labels.map((l: string) => (
-                                  <span key={l} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-green-500/30 transition-colors cursor-default">{l}</span>
-                                )) : null;
-                              } catch { return null; }
-                            })()}
+                  {/* Substrate Body */}
+                  <div className="flex-1 overflow-y-auto p-10 custom-scrollbar">
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-16">
+                      <div className="xl:col-span-2 space-y-12">
+                        <div className="space-y-6">
+                          <div className="flex items-center gap-3">
+                             <Info className="h-4 w-4 text-green-500/60" />
+                             <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Synapse_Descriptor</h4>
+                          </div>
+                          <div className="text-slate-300 text-xl leading-relaxed font-medium">
+                            {selectedIssue.description || "System log empty. Descriptor required for complete synchronization."}
                           </div>
                         </div>
-                      )}
-                    </div>
 
-                    <div className="space-y-10">
-                      {/* Custodian Detail */}
-                      <div className="space-y-8">
-                        <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.02] group">
-                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] block mb-6">Neural_Custodian</span>
-                          <div className="flex items-center gap-5">
-                            <div className="h-14 w-14 rounded-[1.25rem] bg-gradient-to-tr from-green-600 via-green-400 to-emerald-300 flex items-center justify-center text-black font-black text-xl uppercase shadow-[0_0_30px_rgba(34,197,94,0.3)]">
-                              {selectedIssue.assignee ? selectedIssue.assignee[0] : "?"}
+                        {/* Technical Blueprint Table */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-px bg-white/5 rounded-[2rem] overflow-hidden border border-white/5">
+                          <div className="p-6 bg-black/40">
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Type</span>
+                            <p className="text-sm font-bold text-white mt-2 capitalize">{selectedIssue.issue_type}</p>
+                          </div>
+                          <div className="p-6 bg-black/40">
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Impact</span>
+                            <p className="text-sm font-bold text-green-400 mt-2">+{selectedIssue.blocks_count || 0} Nodes</p>
+                          </div>
+                          <div className="p-6 bg-black/40">
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Born</span>
+                            <p className="text-sm font-bold text-slate-400 mt-2">{formatDate(selectedIssue.created_at)}</p>
+                          </div>
+                          <div className="p-6 bg-black/40">
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Updated</span>
+                            <p className="text-sm font-bold text-slate-400 mt-2">{formatDate(selectedIssue.updated_at)}</p>
+                          </div>
+                        </div>
+                        
+                        {/* Labels / Fragments */}
+                        {selectedIssue.labels && (
+                          <div className="space-y-4">
+                             <h4 className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Neural_Fragments</h4>
+                             <div className="flex flex-wrap gap-3">
+                              {(() => {
+                                try {
+                                  const labels = JSON.parse(selectedIssue.labels);
+                                  return Array.isArray(labels) ? labels.map((l: string) => (
+                                    <span key={l} className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-black text-slate-400 uppercase tracking-widest hover:border-green-500/30 transition-colors cursor-default">{l}</span>
+                                  )) : null;
+                                } catch { return null; }
+                              })()}
                             </div>
-                            <div>
-                              <p className="text-lg font-black text-white">{selectedIssue.assignee || "UNASSIGNED"}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                 <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                                 <p className="text-[9px] font-black text-green-500/60 uppercase tracking-widest uppercase">Validated_Engineer</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-10">
+                        {/* Custodian Detail */}
+                        <div className="space-y-8">
+                          <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.02] group">
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] block mb-6">Neural_Custodian</span>
+                            <div className="flex items-center gap-5">
+                              <div className="h-14 w-14 rounded-[1.25rem] bg-gradient-to-tr from-green-600 via-green-400 to-emerald-300 flex items-center justify-center text-black font-black text-xl uppercase shadow-[0_0_30px_rgba(34,197,94,0.3)]">
+                                {selectedIssue.assignee ? selectedIssue.assignee[0] : "?"}
+                              </div>
+                              <div>
+                                <p className="text-lg font-black text-white">{selectedIssue.assignee || "UNASSIGNED"}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                   <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                                   <p className="text-[9px] font-black text-green-500/60 uppercase tracking-widest uppercase">Validated_Engineer</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.02]">
+                            <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] block mb-6">Downstream_Cascade</span>
+                            <div className="space-y-5">
+                              <div className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5">
+                                <span className="text-xs font-bold text-slate-500">Unlocks</span>
+                                <span className="text-sm font-mono font-black text-green-500">{selectedIssue.blocks_count || 0}</span>
+                              </div>
+                              <div className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5">
+                                <span className="text-xs font-bold text-slate-500">Blockers</span>
+                                <span className="text-sm font-mono font-black text-red-500">{selectedIssue.blocked_by_count || 0}</span>
                               </div>
                             </div>
                           </div>
                         </div>
-
-                        <div className="p-8 rounded-[2.5rem] border border-white/5 bg-white/[0.02]">
-                          <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] block mb-6">Downstream_Cascade</span>
-                          <div className="space-y-5">
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5">
-                              <span className="text-xs font-bold text-slate-500">Unlocks</span>
-                              <span className="text-sm font-mono font-black text-green-500">{selectedIssue.blocks_count || 0}</span>
-                            </div>
-                            <div className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5">
-                              <span className="text-xs font-bold text-slate-500">Blockers</span>
-                              <span className="text-sm font-mono font-black text-red-500">{selectedIssue.blocked_by_count || 0}</span>
-                            </div>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Secure Protocol Footer */}
-                <div className="p-8 border-t border-white/5 bg-white/[0.01] flex items-center justify-between">
-                  <div className="flex items-center gap-3 text-[10px] font-black text-slate-700 uppercase tracking-widest text-left">
-                    <Shield className="h-4 w-4 text-green-500/40" />
-                    <span>Integrity_Verified_v1.0.4 <br/> <span className="opacity-40">System_Secure</span></span>
+                  {/* Secure Protocol Footer */}
+                  <div className="p-8 border-t border-white/5 bg-white/[0.01] flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-[10px] font-black text-slate-700 uppercase tracking-widest text-left">
+                      <Shield className="h-4 w-4 text-green-500/40" />
+                      <span>Integrity_Verified_v1.0.4 <br/> <span className="opacity-40">System_Secure</span></span>
+                    </div>
+                    <button 
+                      onClick={() => setSelectedIssue(null)}
+                      data-magnetic="true"
+                      className="px-10 py-4 rounded-2xl bg-green-500 text-black text-[11px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
+                    >
+                      CLOSE_PORTAL
+                    </button>
                   </div>
-                  <button 
-                    onClick={() => setSelectedIssue(null)}
-                    data-magnetic="true"
-                    className="px-10 py-4 rounded-2xl bg-green-500 text-black text-[11px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
-                  >
-                    CLOSE_PORTAL
-                  </button>
-                </div>
-              </FrankenContainer>
-            </motion.div>
-          </div>
+                </FrankenContainer>
+              </motion.div>
+            </div>
+          </Portal>
         )}
       </AnimatePresence>
 
