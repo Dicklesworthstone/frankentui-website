@@ -92,9 +92,10 @@ export default function WarStoriesMap() {
               className="max-w-3xl w-full"
               onClick={(e) => e.stopPropagation()}
             >
-              {allStories.find(s => s.title === selectedId) && (
-                <WarStoryCard story={allStories.find(s => s.title === selectedId)!} />
-              )}
+              {(() => {
+                const story = allStories.find(s => s.title === selectedId);
+                return story ? <WarStoryCard story={story} /> : null;
+              })()}
               <button
                 onClick={() => { setSelectedId(null); playSfx("click"); }}
                 className="mt-8 mx-auto flex items-center gap-2 px-8 py-3 rounded-full bg-red-500 text-white font-black text-xs hover:bg-red-400 transition-all shadow-[0_0_30px_rgba(239,68,68,0.3)] active:scale-95"

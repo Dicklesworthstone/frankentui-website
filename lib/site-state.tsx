@@ -27,10 +27,11 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [isAnatomyMode, setIsAnatomyMode] = useState(false);
   const [isTerminalOpen, setTerminalOpen] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(false);
+  const audioEnabledRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const playSfx = useCallback((type: "click" | "zap" | "hum" | "error") => {
-    if (!isAudioEnabled) return;
+    if (!audioEnabledRef.current) return;
 
     if (!audioContextRef.current) {
       const WebkitAudioContext = (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -88,7 +89,7 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         osc.stop(now + 0.3);
         break;
     }
-  }, [isAudioEnabled]);
+  }, []);
 
   const toggleAnatomyMode = useCallback(() => {
     setIsAnatomyMode(prev => !prev);
@@ -96,12 +97,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   }, [playSfx]);
 
   const toggleAudio = useCallback(() => {
-    const newState = !isAudioEnabled;
+    const newState = !audioEnabledRef.current;
+    audioEnabledRef.current = newState;
     setIsAudioEnabled(newState);
     if (newState) {
       setTimeout(() => playSfx("hum"), 100);
     }
-  }, [isAudioEnabled, playSfx]);
+  }, [playSfx]);
 
   // Handle keyboard shortcuts
   useEffect(() => {

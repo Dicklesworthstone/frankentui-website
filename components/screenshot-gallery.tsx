@@ -63,7 +63,6 @@ export default function ScreenshotGallery({
   columns?: 2 | 3;
 }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const dirRef = useRef(0); // -1 left, 0 initial, 1 right
   const [direction, setDirection] = useState(0);
   const prefersReduced = useReducedMotion();
   const isLightboxOpen = lightboxIndex !== null;
@@ -71,7 +70,6 @@ export default function ScreenshotGallery({
   useBodyScrollLock(isLightboxOpen);
 
   const openLightbox = useCallback((index: number) => {
-    dirRef.current = 0;
     setDirection(0);
     setLightboxIndex(index);
   }, []);
@@ -82,14 +80,12 @@ export default function ScreenshotGallery({
 
   const goNext = useCallback(() => {
     if (screenshots.length === 0) return;
-    dirRef.current = 1;
     setDirection(1);
     setLightboxIndex((prev) => (prev !== null ? (prev + 1) % screenshots.length : null));
   }, [screenshots.length]);
 
   const goPrev = useCallback(() => {
     if (screenshots.length === 0) return;
-    dirRef.current = -1;
     setDirection(-1);
     setLightboxIndex((prev) => (prev !== null ? (prev - 1 + screenshots.length) % screenshots.length : null));
   }, [screenshots.length]);
