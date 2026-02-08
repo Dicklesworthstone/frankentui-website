@@ -164,7 +164,7 @@ export function NeuralPulse({ className }: { className?: string }) {
           ease: "linear",
           times: [0, 0.25, 0.5, 0.75, 1],
         }}
-        className="absolute h-1 w-8 bg-gradient-to-r from-transparent via-green-400 to-transparent blur-[2px] z-20"
+        className="absolute h-1 w-8 bg-gradient-to-r from-transparent via-green-400 to-transparent blur-[2px] z-0"
       />
       <motion.div
         initial={{ top: 0, left: 0, opacity: 0 }}
@@ -180,7 +180,7 @@ export function NeuralPulse({ className }: { className?: string }) {
           times: [0, 0.25, 0.5, 0.75, 1],
           delay: 2, // staggered
         }}
-        className="absolute w-1 h-8 bg-gradient-to-b from-transparent via-emerald-400 to-transparent blur-[2px] z-20"
+        className="absolute w-1 h-8 bg-gradient-to-b from-transparent via-emerald-400 to-transparent blur-[2px] z-0"
       />
     </div>
   );
