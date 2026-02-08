@@ -51,47 +51,53 @@ export default function SiteTerminal() {
       case "help":
         output = (
           <div className="grid grid-cols-2 gap-2 text-[10px] text-slate-500">
-            <div className="text-green-500">help</div><div>Show this list</div>
-            <div className="text-green-500">goto [slug]</div><div>Navigate (showcase, architecture, beads, etc)</div>
-            <div className="text-green-500">anatomy</div><div>Toggle X-Ray Anatomy mode</div>
-            <div className="text-green-500">audio</div><div>Toggle Galvanic Audio</div>
-            <div className="text-green-500">clear</div><div>Clear history</div>
-            <div className="text-green-500">exit</div><div>Close terminal</div>
-            <div className="text-green-500">stats</div><div>Show monster vital signs</div>
+            <div className="text-green-500 font-bold">help</div><div>Show this protocol list</div>
+            <div className="text-green-500 font-bold">goto [slug]</div><div>Navigate (showcase, architecture, beads, etc)</div>
+            <div className="text-green-500 font-bold">anatomy</div><div>Toggle X-Ray Anatomy Mode</div>
+            <div className="text-green-500 font-bold">audio</div><div>Toggle Galvanic Audio System</div>
+            <div className="text-green-500 font-bold">clear</div><div>Clear command history buffer</div>
+            <div className="text-green-500 font-bold">exit</div><div>Terminate terminal interface</div>
+            <div className="text-green-500 font-bold">stats</div><div>Monitor monster vital signs</div>
           </div>
         );
         break;
       case "goto":
         if (args[0]) {
-          const validSlugs = navItems.map(item => item.href.replace("/", "")).filter(Boolean);
-          if (validSlugs.includes(args[0]) || args[0] === "home") {
-            const target = args[0] === "home" ? "/" : `/${args[0]}`;
+          const targetSlug = args[0].toLowerCase();
+          const validSlugs = navItems.map(item => item.href.split("/").filter(Boolean).pop() || "home").filter(s => s !== "home");
+          const matchedItem = navItems.find(item => {
+            const slug = item.href.split("/").filter(Boolean).pop() || "home";
+            return slug === targetSlug;
+          });
+
+          if (matchedItem || targetSlug === "home") {
+            const target = targetSlug === "home" ? "/" : matchedItem!.href;
+            output = `INITIATING_NEURAL_TRANSFER to ${target}...`;
             router.push(target);
-            output = `Navigating to ${target}...`;
-            setTimeout(() => setTerminalOpen(false), 500);
+            setTimeout(() => setTerminalOpen(false), 600);
           } else {
             output = (
               <div className="space-y-1">
-                <div className="text-red-400">Error: Unknown destination &apos;{args[0]}&apos;.</div>
-                <div className="text-[10px] text-slate-500 uppercase tracking-widest">Valid targets: home, {validSlugs.join(", ")}</div>
+                <div className="text-red-400 font-bold">Error: Unknown synaptic destination &apos;{args[0]}&apos;.</div>
+                <div className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Valid targets: home, {validSlugs.join(", ")}</div>
               </div>
             );
             isError = true;
             playSfx("error");
           }
         } else {
-          output = "Error: Missing target slug.";
+          output = "PROTOCOL_ERROR: Missing target synaptic slug.";
           isError = true;
           playSfx("error");
         }
         break;
       case "anatomy":
         toggleAnatomyMode();
-        output = "Anatomy Mode toggled. Visual sensors recalibrated.";
+        output = "Anatomy Mode toggled. Visual neural sensors recalibrated.";
         break;
       case "audio":
         toggleAudio();
-        output = `Audio transducers updated. Use 'stats' to verify.`;
+        output = `Galvanic audio transducers ${isAudioEnabled ? "DEACTIVATED" : "ACTIVATED"}. Use 'stats' to verify.`;
         break;
       case "clear":
         setHistory([]);
@@ -102,18 +108,19 @@ export default function SiteTerminal() {
       case "stats":
         output = (
           <div className="space-y-1 text-green-400 font-mono">
-            <div>CORE_TEMP: 34.2°C [STABLE]</div>
-            <div>MEMORY_USAGE: 128MB / 16GB</div>
-            <div>SYNAPTIC_LATENCY: 1.2ms</div>
-            <div>UPTIME: 5d 14h 22m</div>
+            <div>CORE_TEMP: {(34 + Math.random() * 2).toFixed(1)}°C [STABLE]</div>
+            <div>MEMORY_USAGE: {Math.floor(120 + Math.random() * 20)}MB / 16GB</div>
+            <div>SYNAPTIC_LATENCY: {(1.1 + Math.random() * 0.4).toFixed(2)}ms</div>
+            <div>UPTIME: 5d 14h {Math.floor(Math.random() * 60)}m</div>
             <div>AUDIO_SYSTEM: {isAudioEnabled ? "ACTIVE" : "DISABLED"}</div>
+            <div className="text-[10px] text-green-900 mt-2 font-bold uppercase tracking-tighter">All systems within normal parameters.</div>
           </div>
         );
         break;
       default:
         playSfx("error");
         isError = true;
-        output = `Command not found: ${command}. Type 'help' for available commands.`;
+        output = `PROTOCOL_ERROR: Protocol not found: ${command}. Type 'help' for available protocols.`;
     }
 
     setHistory(prev => [...prev, { command: cmd, output, isError }]);
@@ -142,6 +149,8 @@ export default function SiteTerminal() {
           }}
           className="fixed top-0 left-0 right-0 z-[100] h-[60vh] md:h-[45vh] bg-black/95 border-b border-green-500/30 backdrop-blur-xl shadow-2xl flex flex-col font-mono overflow-hidden"
           onClick={() => inputRef.current?.focus()}
+          role="dialog"
+          aria-label="Monster Kernel Shell Interface"
         >
           <NeuralPulse className="opacity-30" />
           
@@ -157,6 +166,7 @@ export default function SiteTerminal() {
               onClick={(e) => { e.stopPropagation(); setTerminalOpen(false); }}
               data-magnetic="true"
               className="p-1 hover:bg-white/5 rounded-md transition-colors text-slate-400 hover:text-white"
+              aria-label="Terminate Terminal Interface"
             >
               <X className="h-4 w-4" />
             </button>
@@ -173,7 +183,7 @@ export default function SiteTerminal() {
                   <ChevronRight className="h-3 w-3 text-green-500/50" />
                   <span>{item.command}</span>
                 </div>
-                <div className={cn("text-sm pl-5", item.isError ? "text-red-400" : "text-slate-300")}>
+                <div className={cn("text-sm pl-5", item.isError ? "text-red-400 font-bold" : "text-slate-300")}>
                   {item.isError ? (
                     <FrankenGlitch trigger="always" intensity="low">
                       {item.output}
@@ -198,11 +208,12 @@ export default function SiteTerminal() {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className="bg-transparent border-none outline-none flex-1 text-green-400 font-mono text-sm placeholder:text-green-900"
-              placeholder="Enter command..."
+              placeholder="Enter protocol command..."
               spellCheck={false}
               autoComplete="off"
+              aria-label="Synaptic protocol input"
             />
-            <div className="text-[10px] text-green-900 font-black uppercase">Line: {history.length + 1}</div>
+            <div className="text-[10px] text-green-900 font-black uppercase">Buffer_Line: {history.length + 1}</div>
           </form>
 
           {/* CRT Scanline Overlay */}
