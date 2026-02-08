@@ -109,76 +109,79 @@ export default function FrankenEye({ className }: { className?: string }) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_#fff_0%,_#e2e8f0_100%)]" />
       
       {/* Blood Vessels - show on proximity */}
-      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-20" viewBox="0 0 100 100">
+      <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30" viewBox="0 0 100 100">
         <motion.path
-          d="M 20 20 Q 35 40 45 45"
+          d="M 15 15 Q 30 35 45 45"
           stroke="#ef4444"
-          strokeWidth="0.5"
+          strokeWidth="0.8"
           fill="none"
           animate={{ opacity: proximity }}
         />
         <motion.path
-          d="M 80 20 Q 65 40 55 45"
+          d="M 85 15 Q 70 35 55 45"
           stroke="#ef4444"
-          strokeWidth="0.5"
+          strokeWidth="0.8"
           fill="none"
           animate={{ opacity: proximity }}
         />
         <motion.path
-          d="M 20 80 Q 35 60 45 55"
+          d="M 15 85 Q 30 65 45 55"
           stroke="#ef4444"
-          strokeWidth="0.5"
+          strokeWidth="0.8"
           fill="none"
           animate={{ opacity: proximity }}
         />
         <motion.path
-          d="M 80 80 Q 65 60 55 55"
+          d="M 85 85 Q 70 65 55 55"
           stroke="#ef4444"
-          strokeWidth="0.5"
+          strokeWidth="0.8"
           fill="none"
           animate={{ opacity: proximity }}
         />
       </svg>
       
       {/* Iris + Pupil group */}
-      <motion.div 
-        className="relative h-6 w-6 rounded-full bg-green-500 border border-green-700 flex items-center justify-center"
-        style={{ x: mousePos.x, y: mousePos.y }}
-        transition={{ type: "spring", stiffness: 150, damping: 15 }}
-      >
-        {/* Iris pattern */}
-        <div className="absolute inset-0 bg-[repeating-conic-gradient(from_0deg,_transparent_0deg_10deg,_rgba(0,0,0,0.1)_10deg_20deg)] opacity-40 rounded-full" />
-        
-        {/* Pupil - dilates on hover */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <motion.div 
-          className="h-3 w-3 rounded-full bg-slate-950" 
-          animate={{ 
-            scale: isHovered ? 1.4 : 1,
-            backgroundColor: isHovered ? "#000" : "#020617"
-          }}
-        />
-        
-        {/* Shine */}
-        <div className="absolute top-1 left-1 h-1.5 w-1.5 rounded-full bg-white/60" />
-      </motion.div>
+          className="relative h-6 w-6 rounded-full bg-green-500 border border-green-700 flex items-center justify-center shadow-[inset_0_0_10px_rgba(0,0,0,0.3)]"
+          style={{ x: mousePos.x, y: mousePos.y }}
+          transition={{ type: "spring", stiffness: 200, damping: 20 }}
+        >
+          {/* Iris pattern */}
+          <div className="absolute inset-0 bg-[repeating-conic-gradient(from_0deg,_transparent_0deg_10deg,_rgba(0,0,0,0.1)_10deg_20deg)] opacity-40 rounded-full" />
+          
+          {/* Pupil - dilates on hover */}
+          <motion.div 
+            className="h-3 w-3 rounded-full bg-slate-950" 
+            animate={{ 
+              scale: isHovered ? 1.3 : 1,
+              backgroundColor: isHovered ? "#000" : "#020617"
+            }}
+          />
+          
+          {/* Shine */}
+          <div className="absolute top-1 left-1 h-1.5 w-1.5 rounded-full bg-white/60" />
+        </motion.div>
+      </div>
       
-      {/* Eyelids - for blinking */}
+      {/* Eyelids - using a much better approach with clipPath for organic blinking */}
       <motion.div 
-        className="absolute inset-0 bg-slate-900 z-20 origin-top"
-        initial={{ scaleY: 0 }}
-        animate={{ scaleY: isBlinking ? 1 : 0 }}
-        transition={{ duration: 0.1 }}
+        className="absolute inset-0 bg-slate-950 z-20 pointer-events-none rounded-full"
+        initial={{ clipPath: "inset(0 0 100% 0)" }}
+        animate={{ clipPath: isBlinking ? "inset(0 0 0% 0)" : "inset(0 0 100% 0)" }}
+        transition={{ duration: 0.12, ease: "easeInOut" }}
       />
       <motion.div 
-        className="absolute inset-0 bg-slate-900 z-20 origin-bottom"
-        initial={{ scaleY: 0 }}
-        animate={{ scaleY: isBlinking ? 1 : 0 }}
-        transition={{ duration: 0.1 }}
+        className="absolute inset-0 bg-slate-950 z-20 pointer-events-none rounded-full"
+        initial={{ clipPath: "inset(100% 0 0 0)" }}
+        animate={{ clipPath: isBlinking ? "inset(0% 0 0 0)" : "inset(100% 0 0 0)" }}
+        transition={{ duration: 0.12, ease: "easeInOut" }}
       />
       
-      {/* Eyelids / Shadow overlay */}
-      <div className="absolute inset-0 shadow-[inset_0_4px_8px_rgba(0,0,0,0.2)] pointer-events-none rounded-full z-30" />
+      {/* Surface Shadow / Depth Overlay */}
+      <div className="absolute inset-0 shadow-[inset_0_4px_12px_rgba(0,0,0,0.4)] pointer-events-none rounded-full z-30" />
     </div>
   );
 }
+
 
