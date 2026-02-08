@@ -146,6 +146,47 @@ export function FrankenStitch({
 }
 
 /**
+ * A traveling spark that moves along the border of a container
+ */
+export function NeuralPulse({ className }: { className?: string }) {
+  return (
+    <div className={cn("absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]", className)}>
+      <motion.div
+        initial={{ top: 0, left: 0, opacity: 0 }}
+        animate={{
+          top: ["0%", "0%", "100%", "100%", "0%"],
+          left: ["0%", "100%", "100%", "0%", "0%"],
+          opacity: [0, 1, 1, 1, 0],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "linear",
+          times: [0, 0.25, 0.5, 0.75, 1],
+        }}
+        className="absolute h-1 w-8 bg-gradient-to-r from-transparent via-green-400 to-transparent blur-[2px] z-20"
+      />
+      <motion.div
+        initial={{ top: 0, left: 0, opacity: 0 }}
+        animate={{
+          top: ["0%", "0%", "100%", "100%", "0%"],
+          left: ["0%", "100%", "100%", "0%", "0%"],
+          opacity: [0, 0.8, 0.8, 0.8, 0],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "linear",
+          times: [0, 0.25, 0.5, 0.75, 1],
+          delay: 2, // staggered
+        }}
+        className="absolute w-1 h-8 bg-gradient-to-b from-transparent via-emerald-400 to-transparent blur-[2px] z-20"
+      />
+    </div>
+  );
+}
+
+/**
  * A container with bolts and stitches
  */
 export function FrankenContainer({
@@ -153,14 +194,18 @@ export function FrankenContainer({
   className,
   withBolts = true,
   withStitches = true,
+  withPulse = false,
 }: {
   children: React.ReactNode;
   className?: string;
   withBolts?: boolean;
   withStitches?: boolean;
+  withPulse?: boolean;
 }) {
   return (
     <div className={cn("relative group/container rounded-2xl border border-white/5 bg-black/20", className)}>
+      {withPulse && <NeuralPulse className="opacity-0 group-hover/container:opacity-100 transition-opacity duration-500" />}
+      
       {withBolts && (
         <>
           <FrankenBolt className="absolute -left-1.5 -top-1.5 z-10" />

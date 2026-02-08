@@ -1,0 +1,107 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+interface FrankenGlitchProps {
+  children: React.ReactNode;
+  className?: string;
+  trigger?: "hover" | "always" | "random";
+  intensity?: "low" | "medium" | "high";
+}
+
+export default function FrankenGlitch({
+  children,
+  className,
+  trigger = "hover",
+  intensity = "medium",
+}: FrankenGlitchProps) {
+  const [isGlitching, setIsGlitching] = useState(false);
+
+  useEffect(() => {
+    if (trigger === "always") {
+      setIsGlitching(true);
+      return;
+    }
+
+    if (trigger === "random") {
+      const interval = setInterval(() => {
+        if (Math.random() > 0.8) {
+          setIsGlitching(true);
+          setTimeout(() => setIsGlitching(false), 200 + Math.random() * 300);
+        }
+      }, 2000);
+      return () => clearInterval(interval);
+    }
+  }, [trigger]);
+
+  const glitchVariants = {
+    initial: { x: 0, y: 0, textShadow: "none" },
+    glitch: () => {
+      const offset = intensity === "low" ? 2 : intensity === "medium" ? 5 : 10;
+      return {
+        x: [0, -offset, offset, -offset/2, 0],
+        y: [0, offset/2, -offset/2, offset, 0],
+        textShadow: [
+          "none",
+          `${offset}px 0 rgba(255,0,0,0.5), -${offset}px 0 rgba(0,255,255,0.5)`,
+          `-${offset}px 0 rgba(255,0,0,0.5), ${offset}px 0 rgba(0,255,255,0.5)`,
+          "none",
+        ],
+        transition: {
+          duration: 0.2,
+          repeat: Infinity,
+          repeatType: "mirror" as const,
+        },
+      };
+    },
+  };
+
+  return (
+    <div
+      className={cn("relative inline-block will-change-transform", className)}
+      onMouseEnter={() => trigger === "hover" && setIsGlitching(true)}
+      onMouseLeave={() => trigger === "hover" && setIsGlitching(false)}
+      style={{ transform: "translateZ(0)" }}
+    >
+      <motion.div
+        variants={glitchVariants}
+        animate={isGlitching ? "glitch" : "initial"}
+        className="relative z-10"
+        style={{ backfaceVisibility: "hidden" }}
+      >
+        {children}
+      </motion.div>
+
+      <AnimatePresence>
+        {isGlitching && (
+          <>
+            {/* Split Slices */}
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 0.5, x: 10 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1, repeat: Infinity, repeatType: "reverse" }}
+              className="absolute inset-0 z-0 pointer-events-none text-red-500/30 overflow-hidden"
+              style={{ clipPath: "inset(0 0 70% 0)", transform: "translateZ(0)" }}
+            >
+              {children}
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 0.5, x: -10 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1, repeat: Infinity, repeatType: "reverse", delay: 0.05 }}
+              className="absolute inset-0 z-0 pointer-events-none text-cyan-500/30 overflow-hidden"
+              style={{ clipPath: "inset(70% 0 0 0)", transform: "translateZ(0)" }}
+            >
+              {children}
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+

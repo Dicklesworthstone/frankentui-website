@@ -35,8 +35,8 @@ export interface Stat {
 export const heroStats: Stat[] = [
   { label: "Workspace Crates", value: "12", helper: "Composable, focused modules" },
   { label: "Built In", value: "5", helper: "Days from scratch" },
-  { label: "Algorithms", value: "20+", helper: "Alien-artifact quality" },
-  { label: "Glossary Terms", value: "60+", helper: "Searchable TUI dictionary" },
+  { label: "Algorithms", value: "30+", helper: "Alien-artifact quality" },
+  { label: "Sparse Diff", value: "602K", helper: "cells/sec throughput" },
 ];
 
 // Features for the homepage grid
@@ -468,7 +468,13 @@ export interface Tweet {
   date: string;
   type: "quote" | "embed";
   tweetUrl?: string;
+  tweetId?: string;
   hasVideo?: boolean;
+  likes?: number;
+  replies?: number;
+  reposts?: number;
+  views?: number;
+  bookmarks?: number;
 }
 
 export const tweets: Tweet[] = [
@@ -479,6 +485,8 @@ export const tweets: Tweet[] = [
     date: "2026-01-31",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2017719001594380703",
+    tweetId: "2017719001594380703",
+    likes: 62, replies: 13, reposts: 4, views: 25521, bookmarks: 52,
   },
   {
     author: "Jeffrey Emanuel",
@@ -487,6 +495,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-04",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2018848938141614302",
+    tweetId: "2018848938141614302",
+    likes: 131, replies: 36, reposts: 11, views: 23613, bookmarks: 90,
   },
   {
     author: "Jeffrey Emanuel",
@@ -495,6 +505,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-04",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2018870367004328203",
+    tweetId: "2018870367004328203",
+    likes: 21, replies: 6, reposts: 0, views: 3144, bookmarks: 18,
   },
   {
     author: "Jeffrey Emanuel",
@@ -503,6 +515,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-01",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2017777438541975858",
+    tweetId: "2017777438541975858",
+    likes: 46, replies: 6, reposts: 1, views: 14092, bookmarks: 37,
   },
   {
     author: "Jeffrey Emanuel",
@@ -511,6 +525,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-01",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2017777800426455461",
+    tweetId: "2017777800426455461",
+    likes: 6, replies: 3, reposts: 0, views: 2030, bookmarks: 1,
   },
   {
     author: "Jeffrey Emanuel",
@@ -519,7 +535,9 @@ export const tweets: Tweet[] = [
     date: "2026-02-04",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2019175393865908714",
+    tweetId: "2019175393865908714",
     hasVideo: true,
+    likes: 106, replies: 16, reposts: 4, views: 19717, bookmarks: 43,
   },
   {
     author: "Jeffrey Emanuel",
@@ -528,7 +546,9 @@ export const tweets: Tweet[] = [
     date: "2026-02-05",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2019503556139560987",
+    tweetId: "2019503556139560987",
     hasVideo: true,
+    likes: 66, replies: 5, reposts: 4, views: 5529, bookmarks: 26,
   },
   {
     author: "Jeffrey Emanuel",
@@ -537,6 +557,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-07",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2019946095053353430",
+    tweetId: "2019946095053353430",
+    likes: 33, replies: 5, reposts: 0, views: 3358, bookmarks: 10,
   },
   {
     author: "Jeffrey Emanuel",
@@ -545,6 +567,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-07",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2019946957888692297",
+    tweetId: "2019946957888692297",
+    likes: 12, replies: 2, reposts: 0, views: 2127, bookmarks: 2,
   },
   {
     author: "Jeffrey Emanuel",
@@ -553,6 +577,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-07",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2019947644332933204",
+    tweetId: "2019947644332933204",
+    likes: 3, replies: 0, reposts: 0, views: 1402, bookmarks: 1,
   },
   {
     author: "Jeffrey Emanuel",
@@ -561,6 +587,8 @@ export const tweets: Tweet[] = [
     date: "2026-02-07",
     type: "embed",
     tweetUrl: "https://x.com/doodlestein/status/2019946448377274480",
+    tweetId: "2019946448377274480",
+    likes: 4, replies: 1, reposts: 0, views: 962, bookmarks: 0,
   },
   {
     author: "Grok",
@@ -665,6 +693,139 @@ export const algorithms: Algorithm[] = [
     description: "PDE-based pattern generator for organic visual effects rendered entirely in terminal cells.",
     formula: "∂u/∂t = Dᵤ∇²u - uv² + F(1-u)",
     impact: "Mathematical art in the terminal",
+  },
+  {
+    name: "Bayesian Fuzzy Scoring",
+    category: "Command Palette",
+    description: "Posterior odds via Bayes factors for match scoring. Each clue (word boundary, position, tags) is a multiplier on confidence.",
+    formula: "P(R|E)/P(¬R|E) = P(R)/P(¬R) × Π BFᵢ",
+    impact: "Better ranking with fewer re-sorts",
+  },
+  {
+    name: "Bayesian Hint Ranking",
+    category: "UI Intelligence",
+    description: "Keybinding hints ranked by expected utility minus display cost, with VOI exploration bonus and hysteresis for stability.",
+    formula: "Vᵢ = E[Uᵢ] + w_voi·√Var(Uᵢ) - λ·Cᵢ",
+    impact: "Stable, utility-aware hint ordering",
+  },
+  {
+    name: "Bayesian Capability Detection",
+    category: "Terminal Probing",
+    description: "Log Bayes factors as evidence weights to combine noisy signals from env vars, DA1/DA2, and DECRPM probes.",
+    formula: "logit P(feature|E) = logit P(feature) + Σ log BFᵢ",
+    impact: "Robust detection from noisy probes",
+  },
+  {
+    name: "Summed-Area Table",
+    category: "Rendering",
+    description: "2D prefix sum enables O(1) tile density checks for skipping empty tiles on large screens.",
+    formula: "SAT(x,y) = A(x,y) + SAT(x-1,y) + SAT(x,y-1) - SAT(x-1,y-1)",
+    impact: "Skip empty tiles deterministically",
+  },
+  {
+    name: "Dirty-Span Interval Union",
+    category: "Rendering",
+    description: "Each row tracks dirty spans; diff scans only the union of changed intervals instead of full row width.",
+    formula: "Sᵧ = ∪ₖ [x₀ₖ, x₁ₖ)",
+    impact: "Scan cost proportional to actual changes",
+  },
+  {
+    name: "Bayesian Height Prediction",
+    category: "Virtualized Lists",
+    description: "Normal-Normal conjugate update predicts unseen row heights to avoid scroll jumps, with conformal bounds.",
+    formula: "μₙ = (κ₀·μ₀ + n·x̄) / (κ₀ + n)",
+    impact: "Fewer scroll jumps in long lists",
+  },
+  {
+    name: "Bayes-Factor Evidence Ledger",
+    category: "Explainability",
+    description: "Every probabilistic decision records its reasoning as a log10 Bayes factor ledger. Auditable, not black-box.",
+    formula: "LBF = log₁₀(P(E|apply) / P(E|coalesce))",
+    impact: "Transparent, debuggable decisions",
+  },
+  {
+    name: "GRAPA Adaptive Betting",
+    category: "Budget Control",
+    description: "General Random Adaptive Proportion Algorithm auto-tunes the e-process betting fraction for optimal sensitivity.",
+    formula: "λ_{t+1} = λ_t + η·∇_λ log W_t",
+    impact: "Self-tuning statistical sensitivity",
+  },
+  {
+    name: "Mondrian Conformal",
+    category: "Frame Timing",
+    description: "Bucketed conformal prediction keyed by screen mode, diff strategy, and size for frame-time risk gating.",
+    formula: "ŷ⁺ = ŷ + q_{1-α}(|r|) per bucket",
+    impact: "Safe budget gating with sparse data",
+  },
+  {
+    name: "Count-Min Sketch",
+    category: "Data Structures",
+    description: "Probabilistic sketch for approximate frequency counts of hot items with PAC-Bayes error tightening.",
+    formula: "f̂(x) = min_j C_{j,h_j(x)}",
+    impact: "Tiny memory for huge-scale counts",
+  },
+  {
+    name: "W-TinyLFU Admission",
+    category: "Caching",
+    description: "Width cache admission policy using Doorkeeper + Count-Min Sketch to maximize hit-rate.",
+    formula: "admit if f̂(x) ≥ f̂(victim)",
+    impact: "Higher cache hit-rate, fewer recomputes",
+  },
+  {
+    name: "PAC-Bayes Calibration",
+    category: "Error Bounds",
+    description: "Tightens sketch error bounds using PAC-Bayes theory. Bound shrinks as more data is observed.",
+    formula: "E[err] ≤ ē + √(KL(q‖p) / 2n)",
+    impact: "Tighter bounds without distribution assumptions",
+  },
+  {
+    name: "Smith's Rule + Aging",
+    category: "Scheduling",
+    description: "Background work ordered by importance per remaining time, with aging to prevent starvation of long-waiting jobs.",
+    formula: "priority = w/r + a·wait",
+    impact: "Fair throughput under load",
+  },
+  {
+    name: "CUSUM Budget Detection",
+    category: "Budget Control",
+    description: "Cumulative sum accumulates small deviations to catch sustained drift in allocation budgets quickly.",
+    formula: "S_t = max(0, S_{t-1} + X_t - μ₀ - k)",
+    impact: "Fast drift detection with dual e-process confirmation",
+  },
+  {
+    name: "PID Frame Pacing",
+    category: "Frame Timing",
+    description: "Classic feedback control for frame-time regulation. PI is the default; MPC tested but PI proven sufficient.",
+    formula: "u_t = Kp·e_t + Ki·Σe_t + Kd·Δe_t",
+    impact: "Smooth frame-time stabilization",
+  },
+  {
+    name: "Conformal Rank Confidence",
+    category: "Command Palette",
+    description: "Gap-based p-values for deterministic tie-breaks and stable top-k ordering in search results.",
+    formula: "pᵢ = (1/n) Σⱼ 1[gⱼ ≤ gᵢ]",
+    impact: "Deterministic, stable search results",
+  },
+  {
+    name: "Easing + Stagger Cascades",
+    category: "Animation",
+    description: "Analytic easing curves distribute start offsets across list items. Optional xorshift jitter for organic feel.",
+    formula: "offset_i = D · ease(i / (n-1))",
+    impact: "Coordinated, non-uniform entrances",
+  },
+  {
+    name: "Sine Pulse Attention",
+    category: "Animation",
+    description: "Half-cycle sine for smooth attention cues. 0→1→0 emphasis without sharp edges or flicker.",
+    formula: "p(t) = sin(πt), t ∈ [0,1]",
+    impact: "Smooth emphasis without flicker",
+  },
+  {
+    name: "Perceived Luminance",
+    category: "Terminal Probing",
+    description: "RGB to perceived luminance for dark/light theme detection from terminal background probe.",
+    formula: "Y = 0.299R + 0.587G + 0.114B",
+    impact: "Reliable theme defaults",
   },
 ];
 
@@ -1267,15 +1428,20 @@ export interface VisualEffect {
   category: string;
   description: string;
   featureFlag: string;
+  formula?: string;
 }
 
 export const visualEffects: VisualEffect[] = [
-  { name: "Metaballs", category: "Organic", description: "Merging blob simulation rendered as cell backgrounds with smooth falloff", featureFlag: "visual-fx-metaballs" },
-  { name: "Plasma", category: "Procedural", description: "Classic demo-scene plasma with configurable palettes (Aurora, Ember, Ocean)", featureFlag: "visual-fx-plasma" },
-  { name: "Clifford Attractor", category: "Mathematical", description: "Strange attractor visualization with parametric chaos", featureFlag: "visual-fx" },
-  { name: "Gray-Scott Reaction-Diffusion", category: "PDE", description: "Pattern generator producing organic textures via coupled partial differential equations", featureFlag: "visual-fx" },
-  { name: "Mandelbrot", category: "Fractal", description: "Complex-plane fractal with smooth coloring and zoom capability", featureFlag: "visual-fx" },
-  { name: "Spiral", category: "Geometric", description: "Parametric spiral with configurable tightness and exponential expansion", featureFlag: "visual-fx" },
+  { name: "Metaballs", category: "Organic", description: "Smooth, organic blob fields via iso-surface rendering", featureFlag: "visual-fx-metaballs", formula: "F(x,y) = Σᵢ rᵢ² / ((x-xᵢ)²+(y-yᵢ)²), render F ≥ τ" },
+  { name: "Plasma", category: "Procedural", description: "Classic demo-scene plasma with configurable palettes (Aurora, Ember, Ocean)", featureFlag: "visual-fx-plasma", formula: "v = (1/6) Σₖ sin(φₖ(x,y,t))" },
+  { name: "Clifford Attractor", category: "Mathematical", description: "Chaotic strange-attractor filaments with parametric chaos", featureFlag: "visual-fx", formula: "x_{t+1} = sin(a·yₜ) + c·cos(a·xₜ)" },
+  { name: "Gray-Scott Reaction-Diffusion", category: "PDE", description: "Reaction-diffusion morphogenesis via coupled partial differential equations", featureFlag: "visual-fx", formula: "∂u/∂t = Dᵤ∇²u - uv² + F(1-u)" },
+  { name: "Mandelbrot / Julia", category: "Fractal", description: "Escape-time fractal with smooth coloring and deep zoom capability", featureFlag: "visual-fx", formula: "z_{n+1} = zₙ² + c" },
+  { name: "Lissajous / Harmonograph", category: "Geometric", description: "Elegant phase-locked curves with optional exponential damping", featureFlag: "visual-fx", formula: "x = A·sin(at+δ), y = B·sin(bt+φ)" },
+  { name: "Flow Field", category: "Particle", description: "Particle ribbons through a vector field with dynamic advection", featureFlag: "visual-fx", formula: "v⃗(x,y) = (cos 2πN, sin 2πN); p_{t+1} = pₜ + v⃗·Δt" },
+  { name: "Wave Interference", category: "Physics", description: "Multi-source ripple patterns from superposed wave functions", featureFlag: "visual-fx", formula: "I(x,t) = Σᵢ sin(kᵢ‖x-sᵢ‖ - ωᵢt)" },
+  { name: "Spiral Galaxy", category: "Geometric", description: "Logarithmic spiral starfields with rotation over time", featureFlag: "visual-fx", formula: "r = a·e^{bθ}, θ(t) = θ₀ + ωt" },
+  { name: "Spin Lattice (LLG)", category: "Physics", description: "Magnetic domain dynamics via Landau-Lifshitz-Gilbert equation", featureFlag: "visual-fx", formula: "dS⃗/dt = -S⃗×H⃗ - α·S⃗×(S⃗×H⃗)" },
   { name: "Scrim (Vignette)", category: "Overlay", description: "Darkening overlay with uniform, vignette, or vertical-fade modes for text legibility", featureFlag: "visual-fx" },
   { name: "Stacked FX", category: "Composition", description: "Layer multiple effects with per-layer opacity for rich backgrounds", featureFlag: "visual-fx" },
 ];
