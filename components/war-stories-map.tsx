@@ -37,7 +37,7 @@ export default function WarStoriesMap() {
           return (
             <motion.div
               key={story.title}
-              layoutId={`node-${story.title}`}
+              layoutId={`map-node-${story.title}`}
               className="relative"
             >
               <motion.button

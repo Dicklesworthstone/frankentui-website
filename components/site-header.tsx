@@ -47,32 +47,34 @@ export default function SiteHeader() {
           className={cn(
             "absolute top-6 left-1/2 -translate-x-1/2 flex items-center transition-all duration-500 pointer-events-auto",
             "w-[95%] lg:w-[1200px] h-16 px-8 rounded-full border border-white/5",
-            scrolled ? "glass-modern shadow-2xl scale-[0.98] border-green-500/20" : "bg-transparent"
+            scrolled ? "glass-modern shadow-2xl scale-[0.98] border-green-500/20" : "bg-transparent border-transparent"
           )}
         >
           {scrolled && <NeuralPulse className="opacity-40" />}
           
-          <div className="flex items-center justify-between w-full relative z-10 h-full">
-            {/* Logo */}
-            <Link
-              href="/"
-              className="flex items-center gap-3 group shrink-0"
-            >
-              <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-green-600 to-lime-400 shadow-lg transition-transform group-hover:scale-105 active:scale-95">
-                <FrankenBolt className="absolute -left-1 -top-1 z-20 scale-50" />
-                <FrankenBolt className="absolute -right-1 -bottom-1 z-20 scale-50" />
-                <span className="text-lg font-black text-black select-none">F</span>
-              </div>
-              <div className="flex flex-col text-left justify-center">
-                <span className="text-sm font-black tracking-tight text-white uppercase leading-none">
-                  {siteConfig.name}
-                </span>
-                <span className="text-[7px] font-black text-green-500 uppercase tracking-widest leading-none mt-1">SYSTEM_ALIVE</span>
-              </div>
-            </Link>
+          <div className="grid grid-cols-3 w-full relative z-10 h-full items-center">
+            {/* Column 1: Logo */}
+            <div className="flex justify-start">
+              <Link
+                href="/"
+                className="flex items-center gap-3 group shrink-0"
+              >
+                <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-green-600 to-lime-400 shadow-lg transition-transform group-hover:scale-105 active:scale-95">
+                  <FrankenBolt className="absolute -left-1 -top-1 z-20 scale-50" />
+                  <FrankenBolt className="absolute -right-1 -bottom-1 z-20 scale-50" />
+                  <span className="text-lg font-black text-black select-none">F</span>
+                </div>
+                <div className="flex flex-col text-left justify-center">
+                  <span className="text-sm font-black tracking-tight text-white uppercase leading-none">
+                    {siteConfig.name}
+                  </span>
+                  <span className="text-[7px] font-black text-green-500 uppercase tracking-widest leading-none mt-1">SYSTEM_ALIVE</span>
+                </div>
+              </Link>
+            </div>
 
-            {/* Navigation - Simplified for perfect alignment */}
-            <nav className="flex items-center gap-1 h-full">
+            {/* Column 2: Navigation - Perfectly Centered */}
+            <nav className="flex items-center justify-center gap-1 h-full">
               {navItems.map((item) => {
                 const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
                 return (
@@ -80,8 +82,8 @@ export default function SiteHeader() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "px-4 h-9 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.2em] transition-colors rounded-full relative",
-                      active ? "text-green-400 bg-green-500/10" : "text-slate-400 hover:text-white hover:bg-white/5"
+                      "px-4 h-9 flex items-center justify-center text-[10px] font-black uppercase tracking-[0.15em] transition-colors rounded-full relative",
+                      active ? "text-green-400 bg-green-500/10" : "text-slate-300 hover:text-white hover:bg-white/5"
                     )}
                   >
                     {item.label}
@@ -96,8 +98,8 @@ export default function SiteHeader() {
               })}
             </nav>
 
-            {/* Tools */}
-            <div className="flex items-center gap-2 shrink-0">
+            {/* Column 3: Tools */}
+            <div className="flex items-center justify-end gap-2 shrink-0">
               <button onClick={() => setTerminalOpen(true)} className="p-2 rounded-lg hover:bg-white/5 text-slate-400 hover:text-green-400 transition-colors">
                 <TerminalIcon className="h-4 w-4" />
               </button>
