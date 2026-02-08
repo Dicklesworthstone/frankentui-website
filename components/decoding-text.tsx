@@ -23,7 +23,7 @@ export default function DecodingText({
   const frameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
   
-  // Numeric characters are more likely to be monospaced in variable fonts
+  // Strictly numeric for guaranteed visual width consistency in most fonts with tabular-nums
   const characters = "0123456789";
 
   const animate = useCallback(
@@ -55,9 +55,38 @@ export default function DecodingText({
     [text, duration],
   );
 
+  const scramble = useCallback(() => {
+    if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    
+    const endTime = performance.now() + 500; // brief scramble on hover
+
+    function step(ts: number) {
+      if (ts >= endTime) {
+        setDisplayText(text);
+        frameRef.current = null;
+        return;
+      }
+      
+      const scrambled = text
+        .split("")
+        .map((char) => {
+          if (char === " ") return " ";
+          return characters[Math.floor(Math.random() * characters.length)];
+        })
+        .join("");
+        
+      setDisplayText(scrambled);
+      frameRef.current = requestAnimationFrame(step);
+    }
+
+    frameRef.current = requestAnimationFrame(step);
+  }, [text]);
+
   useEffect(() => {
-    // Initial placeholder to prevent layout jumps
-    setDisplayText(text.replace(/[^ ]/g, "0"));
+    // Initial state: matches length to avoid layout jumps
+    if (!isDone) {
+      setDisplayText(text.replace(/[^ ]/g, "0"));
+    }
 
     const timeout = setTimeout(() => {
       startTimeRef.current = null;
@@ -68,7 +97,7 @@ export default function DecodingText({
       clearTimeout(timeout);
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
-  }, [delay, animate, text]);
+  }, [delay, animate, text, isDone]);
 
   return (
     <span className={cn("relative inline-block whitespace-pre tabular-nums", className)}>
@@ -78,7 +107,10 @@ export default function DecodingText({
       </span>
 
       {/* Visible animated text */}
-      <span className="absolute inset-0">
+      <span 
+        className="absolute inset-0" 
+        onMouseEnter={scramble}
+      >
         {displayText}
       </span>
     </span>
