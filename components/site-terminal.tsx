@@ -8,6 +8,7 @@ import { Terminal as TerminalIcon, X, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FrankenBolt, NeuralPulse } from "./franken-elements";
 import FrankenGlitch from "./franken-glitch";
+import { navItems } from "@/lib/content";
 
 interface CommandResult {
   command: string;
@@ -62,13 +63,14 @@ export default function SiteTerminal() {
         break;
       case "goto":
         if (args[0]) {
-          const validSlugs = ["showcase", "architecture", "beads", "war-stories", "getting-started", "how-it-was-built"];
-          if (validSlugs.includes(args[0])) {
-            router.push(`/${args[0]}`);
-            output = `Navigating to /${args[0]}...`;
+          const validSlugs = navItems.map(item => item.href.replace("/", "")).filter(Boolean);
+          if (validSlugs.includes(args[0]) || args[0] === "home") {
+            const target = args[0] === "home" ? "/" : `/${args[0]}`;
+            router.push(target);
+            output = `Navigating to ${target}...`;
             setTimeout(() => setTerminalOpen(false), 500);
           } else {
-            output = `Error: Unknown destination '${args[0]}'. Valid targets: ${validSlugs.join(", ")}`;
+            output = `Error: Unknown destination '${args[0]}'. Valid targets: home, ${validSlugs.join(", ")}`;
             isError = true;
             playSfx("error");
           }

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Github, Terminal as TerminalIcon, Eye, Home, Network, LayoutGrid, Skull, Info, Cpu, Zap, ChevronRight } from "lucide-react";
+import { Menu, X, Github, Terminal as TerminalIcon, Eye, Home, Network, LayoutGrid, Skull, Info, Cpu, Zap, ChevronRight, Rocket } from "lucide-react";
 import { useState, useEffect } from "react";
 import { navItems, siteConfig } from "@/lib/content";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -35,6 +35,7 @@ export default function SiteHeader() {
       case 'project graph': return Network;
       case 'glossary': return Info;
       case 'get started': return Zap;
+      case 'built in 5 days': return Rocket;
       default: return LayoutGrid;
     }
   };
@@ -120,7 +121,7 @@ export default function SiteHeader() {
       {/* ── MOBILE BOTTOM NAV ───────────────────────────────── */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-[90%] pointer-events-none">
         <nav className="glass-modern h-16 rounded-2xl border border-white/10 flex items-center justify-around px-2 pointer-events-auto shadow-2xl">
-          {navItems.slice(0, 6).map((item) => {
+          {navItems.map((item) => {
             const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
             const Icon = getIcon(item.label);
             return (
