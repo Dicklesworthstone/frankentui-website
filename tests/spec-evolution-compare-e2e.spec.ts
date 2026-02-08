@@ -161,8 +161,8 @@ test.describe("spec evolution lab: compare mode", () => {
     await page.getByTitle("Next Node").click();
     await expect(page.getByTestId("compare-metrics")).toBeVisible({ timeout: 5_000 });
 
-    // Switch to Files tab
-    const filesTab = page.getByRole("button", { name: /FILES/i }).first();
+    // Switch to Files tab (labeled "Changed_Nodes" in the UI)
+    const filesTab = page.getByRole("button", { name: /Changed_Nodes/i }).first();
     await filesTab.click();
 
     // The compare file summary should appear
@@ -170,6 +170,75 @@ test.describe("spec evolution lab: compare mode", () => {
     await expect(fileSummary).toBeVisible({ timeout: 10_000 });
 
     // Verify no page errors
+    expect(pageErrors).toEqual([]);
+  });
+});
+
+test.describe("spec evolution lab: deep-linkable state", () => {
+  test.setTimeout(60_000);
+
+  test("URL hash updates on state change and restores on reload", async ({ page }) => {
+    const baseUrl = process.env.BASE_URL ?? "http://localhost:3100";
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    await page.goto(`${baseUrl}/how-it-was-built/spec-evolution-lab`, {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(
+      page.getByRole("heading", { name: /Scrub_Node_Selector/i })
+    ).toBeVisible({ timeout: 30_000 });
+
+    // Navigate to a different commit
+    await page.getByTitle("Next Node").click();
+    await page.waitForTimeout(500);
+
+    // Switch to snapshot tab
+    const snapshotTab = page.getByRole("button", { name: /MD_Snapshot/i }).first();
+    await snapshotTab.click();
+    await page.waitForTimeout(500);
+
+    // Read the current URL hash
+    const hash = await page.evaluate(() => window.location.hash);
+    expect(hash).toContain("tab=snapshot");
+    expect(hash).toContain("c=");
+
+    // Extract the commit SHA from hash
+    const commitSHA = new URLSearchParams(hash.slice(1)).get("c");
+    expect(commitSHA).toBeTruthy();
+
+    // Reload with the same hash - should restore state
+    await page.goto(`${baseUrl}/how-it-was-built/spec-evolution-lab${hash}`, {
+      waitUntil: "domcontentloaded",
+    });
+    await expect(
+      page.getByRole("heading", { name: /Scrub_Node_Selector/i })
+    ).toBeVisible({ timeout: 30_000 });
+
+    // Verify the commit SHA is restored in the B badge
+    const bBadge = page.getByTestId("compare-b-badge");
+    await expect(bBadge).toHaveText(commitSHA!, { timeout: 5_000 });
+
+    // Verify no page errors
+    expect(pageErrors).toEqual([]);
+  });
+
+  test("invalid hash does not crash the page", async ({ page }) => {
+    const baseUrl = process.env.BASE_URL ?? "http://localhost:3100";
+    const pageErrors: string[] = [];
+    page.on("pageerror", (err) => pageErrors.push(err.message));
+
+    // Load with a completely invalid hash
+    await page.goto(
+      `${baseUrl}/how-it-was-built/spec-evolution-lab#c=INVALID&tab=nope&b=999&ro=banana`,
+      { waitUntil: "domcontentloaded" }
+    );
+
+    // Should still load successfully (invalid values are ignored/clamped)
+    await expect(
+      page.getByRole("heading", { name: /Scrub_Node_Selector/i })
+    ).toBeVisible({ timeout: 30_000 });
+
     expect(pageErrors).toEqual([]);
   });
 });

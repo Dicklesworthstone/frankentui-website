@@ -3,12 +3,12 @@ import {
   buildCorpusText,
   computeEditDistanceLines,
   computeFileChangeSummary,
+  computePerFileContribution,
   computeTextStats,
   myersDiffTextLines,
   myersDiffLines,
   indexSpecFiles,
   type SpecFile,
-  type DiffOp,
 } from "../lib/spec-evolution-compare";
 
 /* ------------------------------------------------------------------ */
@@ -165,7 +165,7 @@ describe("computeTextStats", () => {
 
   test("handles empty string", () => {
     const stats = computeTextStats("");
-    expect(stats).toEqual({ lines: 0, bytes: 0 });
+    expect(stats).toEqual({ lines: 0, bytes: 0, words: 0 });
   });
 
   test("handles single line", () => {
@@ -178,6 +178,11 @@ describe("computeTextStats", () => {
     const stats = computeTextStats("\u00e9"); // é = 2 bytes in UTF-8
     expect(stats.lines).toBe(1);
     expect(stats.bytes).toBe(2);
+  });
+
+  test("counts words via whitespace tokenization", () => {
+    const stats = computeTextStats("hello world\nfoo bar baz");
+    expect(stats.words).toBe(5);
   });
 
   test("counts trailing newline as extra line", () => {
@@ -306,5 +311,47 @@ describe("myersDiffLines (array API)", () => {
     expect(ops.filter((o) => o.kind === "equal")).toEqual([{ kind: "equal", text: "a" }]);
     expect(ops.filter((o) => o.kind === "del")).toEqual([{ kind: "del", text: "b" }]);
     expect(ops.filter((o) => o.kind === "add")).toEqual([{ kind: "add", text: "c" }]);
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/*  computePerFileContribution                                        */
+/* ------------------------------------------------------------------ */
+describe("computePerFileContribution", () => {
+  test("computes per-file deltas sorted by absolute byte delta", () => {
+    const a: SpecFile[] = [
+      { path: "small.md", content: "abc" },
+      { path: "big.md", content: "hello world this is a long sentence" },
+    ];
+    const b: SpecFile[] = [
+      { path: "small.md", content: "abcd" },
+      { path: "big.md", content: "hi" },
+    ];
+    const result = computePerFileContribution(a, b);
+    expect(result.length).toBe(2);
+    // "big.md" has a larger absolute delta → should come first
+    expect(result[0].path).toBe("big.md");
+    expect(result[0].deltaBytes).toBeLessThan(0);
+    expect(result[1].path).toBe("small.md");
+    expect(result[1].deltaBytes).toBe(1); // "abcd" (4) - "abc" (3) = 1
+  });
+
+  test("handles added and removed files", () => {
+    const a: SpecFile[] = [{ path: "gone.md", content: "bye" }];
+    const b: SpecFile[] = [{ path: "new.md", content: "hello" }];
+    const result = computePerFileContribution(a, b);
+    expect(result.length).toBe(2);
+    const gonePf = result.find((r) => r.path === "gone.md");
+    const newPf = result.find((r) => r.path === "new.md");
+    expect(gonePf?.deltaBytes).toBeLessThan(0);
+    expect(newPf?.deltaBytes).toBeGreaterThan(0);
+  });
+
+  test("is deterministic", () => {
+    const a: SpecFile[] = [{ path: "x.md", content: "one" }];
+    const b: SpecFile[] = [{ path: "x.md", content: "one two" }];
+    const r1 = computePerFileContribution(a, b);
+    const r2 = computePerFileContribution(a, b);
+    expect(r1).toEqual(r2);
   });
 });

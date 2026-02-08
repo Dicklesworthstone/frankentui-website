@@ -305,13 +305,13 @@ test("spec evolution lab: loads and renders core UI without console errors", asy
 
   // This heading only appears after the dataset is loaded and the main UI is rendered.
   await expect(
-    page.getByRole("heading", { name: /revision taxonomy over time/i })
+    page.getByRole("heading", { name: /Scrub_Node_Selector/i })
   ).toBeVisible({ timeout: 20_000 });
 
-  // Basic interaction: open + close legend.
-  await page.getByRole("button", { name: "Legend" }).first().click();
-  await expect(page.getByText("Legend (Revision Buckets)")).toBeVisible();
-  await page.keyboard.press("Escape");
+  // Basic interaction: verify the forensic inspector section rendered.
+  await expect(
+    page.getByRole("heading", { name: /Forensics_Inspector/i })
+  ).toBeVisible();
 
   expect(errors).toEqual([]);
 });
