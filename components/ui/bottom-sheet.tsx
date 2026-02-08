@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { X } from "lucide-react";
+import { X, Binary } from "lucide-react";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
+import { createPortal } from "react-dom";
+import { cn } from "@/lib/utils";
 
 interface BottomSheetProps {
   isOpen: boolean;
   onClose: () => void;
   title?: string;
   children: React.ReactNode;
+}
+
+function Portal({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return mounted ? createPortal(children, document.body) : null;
 }
 
 export default function BottomSheet({
@@ -36,51 +44,94 @@ export default function BottomSheet({
   return (
     <AnimatePresence>
       {isOpen && (
-        <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: prefersReducedMotion ? 0 : 0.2 }}
-            className="fixed inset-0 z-[var(--z-modal-backdrop)] bg-black/60 backdrop-blur-sm"
-            onClick={onClose}
-            aria-hidden
-          />
-          <motion.div
-            ref={sheetRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label={title ? undefined : "Details"}
-            aria-labelledby={title ? headingId : undefined}
-            initial={{ y: "100%" }}
-            animate={{ y: 0 }}
-            exit={{ y: "100%" }}
-            transition={
-              prefersReducedMotion
-                ? { duration: 0 }
-                : { type: "spring", stiffness: 300, damping: 30 }
+        <Portal>
+          <div className="fixed inset-0 z-[999] flex flex-col justify-end">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: prefersReducedMotion ? 0 : 0.3 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+              onClick={onClose}
+              aria-hidden
+            />
+            <motion.div
+              ref={sheetRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label={title ? undefined : "Details"}
+              aria-labelledby={title ? headingId : undefined}
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : { type: "spring", damping: 30, stiffness: 300, mass: 0.8 }
+              }
+              className="relative z-10 w-full max-h-[92vh] overflow-hidden rounded-t-[2.5rem] border-t border-green-500/20 bg-[#020a02] shadow-[0_-20px_80px_rgba(0,0,0,0.8)] flex flex-col"
+            >
+              {/* Header */}
+              <div className="sticky top-0 z-20 flex items-center justify-between border-b border-white/5 bg-[#020a02]/90 px-8 py-6 backdrop-blur-xl">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 border border-green-500/20 text-green-400">
+                    <Binary size={20} />
+                  </div>
+                  {title && (
+                    <h3 id={headingId} className="text-xl font-black uppercase tracking-widest text-white">
+                      {title}
+                    </h3>
+                  )}
+                </div>
+                <button
+                  onClick={onClose}
+                  className="h-12 w-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:bg-white/10 hover:text-white transition-all group"
+                  aria-label="Close"
+                >
+                  <X className="h-6 w-6 group-hover:rotate-90 transition-transform duration-300" />
+                </button>
+              </div>
+
+              {/* Content Area */}
+              <div className="flex-1 overflow-y-auto p-8 md:p-12 custom-scrollbar">
+                <div className="mx-auto max-w-4xl w-full">
+                  {children}
+                </div>
+              </div>
+
+              {/* Decorative Footer Detail */}
+              <div className="p-6 border-t border-white/5 bg-white/[0.01] flex items-center justify-between">
+                <div className="flex items-center gap-2 text-[10px] font-black text-slate-700 uppercase tracking-widest">
+                  <div className="h-1.5 w-1.5 rounded-full bg-green-500/40" />
+                  <span>Lexicon_Protocol_Secure</span>
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="h-1 w-4 rounded-full bg-white/5" />
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          <style jsx global>{`
+            .custom-scrollbar::-webkit-scrollbar {
+              width: 4px;
             }
-            className="fixed inset-x-0 bottom-0 z-[var(--z-modal)] max-h-[85vh] overflow-y-auto rounded-t-2xl border-t border-green-500/20 bg-[#0a1a0a] shadow-2xl"
-          >
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-[#0a1a0a]/95 px-6 py-4 backdrop-blur">
-              {title && (
-                <h3 id={headingId} className="font-mono text-sm font-semibold text-green-400">
-                  {title}
-                </h3>
-              )}
-              <button
-                type="button"
-                onClick={onClose}
-                className="ml-auto rounded-full p-1.5 text-white/40 transition-colors hover:bg-white/5 hover:text-white/70"
-                aria-label="Close"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="px-6 py-5">{children}</div>
-          </motion.div>
-        </>
+            .custom-scrollbar::-webkit-scrollbar-track {
+              background: transparent;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb {
+              background: rgba(34, 197, 94, 0.2);
+              border-radius: 10px;
+            }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+              background: rgba(34, 197, 94, 0.4);
+            }
+          `}</style>
+        </Portal>
       )}
     </AnimatePresence>
   );
 }
+
