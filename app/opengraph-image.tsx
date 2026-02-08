@@ -85,6 +85,7 @@ export default function Image() {
         >
           <img
             src={logoUri}
+            alt=""
             width={320}
             height={320}
             style={{

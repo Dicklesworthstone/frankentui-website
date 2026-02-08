@@ -43,3 +43,6 @@ next-env.d.ts
 # large media source assets
 /screenshots_and_demo_video/
 /public/videos/*.mp4
+
+# bv (beads viewer) local config and caches
+.bv/

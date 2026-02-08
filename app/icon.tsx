@@ -16,6 +16,7 @@ export default function Icon() {
     (
       <img
         src={dataUri}
+        alt=""
         width={32}
         height={32}
         style={{ borderRadius: "4px" }}

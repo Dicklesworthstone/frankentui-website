@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useScroll, useTransform, useSpring } from "framer-motion";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import type { SVGProps } from "react";
 import {
@@ -86,9 +86,6 @@ function DecisionCard({
 /* ── Page component ──────────────────────────────────────── */
 
 export default function ArchitecturePage() {
-  const { scrollYProgress } = useScroll();
-  const scaleProgress = useSpring(scrollYProgress, { stiffness: 100, damping: 30 });
-
   return (
     <main id="main-content" className="relative min-h-screen bg-black overflow-x-hidden">
       {/* ── HIGH-END HEADER ───────────────────────────────── */}

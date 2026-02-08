@@ -24,7 +24,10 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
     if (!isAudioEnabled) return;
 
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const WebkitAudioContext = (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      const AudioCtx = window.AudioContext || WebkitAudioContext;
+      if (!AudioCtx) return;
+      audioContextRef.current = new AudioCtx();
     }
 
     const ctx = audioContextRef.current;
