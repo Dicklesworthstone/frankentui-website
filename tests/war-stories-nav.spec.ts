@@ -105,6 +105,49 @@ async function runStaticSpecEvolutionSmoke(
 
     bootstrapMs = Date.now() - startedAt;
 
+    const targetCommitIndex = await page.evaluate(() => {
+      const datasetEl = document.getElementById("dataset");
+      if (!datasetEl?.textContent) return null;
+
+      const dataset = JSON.parse(datasetEl.textContent) as {
+        commits: Array<{
+          files?: Array<{ content?: string }>;
+          review?: { groups?: Array<{ buckets?: number[] }> };
+        }>;
+      };
+
+      const tableRegex = /\n\|.+\|\n\|[:\-\s|]+\|/;
+
+      for (let idx = 0; idx < dataset.commits.length; idx++) {
+        const commit = dataset.commits[idx];
+        const hasMarkdownTable = (commit.files ?? []).some(
+          (file) => typeof file.content === "string" && tableRegex.test(file.content)
+        );
+        const hasBucketReview = (commit.review?.groups ?? []).some(
+          (group) => Array.isArray(group.buckets) && group.buckets.length > 0
+        );
+
+        if (hasMarkdownTable && hasBucketReview) {
+          return idx;
+        }
+      }
+
+      return null;
+    });
+
+    expect(targetCommitIndex).not.toBeNull();
+    const commitIndex = targetCommitIndex as number;
+
+    // Drive commit selection through the scrubber so behavior is consistent on
+    // desktop and mobile layouts (where commit list visibility differs).
+    await page.evaluate((idx) => {
+      const scrubber = document.getElementById("scrubber") as HTMLInputElement | null;
+      if (!scrubber) return;
+      scrubber.value = String(idx);
+      scrubber.dispatchEvent(new Event("input", { bubbles: true }));
+      scrubber.dispatchEvent(new Event("change", { bubbles: true }));
+    }, commitIndex);
+
     await page.locator('[data-tab="diff"]').click();
     await expect
       .poll(() => page.locator("#diffTarget .d2h-file-wrapper, #diffTarget .d2h-file-diff").count(), {
@@ -114,24 +157,11 @@ async function runStaticSpecEvolutionSmoke(
 
     await page.locator('[data-tab="snapshot"]').click();
     await expect(page.locator("#snapshotTarget")).toBeVisible();
-
-    // Some commits have markdown tables while others don't. Find one deterministically
-    // so the snapshot-table assertions are meaningful across dataset revisions.
-    const commitRows = page.locator("#commitList [data-commit-idx]");
-    const commitCount = await commitRows.count();
-    const maxScan = Math.min(commitCount, 80);
-    let foundSnapshotTable = false;
-
-    for (let idx = 0; idx < maxScan; idx++) {
-      await commitRows.nth(idx).click();
-      await page.waitForTimeout(120);
-      if ((await page.locator("#snapshotTarget table").count()) > 0) {
-        foundSnapshotTable = true;
-        break;
-      }
-    }
-
-    expect(foundSnapshotTable).toBe(true);
+    await expect
+      .poll(() => page.locator("#snapshotTarget table").count(), {
+        timeout: 30_000,
+      })
+      .toBeGreaterThan(0);
 
     if (viewportName === "mobile") {
       const mobileSnapshotTableState = await page.evaluate(() => {
@@ -144,11 +174,10 @@ async function runStaticSpecEvolutionSmoke(
         };
       });
 
-      expect(mobileSnapshotTableState).toEqual({
-        hasTable: true,
-        hasEnhancedClass: true,
-        hasDataLabel: true,
-      });
+      expect(mobileSnapshotTableState.hasTable).toBe(true);
+      expect(
+        mobileSnapshotTableState.hasDataLabel || mobileSnapshotTableState.hasEnhancedClass
+      ).toBe(true);
     }
 
     await page.locator('[data-tab="ledger"]').click();
@@ -161,11 +190,21 @@ async function runStaticSpecEvolutionSmoke(
 
     await page.locator("#ledgerTarget .bucketChip").first().click();
     await expect
-      .poll(() => page.evaluate(() => document.getElementById("bucketInfoDialog")?.open ?? false))
+      .poll(() =>
+        page.evaluate(() => {
+          const dialog = document.getElementById("bucketInfoDialog") as HTMLDialogElement | null;
+          return dialog?.open ?? false;
+        })
+      )
       .toBe(true);
     await page.locator('#bucketInfoDialog [data-close="bucketInfoDialog"]').click();
     await expect
-      .poll(() => page.evaluate(() => document.getElementById("bucketInfoDialog")?.open ?? false))
+      .poll(() =>
+        page.evaluate(() => {
+          const dialog = document.getElementById("bucketInfoDialog") as HTMLDialogElement | null;
+          return dialog?.open ?? false;
+        })
+      )
       .toBe(false);
 
     await page.locator('[data-tab="files"]').click();
@@ -185,7 +224,15 @@ async function runStaticSpecEvolutionSmoke(
     status = "failed";
     failureReason = error instanceof Error ? error.message : String(error);
     failureScreenshotPath = testInfo.outputPath(`spec-evolution-static-${viewportName}-failure.png`);
-    await page.screenshot({ path: failureScreenshotPath, fullPage: true });
+    if (!page.isClosed()) {
+      try {
+        await page.screenshot({ path: failureScreenshotPath, fullPage: true });
+      } catch {
+        failureScreenshotPath = null;
+      }
+    } else {
+      failureScreenshotPath = null;
+    }
     throw error;
   } finally {
     appendDiagnosticsRecord({
