@@ -169,6 +169,140 @@ export default function HomePage() {
       </section>
 
       {/* ================================================================
+          1c. SPEC EVOLUTION LAB — Frankenstein CTA
+          ================================================================ */}
+      <section className="relative py-24 md:py-32 overflow-hidden">
+        {/* Deep background effects */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-red-950/10 blur-[120px]" />
+          {/* Electrical grid background */}
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(239,68,68,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(239,68,68,0.05)_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_90%)] opacity-40" />
+        </div>
+
+        <div className="relative mx-auto max-w-6xl px-6">
+          <Link href="/how-it-was-built/spec-evolution-lab" className="group block relative">
+            {/* Pulsing glow behind the container */}
+            <div className="absolute -inset-10 bg-red-500/5 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            
+            <FrankenContainer withPulse={false} className="glass-modern border-red-500/10 group-hover:border-red-500/40 transition-all duration-700 hover:shadow-[0_0_100px_rgba(239,68,68,0.2)] bg-black/40 backdrop-blur-sm p-0">
+              {/* Custom Red Neural Pulse */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit] z-0">
+                <motion.div
+                  animate={{
+                    top: ["0%", "0%", "100%", "100%", "0%"],
+                    left: ["0%", "100%", "100%", "0%", "0%"],
+                    opacity: [0, 0.8, 0.8, 0.8, 0],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                  className="absolute h-1 w-12 bg-gradient-to-r from-transparent via-red-500 to-transparent blur-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                />
+              </div>
+
+              <div className="relative flex flex-col md:flex-row items-center gap-10 md:gap-16 p-10 md:p-16 z-10">
+                {/* Frankenstein Head — Forensic Style */}
+                <div className="relative shrink-0">
+                  <div className="absolute -inset-8 bg-red-500/20 rounded-full blur-3xl group-hover:bg-red-500/40 transition-all duration-700 animate-pulse" />
+                  
+                  {/* Decorative corner brackets */}
+                  <div className="absolute -top-4 -left-4 w-8 h-8 border-t-2 border-l-2 border-red-500/40 group-hover:border-red-500 transition-colors duration-500" />
+                  <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-2 border-r-2 border-red-500/40 group-hover:border-red-500 transition-colors duration-500" />
+
+                  <motion.div
+                    whileHover={{ scale: 1.08, rotate: [0, -2, 2, 0] }}
+                    transition={{ duration: 0.5 }}
+                    className="relative h-32 w-32 md:h-44 md:w-44 rounded-3xl overflow-hidden border border-red-500/30 group-hover:border-red-500/60 shadow-[0_0_50px_rgba(239,68,68,0.3)] transition-all duration-500 bg-black"
+                  >
+                    <Image
+                      src="/images/franken-favicon.webp"
+                      alt="FrankenTUI Spec Evolution Lab"
+                      fill
+                      className="object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100"
+                    />
+                    {/* Scanline overlay */}
+                    <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px] opacity-40" />
+                    {/* Flickering red overlay */}
+                    <motion.div 
+                      animate={{ opacity: [0.1, 0.3, 0.1, 0.4, 0.1] }}
+                      transition={{ duration: 2, repeat: Infinity }}
+                      className="absolute inset-0 bg-red-500/5 pointer-events-none"
+                    />
+                  </motion.div>
+
+                  {/* Lightning Strike Arcs (Custom SVG) */}
+                  <svg className="absolute inset-[-40px] w-[calc(100%+80px)] h-[calc(100%+80px)] pointer-events-none overflow-visible opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    <motion.path
+                      d="M 20,40 Q 40,30 60,60 T 100,20"
+                      stroke="#ef4444"
+                      strokeWidth="1"
+                      fill="none"
+                      animate={{ 
+                        pathLength: [0, 1, 0],
+                        opacity: [0, 1, 0]
+                      }}
+                      transition={{ duration: 0.4, repeat: Infinity, repeatDelay: 1 }}
+                      style={{ filter: "drop-shadow(0 0 5px #ef4444)" }}
+                    />
+                    <motion.path
+                      d="M 140,120 Q 120,100 100,140 T 60,100"
+                      stroke="#ef4444"
+                      strokeWidth="1"
+                      fill="none"
+                      animate={{ 
+                        pathLength: [0, 1, 0],
+                        opacity: [0, 1, 0]
+                      }}
+                      transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1.5 }}
+                      style={{ filter: "drop-shadow(0 0 5px #ef4444)" }}
+                    />
+                  </svg>
+                </div>
+
+                {/* Text Content */}
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="relative h-3 w-3">
+                      <div className="absolute inset-0 rounded-full bg-red-500 animate-ping" />
+                      <div className="relative h-3 w-3 rounded-full bg-red-500" />
+                    </div>
+                    <span className="text-[11px] font-black uppercase tracking-[0.4em] text-red-500 bg-red-500/10 px-3 py-1 rounded-full border border-red-500/20">
+                      Forensic_Node_Live
+                    </span>
+                  </div>
+
+                  <FrankenGlitch trigger="hover" intensity="medium">
+                    <h3 className="text-3xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter group-hover:text-red-500 transition-colors leading-[0.9] mb-6">
+                      SPEC <br className="hidden sm:block" />
+                      EVOLUTION <br className="hidden sm:block" />
+                      LAB.
+                    </h3>
+                  </FrankenGlitch>
+
+                  <p className="text-base md:text-xl text-slate-400 font-medium leading-relaxed max-w-xl group-hover:text-slate-300 transition-colors">
+                    Watch the FrankenTUI specification mutate through <strong className="text-white">50+ structural revisions.</strong> 
+                    Forensic diff analysis of every algorithm, stitched together in 5 days of madness.
+                  </p>
+
+                  <div className="mt-10 flex items-center gap-6">
+                    <div className="flex items-center gap-2 group/btn">
+                      <span className="text-sm font-black text-white uppercase tracking-widest group-hover:text-red-500 transition-colors">Enter Laboratory</span>
+                      <div className="h-10 w-10 rounded-full border border-red-500/30 flex items-center justify-center group-hover:bg-red-500 group-hover:border-red-500 transition-all duration-300">
+                        <ArrowRight className="h-5 w-5 text-red-500 group-hover:text-white transition-colors" />
+                      </div>
+                    </div>
+                    <div className="h-px flex-1 bg-gradient-to-r from-red-500/20 to-transparent" />
+                  </div>
+                </div>
+              </div>
+            </FrankenContainer>
+          </Link>
+        </div>
+      </section>
+
+      {/* ================================================================
           2. WHY FRANKENTUI (Feature Cards)
           ================================================================ */}
       <SectionShell
