@@ -3,10 +3,13 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, Network, Share2, Binary, GitBranch, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
-import { FrankenContainer } from "@/components/franken-elements";
+import { cn } from "@/lib/utils";
+import { FrankenContainer, NeuralPulse } from "@/components/franken-elements";
 import FrankenEye from "@/components/franken-eye";
 import BeadHUD from "@/components/bead-hud";
 import DecodingText from "@/components/decoding-text";
+import FrankenGlitch from "@/components/franken-glitch";
+import BeadsView from "@/components/beads/beads-view";
 
 const VIEWER_REPO = "https://github.com/Dicklesworthstone/beads-for-frankentui";
 
@@ -64,126 +67,9 @@ export default function BeadsPage() {
         </div>
       </header>
 
-      {/* ── STATS BAR ─────────────────────────────────────────── */}
-      <div className="border-b border-white/5 bg-white/[0.01]">
-        <div className="mx-auto max-w-7xl px-6 lg:px-8 py-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            {graphStats.map((stat, i) => (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className="flex items-center gap-4"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/5 border border-green-500/20 text-green-400">
-                  <stat.icon className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="text-2xl font-black text-white tracking-tight">{stat.value}</p>
-                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">{stat.label}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ── VIEWER SECTION ─────────────────────────────────────── */}
-      <section className="mx-auto max-w-7xl px-6 lg:px-8 py-16 md:py-24">
-        <div className="grid lg:grid-cols-12 gap-8 items-start">
-          {/* Sidebar */}
-          <div className="lg:col-span-3 space-y-6">
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="space-y-4 text-left"
-            >
-              <h2 className="text-2xl font-black text-white tracking-tight">
-                Live Viewer
-              </h2>
-              <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                Explore the full dependency graph interactively. Filter by status,
-                priority, and dependency depth. Hover nodes to trace connections.
-              </p>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              className="flex flex-col gap-3"
-            >
-              <a
-                href="/beads-viewer/index.html"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group flex items-center justify-between p-4 rounded-2xl bg-green-500 text-black font-black text-sm shadow-[0_0_20px_rgba(34,197,94,0.3)] hover:scale-[1.02] active:scale-95 transition-all"
-              >
-                <span>OPEN FULLSCREEN</span>
-                <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a
-                href={VIEWER_REPO}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 p-3.5 rounded-2xl border border-white/10 text-slate-400 font-bold text-sm hover:bg-white/5 transition-all"
-              >
-                <Share2 className="h-3.5 w-3.5" />
-                <span>VIEW REPO</span>
-              </a>
-            </motion.div>
-
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="p-5 rounded-2xl border border-white/5 bg-white/[0.02] text-left"
-            >
-              <div className="flex items-center gap-2 mb-3 text-yellow-500/80">
-                <AlertTriangle className="h-3.5 w-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Note</span>
-              </div>
-              <p className="text-xs text-slate-500 leading-relaxed font-medium">
-                The viewer loads a SQLite database via WASM. First load may
-                take a moment. For mobile, use the fullscreen link above.
-              </p>
-            </motion.div>
-          </div>
-
-          {/* Embedded Viewer */}
-          <div className="lg:col-span-9">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.98 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-            >
-              <FrankenContainer className="bg-black/60 p-1 overflow-hidden shadow-2xl relative">
-                <BeadHUD />
-                <div className="bg-black/80 rounded-xl overflow-hidden relative z-0">
-                  <div className="flex items-center justify-between px-4 py-3 bg-white/5 border-b border-white/5">
-                    <div className="flex gap-1.5">
-                      <div className="h-2.5 w-2.5 rounded-full bg-red-500/50" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-yellow-500/50" />
-                      <div className="h-2.5 w-2.5 rounded-full bg-green-500/50" />
-                    </div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">beads_viewer</span>
-                  </div>
-                  <div className="aspect-[16/10] w-full">
-                    <iframe
-                      title="Beads project graph viewer"
-                      src="/beads-viewer/index.html"
-                      loading="lazy"
-                      className="h-full w-full border-0"
-                    />
-                  </div>
-                </div>
-              </FrankenContainer>
-            </motion.div>
-          </div>
-        </div>
+      {/* ── NATIVE VIEWER SECTION ───────────────────────────────── */}
+      <section className="mx-auto max-w-[1600px] px-6 lg:px-8 py-16 md:py-24">
+        <BeadsView />
       </section>
 
       {/* ── WHAT ARE BEADS ────────────────────────────────────── */}
