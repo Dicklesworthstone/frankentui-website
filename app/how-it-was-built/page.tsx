@@ -81,9 +81,9 @@ export default function HowItWasBuiltPage() {
           </div>
         </div>
 
-        {/* Floating Peeking Eye */}
-        <div className="absolute top-48 right-[12%] hidden lg:block opacity-35 hover:opacity-100 transition-opacity">
-          <FrankenEye className="scale-[1.8] rotate-[-10deg]" />
+        {/* Floating Peeking Eye - Now visible on mobile */}
+        <div className="absolute top-24 right-4 md:top-48 md:right-[12%] opacity-35 hover:opacity-100 transition-opacity">
+          <FrankenEye className="scale-[1.2] md:scale-[1.8] rotate-[-10deg]" />
         </div>
       </header>
 

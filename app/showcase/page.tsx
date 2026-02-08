@@ -54,9 +54,9 @@ export default function ShowcasePage() {
           </div>
         </div>
 
-        {/* Floating Peeking Eye */}
-        <div className="absolute top-48 right-[15%] hidden lg:block opacity-30 hover:opacity-100 transition-opacity">
-          <FrankenEye className="scale-[2] rotate-12" />
+        {/* Floating Peeking Eye - Now visible on mobile */}
+        <div className="absolute top-24 right-4 md:top-48 md:right-[15%] opacity-30 hover:opacity-100 transition-opacity">
+          <FrankenEye className="scale-[1.3] md:scale-[2] rotate-12" />
         </div>
       </header>
 

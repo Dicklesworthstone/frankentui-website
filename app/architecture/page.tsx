@@ -128,9 +128,9 @@ export default function ArchitecturePage() {
           </div>
         </div>
 
-        {/* Floating Eye Detail */}
-        <div className="absolute top-48 right-[10%] hidden lg:block opacity-40 hover:opacity-100 transition-opacity">
-          <FrankenEye className="scale-150 -rotate-12" />
+        {/* Floating Eye Detail - Now visible on mobile */}
+        <div className="absolute top-24 right-4 md:top-48 md:right-[10%] opacity-40 hover:opacity-100 transition-opacity">
+          <FrankenEye className="scale-[1.1] md:scale-150 -rotate-12" />
         </div>
       </header>
 

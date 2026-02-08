@@ -56,9 +56,9 @@ export default function BeadsPage() {
           </div>
         </div>
 
-        {/* Floating Peeking Eye */}
-        <div className="absolute top-48 right-[15%] hidden lg:block opacity-30 hover:opacity-100 transition-opacity">
-          <FrankenEye className="scale-[2.2] rotate-[15deg]" />
+        {/* Floating Peeking Eye - Now visible on mobile */}
+        <div className="absolute top-24 right-4 md:top-48 md:right-[15%] opacity-30 hover:opacity-100 transition-opacity">
+          <FrankenEye className="scale-[1.4] md:scale-[2.2] rotate-[15deg]" />
         </div>
       </header>
 
