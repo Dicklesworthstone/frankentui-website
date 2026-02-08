@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Github, Terminal as TerminalIcon, Eye, Home, Network, LayoutGrid, Skull, Info, Cpu, Zap, ChevronRight, Rocket } from "lucide-react";
+import { Menu, X, Terminal as TerminalIcon, Eye, Home, Network, LayoutGrid, Skull, Info, Cpu, Zap, ChevronRight, Rocket } from "lucide-react";
 import { useState, useEffect } from "react";
 import { navItems, siteConfig } from "@/lib/content";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";

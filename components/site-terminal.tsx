@@ -6,7 +6,7 @@ import { useSite } from "@/lib/site-state";
 import { useRouter } from "next/navigation";
 import { Terminal as TerminalIcon, X, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FrankenBolt, NeuralPulse } from "./franken-elements";
+import { NeuralPulse } from "./franken-elements";
 import FrankenGlitch from "./franken-glitch";
 import { navItems } from "@/lib/content";
 

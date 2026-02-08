@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { Terminal, Activity } from "lucide-react";
+import { useReducedMotion } from "framer-motion";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -99,6 +100,7 @@ export default function TerminalDemo() {
     threshold: 0.2,
     triggerOnce: true,
   });
+  const prefersReducedMotion = useReducedMotion();
 
   const [visibleLineIndex, setVisibleLineIndex] = useState(-1);
   const [currentLineChars, setCurrentLineChars] = useState(0);
@@ -147,6 +149,12 @@ export default function TerminalDemo() {
   useEffect(() => {
     if (isIntersecting && !hasStarted.current) {
       hasStarted.current = true;
+      if (prefersReducedMotion) {
+        setVisibleLineIndex(LINES.length - 1);
+        setCurrentLineChars(LINES[LINES.length - 1]?.text.length ?? 0);
+        setAnimationDone(true);
+        return;
+      }
       advanceLine(0);
     }
     return () => {
@@ -155,7 +163,7 @@ export default function TerminalDemo() {
         timerRef.current = null;
       }
     };
-  }, [isIntersecting, advanceLine]);
+  }, [isIntersecting, advanceLine, prefersReducedMotion]);
 
   const renderedLines = useMemo(() => {
     const result: React.ReactNode[] = [];

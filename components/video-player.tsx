@@ -3,7 +3,7 @@
 import { useRef, useState, useCallback } from "react";
 import { Play, Terminal } from "lucide-react";
 import type { Video } from "@/lib/content";
-import { FrankenContainer, NeuralPulse } from "./franken-elements";
+import { FrankenContainer } from "./franken-elements";
 import FrankenGlitch from "./franken-glitch";
 
 export default function VideoPlayer({ video }: { video: Video }) {
@@ -76,4 +76,3 @@ export default function VideoPlayer({ video }: { video: Video }) {
     </FrankenContainer>
   );
 }
-

@@ -14,6 +14,15 @@ interface SiteContextType {
 
 const SiteContext = createContext<SiteContextType | undefined>(undefined);
 
+function isTextInputLike(el: Element | null): boolean {
+  if (!el) return false;
+  if (!(el instanceof HTMLElement)) return false;
+  const tag = el.tagName.toLowerCase();
+  if (tag === "input" || tag === "textarea" || tag === "select") return true;
+  if (el.isContentEditable) return true;
+  return Boolean(el.closest("[contenteditable='true']"));
+}
+
 export function SiteProvider({ children }: { children: React.ReactNode }) {
   const [isAnatomyMode, setIsAnatomyMode] = useState(false);
   const [isTerminalOpen, setTerminalOpen] = useState(false);
@@ -97,21 +106,27 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const typing = isTextInputLike(document.activeElement);
+
       // Backtick to toggle terminal
       if (e.key === "`") {
+        // Don't steal keystrokes from inputs unless the terminal is already open
+        // (allowing a quick close even while focused inside the terminal input).
+        if (!isTerminalOpen && typing) return;
         e.preventDefault();
         setTerminalOpen(prev => !prev);
         playSfx("click");
       }
       // Ctrl+Shift+X for Anatomy Mode
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === "x") {
+        if (typing) return;
         e.preventDefault();
         toggleAnatomyMode();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [toggleAnatomyMode, playSfx]);
+  }, [toggleAnatomyMode, playSfx, isTerminalOpen]);
 
   return (
     <SiteContext.Provider 

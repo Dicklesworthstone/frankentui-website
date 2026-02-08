@@ -2,13 +2,14 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 
 /**
  * A visceral, reactive "Monster" eye.
  * Hyper-optimized for performance and lifelike behavior.
  */
 export default function FrankenEye({ className }: { className?: string }) {
+  const prefersReducedMotion = useReducedMotion();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isBlinking, setIsBlinking] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -28,6 +29,8 @@ export default function FrankenEye({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
+    if (prefersReducedMotion) return undefined;
+
     const el = eyeRef.current;
     if (!el) return;
 
@@ -85,10 +88,12 @@ export default function FrankenEye({ className }: { className?: string }) {
       window.removeEventListener("resize", updateRect);
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
-  }, [updateRect]);
+  }, [updateRect, prefersReducedMotion]);
 
   // Separate effect for blinking to avoid listener thrashing
   useEffect(() => {
+    if (prefersReducedMotion) return undefined;
+
     const blinkInterval = setInterval(() => {
       if (Math.random() > 0.8 && !isBlinking) {
         setIsBlinking(true);
@@ -101,7 +106,7 @@ export default function FrankenEye({ className }: { className?: string }) {
       clearInterval(blinkInterval);
       if (blinkTimeoutRef.current) clearTimeout(blinkTimeoutRef.current);
     };
-  }, [isBlinking]);
+  }, [isBlinking, prefersReducedMotion]);
 
   return (
     <div
@@ -109,7 +114,8 @@ export default function FrankenEye({ className }: { className?: string }) {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className={cn(
-        "group relative h-12 w-12 rounded-full bg-white border-2 border-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] overflow-hidden flex items-center justify-center cursor-none",
+        "group relative h-12 w-12 rounded-full bg-white border-2 border-slate-900 shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)] overflow-hidden flex items-center justify-center",
+        prefersReducedMotion ? "cursor-auto" : "cursor-none",
         className
       )}
     >

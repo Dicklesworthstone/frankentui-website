@@ -111,7 +111,7 @@ export default function HomePage() {
 
 
           {/* Full-Width Video — the centrepiece */}
-          <div className="relative mt-16 w-full group">
+          <div className="relative mt-16 w-full max-w-[1200px] group">
             {/* Floating Peeking Eye - Now visible on mobile with adjusted positioning */}
             <div className="absolute -top-12 right-4 md:top-[-80px] md:right-[10%] z-20 animate-bounce transition-all duration-1000">
               <FrankenEye className="scale-100 md:scale-150 rotate-12 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />

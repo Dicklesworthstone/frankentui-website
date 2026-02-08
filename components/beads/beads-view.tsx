@@ -193,6 +193,14 @@ export default function BeadsView() {
   const graphRef = useRef<ForceGraphInstance | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Check for already loaded scripts on mount
+  useEffect(() => {
+    const w = window as Window & { initSqlJs?: unknown; d3?: unknown; ForceGraph?: unknown };
+    if (typeof w.initSqlJs === "function") setSqlLoaded(true);
+    if (w.d3) setD3Loaded(true);
+    if (typeof w.ForceGraph === "function") setForceGraphLoaded(true);
+  }, []);
+
   // Reassemble database chunks
   const loadDatabase = useCallback(async () => {
     if (db) return;
@@ -237,6 +245,7 @@ export default function BeadsView() {
 
       const database = new SQL.Database(combined);
       setDb(database);
+      setLoadingMessage("Synchronization Complete.");
       setLoading(false);
     } catch (err: unknown) {
       console.error("Failed to load database:", err);
@@ -244,6 +253,7 @@ export default function BeadsView() {
         err instanceof Error ? err.message : (typeof err === "string" ? err : "Unknown system failure.");
       setError(message);
       setLoadingMessage("CRITICAL_FAILURE: System corruption detected.");
+      // Ensure we don't hang in a loading state if chunk fetching fails
       setLoading(false);
     }
   }, [db]);
@@ -447,9 +457,21 @@ export default function BeadsView() {
 
   return (
     <div className="flex flex-col gap-12 w-full min-h-[800px] relative">
-      <Script src="/beads-viewer/vendor/sql-wasm.js" onLoad={() => setSqlLoaded(true)} />
-      <Script src="/beads-viewer/vendor/d3.v7.min.js" onLoad={() => setD3Loaded(true)} />
-      <Script src="/beads-viewer/vendor/force-graph.min.js" onLoad={() => setForceGraphLoaded(true)} />
+      <Script 
+        src="/beads-viewer/vendor/sql-wasm.js" 
+        onLoad={() => setSqlLoaded(true)} 
+        onError={() => { setError("SQL Engine Load Failure"); setLoading(false); }}
+      />
+      <Script 
+        src="/beads-viewer/vendor/d3.v7.min.js" 
+        onLoad={() => setD3Loaded(true)} 
+        onError={() => { setError("D3 Visualization Library Load Failure"); setLoading(false); }}
+      />
+      <Script 
+        src="/beads-viewer/vendor/force-graph.min.js" 
+        onLoad={() => setForceGraphLoaded(true)} 
+        onError={() => { setError("ForceGraph Renderer Load Failure"); setLoading(false); }}
+      />
 
       {loading ? (
         <div className="flex flex-col items-center justify-center min-h-[600px] w-full bg-black/40 rounded-3xl border border-green-500/10 backdrop-blur-xl overflow-hidden relative">

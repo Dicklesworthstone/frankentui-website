@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { motion, useSpring, useMotionValue, AnimatePresence, useReducedMotion, type MotionValue } from "framer-motion";
 
 function prng(seed: number): number {
@@ -64,6 +64,7 @@ export default function CustomCursor() {
   const [isClicking, setIsClicking] = useState(false);
   const [isOverFlashlightSection, setIsOverFlashlightSection] = useState(false);
   const [isTechnicalArea, setIsTechnicalArea] = useState(false);
+  const visibleRef = useRef(false);
   
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -77,67 +78,131 @@ export default function CustomCursor() {
   const [isMagnetic, setIsMagnetic] = useState(false);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      mouseX.set(e.clientX);
-      mouseY.set(e.clientY);
-      if (!isVisible) setIsVisible(true);
+    if (prefersReducedMotion) return undefined;
 
-      const target = e.target as HTMLElement;
+    const media = window.matchMedia("(min-width: 768px)");
+    let enabled = false;
+    let rafId: number | null = null;
+    let last: { clientX: number; clientY: number; target: HTMLElement | null } | null = null;
+
+    const handleMouseDown = () => setIsClicking(true);
+    const handleMouseUp = () => setIsClicking(false);
+    const handleMouseLeave = () => {
+      visibleRef.current = false;
+      setIsVisible(false);
+    };
+    const handleMouseEnter = () => {
+      visibleRef.current = true;
+      setIsVisible(true);
+    };
+
+    const flush = () => {
+      rafId = null;
+      if (!last) return;
+      const { clientX, clientY, target } = last;
       if (!target) return;
 
-      const isClickable = 
-        window.getComputedStyle(target).cursor === "pointer" ||
+      const closestButton = target.closest("button");
+      const closestLink = target.closest("a");
+
+      const isClickable =
         target.tagName.toLowerCase() === "button" ||
         target.tagName.toLowerCase() === "a" ||
-        !!target.closest("button") ||
-        !!target.closest("a");
-        
-      setIsPointer(isClickable);
+        Boolean(closestButton) ||
+        Boolean(closestLink) ||
+        window.getComputedStyle(target).cursor === "pointer";
 
-      // Check for technical areas (code, terminal, etc.)
-      const isTech = !!target.closest("pre") || !!target.closest("code") || !!target.closest("[data-technical='true']");
-      setIsTechnicalArea(isTech);
+      setIsPointer((prev) => (prev === isClickable ? prev : isClickable));
 
-      // Check for flashlight sections
-      const isFlashlight = !!target.closest("[data-flashlight='true']") && !target.closest("header");
-      setIsOverFlashlightSection(isFlashlight);
+      const isTech =
+        Boolean(target.closest("pre")) ||
+        Boolean(target.closest("code")) ||
+        Boolean(target.closest("[data-technical='true']"));
+      setIsTechnicalArea((prev) => (prev === isTech ? prev : isTech));
 
-      // Magnetic effect logic
-      const magneticElement = target.closest("[data-magnetic='true']");
+      const isFlashlight = Boolean(target.closest("[data-flashlight='true']")) && !target.closest("header");
+      setIsOverFlashlightSection((prev) => (prev === isFlashlight ? prev : isFlashlight));
+
+      const magneticElement = target.closest<HTMLElement>("[data-magnetic='true']");
       if (magneticElement) {
         const rect = magneticElement.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
         const centerY = rect.top + rect.height / 2;
-        const distance = Math.hypot(e.clientX - centerX, e.clientY - centerY);
-        
+        const distance = Math.hypot(clientX - centerX, clientY - centerY);
+
         if (distance < 60) {
-          setIsMagnetic(true);
-          setMagneticPos({ x: centerX, y: centerY });
+          setIsMagnetic((prev) => (prev ? prev : true));
+          setMagneticPos((prev) => (prev.x === centerX && prev.y === centerY ? prev : { x: centerX, y: centerY }));
           return;
         }
       }
-      setIsMagnetic(false);
+
+      setIsMagnetic((prev) => (prev ? false : prev));
     };
 
-    const handleMouseDown = () => setIsClicking(true);
-    const handleMouseUp = () => setIsClicking(false);
-    const handleMouseLeave = () => setIsVisible(false);
-    const handleMouseEnter = () => setIsVisible(true);
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!enabled) return;
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
 
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mousedown", handleMouseDown);
-    window.addEventListener("mouseup", handleMouseUp);
-    document.addEventListener("mouseleave", handleMouseLeave);
-    document.addEventListener("mouseenter", handleMouseEnter);
+      if (!visibleRef.current) {
+        visibleRef.current = true;
+        setIsVisible(true);
+      }
 
-    return () => {
+      const target = e.target instanceof HTMLElement ? e.target : null;
+      last = { clientX: e.clientX, clientY: e.clientY, target };
+      if (rafId === null) rafId = window.requestAnimationFrame(flush);
+    };
+
+    const enable = () => {
+      if (enabled) return;
+      enabled = true;
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mousedown", handleMouseDown);
+      window.addEventListener("mouseup", handleMouseUp);
+      document.addEventListener("mouseleave", handleMouseLeave);
+      document.addEventListener("mouseenter", handleMouseEnter);
+    };
+
+    const disable = () => {
+      if (!enabled) return;
+      enabled = false;
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mousedown", handleMouseDown);
       window.removeEventListener("mouseup", handleMouseUp);
       document.removeEventListener("mouseleave", handleMouseLeave);
       document.removeEventListener("mouseenter", handleMouseEnter);
+      if (rafId !== null) window.cancelAnimationFrame(rafId);
+      rafId = null;
+      last = null;
+      visibleRef.current = false;
+      setIsVisible(false);
+      setIsMagnetic(false);
     };
-  }, [mouseX, mouseY, isVisible]);
+
+    const onMediaChange = () => {
+      if (media.matches) enable();
+      else disable();
+    };
+
+    onMediaChange();
+
+    // Safari fallback: matchMedia uses addListener/removeListener
+    if ("addEventListener" in media) {
+      media.addEventListener("change", onMediaChange);
+      return () => {
+        media.removeEventListener("change", onMediaChange);
+        disable();
+      };
+    }
+
+    media.addListener(onMediaChange);
+    return () => {
+      media.removeListener(onMediaChange);
+      disable();
+    };
+  }, [mouseX, mouseY, prefersReducedMotion]);
 
   if (prefersReducedMotion) return null;
 

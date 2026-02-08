@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { cn } from "@/lib/utils";
 import RustCodeBlock from "@/components/rust-code-block";
 
@@ -9,17 +9,21 @@ interface StreamdownProps {
   className?: string;
 }
 
+type StreamPart =
+  | { type: "text"; content: string }
+  | { type: "code"; lang: string; content: string };
+
 /**
  * A visceral, high-performance Markdown-lite renderer.
  * Optimized for streaming and technical descriptors.
  */
 export default function Streamdown({ content, className }: StreamdownProps) {
-  const parts = useMemo(() => {
+  const parts = useMemo<StreamPart[]>(() => {
     if (!content) return [];
 
     // Split by code blocks first
     const regex = new RegExp("```(\\w+)?\\n([\\s\\S]*?)```", "g");
-    const result = [];
+    const result: StreamPart[] = [];
     let lastIndex = 0;
     let match;
 
@@ -67,13 +71,9 @@ export default function Streamdown({ content, className }: StreamdownProps) {
         }
 
         return (
-          <div
-            key={i}
-            className="prose-franken text-slate-300 leading-relaxed font-medium text-lg"
-            dangerouslySetInnerHTML={{
-              __html: parseMarkdown(part.content),
-            }}
-          />
+          <div key={i} className="prose-franken text-slate-300 leading-relaxed font-medium text-lg space-y-6">
+            {renderMarkdownLite(part.content, `stream-${i}`)}
+          </div>
         );
       })}
     </div>
@@ -81,31 +81,225 @@ export default function Streamdown({ content, className }: StreamdownProps) {
 }
 
 /**
- * Simple regex-based markdown parser for the "text" parts
+ * Safe, markdown-lite renderer for "text" parts.
+ *
+ * Goals:
+ * - Avoid `dangerouslySetInnerHTML` (XSS + invalid markup hazards)
+ * - Keep output deterministic (hydration-safe)
+ * - Support a small subset: headings, lists, bold/italic, links, inline code, line breaks
  */
-function parseMarkdown(text: string): string {
-  return text
+function renderMarkdownLite(text: string, keyPrefix: string): React.ReactNode[] {
+  const normalized = text.replace(/\r\n/g, "\n");
+  const lines = normalized.split("\n");
+
+  const blocks: React.ReactNode[] = [];
+  let i = 0;
+  let blockIndex = 0;
+
+  while (i < lines.length) {
+    const raw = lines[i] ?? "";
+    const trimmed = raw.trim();
+
+    if (trimmed === "") {
+      i += 1;
+      continue;
+    }
+
     // Headings
-    .replace(/^### (.*$)/gm, '<h4 class="text-white font-black uppercase tracking-widest mt-8 mb-4 text-sm">$1</h4>')
-    .replace(/^## (.*$)/gm, '<h3 class="text-white font-black tracking-tight mt-10 mb-6 text-2xl">$1</h3>')
-    .replace(/^# (.*$)/gm, '<h2 class="text-white font-black tracking-tighter mt-12 mb-8 text-4xl">$1</h2>')
-    
-    // Bold / Italic
-    .replace(/\*\*\*(.*?)\*\*\*/g, '<strong class="text-white font-black italic">$1</strong>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-black">$1</strong>')
-    .replace(/\*(.*?)\*/g, '<em class="italic text-slate-200">$1</em>')
-    
-    // Links
-    .replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-green-400 hover:text-green-300 transition-colors underline decoration-green-500/30 underline-offset-4 font-bold">$1</a>')
-    
-    // Inline Code
-    .replace(/`(.*?)`/g, '<code class="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 font-mono text-sm text-green-300">$1</code>')
-    
-    // Lists
-    .replace(/^\s*-\s+(.*$)/gm, '<li class="flex gap-3 mb-2"><span class="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"></span><span>$1</span></li>')
-    .replace(/((?:<li[\s\S]*?<\/li>\s*)+)/g, '<ul class="my-6 space-y-2">$1</ul>')
-    
-    // Newlines to breaks
-    .replace(/\n\n/g, '</div><div class="mt-6">')
-    .replace(/\n/g, "<br />");
+    if (trimmed.startsWith("### ")) {
+      blocks.push(
+        <h4
+          key={`${keyPrefix}-h4-${blockIndex}`}
+          className="text-white font-black uppercase tracking-widest text-sm"
+        >
+          {renderInline(trimmed.slice(4), `${keyPrefix}-h4-${blockIndex}`)}
+        </h4>
+      );
+      i += 1;
+      blockIndex += 1;
+      continue;
+    }
+    if (trimmed.startsWith("## ")) {
+      blocks.push(
+        <h3
+          key={`${keyPrefix}-h3-${blockIndex}`}
+          className="text-white font-black tracking-tight text-2xl"
+        >
+          {renderInline(trimmed.slice(3), `${keyPrefix}-h3-${blockIndex}`)}
+        </h3>
+      );
+      i += 1;
+      blockIndex += 1;
+      continue;
+    }
+    if (trimmed.startsWith("# ")) {
+      blocks.push(
+        <h2
+          key={`${keyPrefix}-h2-${blockIndex}`}
+          className="text-white font-black tracking-tighter text-4xl"
+        >
+          {renderInline(trimmed.slice(2), `${keyPrefix}-h2-${blockIndex}`)}
+        </h2>
+      );
+      i += 1;
+      blockIndex += 1;
+      continue;
+    }
+
+    // Unordered list (- item)
+    if (/^\s*-\s+/.test(raw)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\s*-\s+/.test(lines[i] ?? "")) {
+        items.push((lines[i] ?? "").replace(/^\s*-\s+/, ""));
+        i += 1;
+      }
+
+      blocks.push(
+        <ul key={`${keyPrefix}-ul-${blockIndex}`} className="space-y-2">
+          {items.map((item, idx) => (
+            <li key={`${keyPrefix}-ul-${blockIndex}-li-${idx}`} className="flex gap-3">
+              <span
+                className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]"
+                aria-hidden="true"
+              />
+              <span>{renderInline(item, `${keyPrefix}-ul-${blockIndex}-li-${idx}`)}</span>
+            </li>
+          ))}
+        </ul>
+      );
+
+      blockIndex += 1;
+      continue;
+    }
+
+    // Paragraph (until blank line)
+    const paragraphLines: string[] = [];
+    while (i < lines.length) {
+      const line = lines[i] ?? "";
+      if (line.trim() === "") break;
+      // Stop paragraph if next line begins a new block type
+      if (line.trim().startsWith("# ") || line.trim().startsWith("## ") || line.trim().startsWith("### ")) break;
+      if (/^\s*-\s+/.test(line)) break;
+
+      paragraphLines.push(line);
+      i += 1;
+    }
+
+    blocks.push(
+      <p key={`${keyPrefix}-p-${blockIndex}`} className="text-slate-300">
+        {paragraphLines.map((line, lineIdx) => (
+          <Fragment key={`${keyPrefix}-p-${blockIndex}-ln-${lineIdx}`}>
+            {renderInline(line, `${keyPrefix}-p-${blockIndex}-ln-${lineIdx}`)}
+            {lineIdx < paragraphLines.length - 1 ? <br /> : null}
+          </Fragment>
+        ))}
+      </p>
+    );
+
+    blockIndex += 1;
+
+    // Consume the blank line after a paragraph, if present
+    while (i < lines.length && (lines[i] ?? "").trim() === "") i += 1;
+  }
+
+  return blocks;
+}
+
+function renderInline(text: string, keyPrefix: string) {
+  const nodes = tokenizeInline(text);
+  return (
+    <>
+      {nodes.map((node, i) => (
+        <Fragment key={`${keyPrefix}-${i}`}>{node}</Fragment>
+      ))}
+    </>
+  );
+}
+
+function sanitizeHref(rawHref: string): { href: string; isExternal: boolean } | null {
+  const href = rawHref.trim();
+  if (!href) return null;
+
+  // Allow hash + relative links (will resolve within the current origin).
+  if (href.startsWith("#") || href.startsWith("/")) {
+    return { href, isExternal: false };
+  }
+
+  try {
+    const resolved = new URL(href, "https://frankentui.com");
+    const protocol = resolved.protocol.toLowerCase();
+    if (protocol === "http:" || protocol === "https:" || protocol === "mailto:") {
+      const isExternal = href.startsWith("http://") || href.startsWith("https://") || href.startsWith("mailto:");
+      return { href, isExternal };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function tokenizeInline(text: string): React.ReactNode[] {
+  const re =
+    /(`[^`]+?`|\[[^\]]+?\]\([^)]+?\)|\*\*\*[^*]+?\*\*\*|\*\*[^*]+?\*\*|\*[^*]+?\*)/g;
+
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = re.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
+    }
+
+    const token = match[0] ?? "";
+
+    if (token.startsWith("`") && token.endsWith("`")) {
+      nodes.push(
+        <code className="bg-white/5 border border-white/10 rounded px-1.5 py-0.5 font-mono text-sm text-green-300">
+          {token.slice(1, -1)}
+        </code>
+      );
+    } else if (token.startsWith("[") && token.includes("](") && token.endsWith(")")) {
+      const sep = token.indexOf("](");
+      const label = token.slice(1, sep);
+      const hrefRaw = token.slice(sep + 2, -1);
+      const safe = sanitizeHref(hrefRaw);
+
+      if (!safe) {
+        nodes.push(label);
+      } else {
+        nodes.push(
+          <a
+            href={safe.href}
+            target={safe.isExternal ? "_blank" : undefined}
+            rel={safe.isExternal ? "noopener noreferrer" : undefined}
+            className="text-green-400 hover:text-green-300 transition-colors underline decoration-green-500/30 underline-offset-4 font-bold"
+          >
+            {label}
+          </a>
+        );
+      }
+    } else if (token.startsWith("***") && token.endsWith("***")) {
+      const inner = token.slice(3, -3);
+      nodes.push(
+        <strong className="text-white font-black italic">
+          <em>{inner}</em>
+        </strong>
+      );
+    } else if (token.startsWith("**") && token.endsWith("**")) {
+      nodes.push(<strong className="text-white font-black">{token.slice(2, -2)}</strong>);
+    } else if (token.startsWith("*") && token.endsWith("*")) {
+      nodes.push(<em className="italic text-slate-200">{token.slice(1, -1)}</em>);
+    } else {
+      nodes.push(token);
+    }
+
+    lastIndex = re.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
 }
