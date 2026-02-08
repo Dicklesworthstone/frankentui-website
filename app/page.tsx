@@ -122,7 +122,7 @@ export default function HomePage() {
               <BorderBeam />
 
               {/* Auto-playing Rio Recording */}
-              <div className="relative aspect-video bg-black rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+              <div className="relative aspect-[1428/972] bg-black rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                  <video
                   autoPlay
                   muted
