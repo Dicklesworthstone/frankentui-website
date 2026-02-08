@@ -102,37 +102,38 @@ export default function SiteHeader() {
               {navItems.map((item) => {
                 const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onMouseEnter={() => setHoveredItem(item.href)}
-                    onMouseLeave={() => setHoveredItem(null)}
-                    aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "relative px-4 py-2 text-sm font-bold transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black uppercase tracking-wide",
-                      active ? "text-green-400" : "text-slate-400 hover:text-white"
-                    )}
-                  >
-                    <AnimatePresence>
-                      {hoveredItem === item.href && (
-                        <motion.div
-                          layoutId="nav-hover"
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          className="absolute inset-0 bg-green-500/10 border border-green-500/20 rounded-full -z-10"
-                          transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                  <Magnetic key={item.href} strength={0.1}>
+                    <Link
+                      href={item.href}
+                      onMouseEnter={() => setHoveredItem(item.href)}
+                      onMouseLeave={() => setHoveredItem(null)}
+                      aria-current={active ? "page" : undefined}
+                      className={cn(
+                        "relative px-4 py-2 text-sm font-bold transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black uppercase tracking-wide",
+                        active ? "text-green-400" : "text-slate-400 hover:text-white"
+                      )}
+                    >
+                      <AnimatePresence>
+                        {hoveredItem === item.href && (
+                          <motion.div
+                            layoutId="nav-hover"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="absolute inset-0 bg-green-500/10 border border-green-500/20 rounded-full -z-10"
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                          />
+                        )}
+                      </AnimatePresence>
+                      {active && !hoveredItem && (
+                        <motion.div 
+                          layoutId="nav-active-dot"
+                          className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" 
                         />
                       )}
-                    </AnimatePresence>
-                    {active && !hoveredItem && (
-                      <motion.div 
-                        layoutId="nav-active-dot"
-                        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" 
-                      />
-                    )}
-                    <span className="relative z-10">{item.label}</span>
-                  </Link>
+                      <span className="relative z-10">{item.label}</span>
+                    </Link>
+                  </Magnetic>
                 );
               })}
             </nav>
