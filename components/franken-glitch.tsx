@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface FrankenGlitchProps {
@@ -17,24 +17,41 @@ export default function FrankenGlitch({
   trigger = "hover",
   intensity = "medium",
 }: FrankenGlitchProps) {
-  const [isGlitching, setIsGlitching] = useState(false);
+  const prefersReducedMotion = useReducedMotion();
+  const [isHovered, setIsHovered] = useState(false);
+  const [isRandomGlitching, setIsRandomGlitching] = useState(false);
+  const randomOffTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (trigger === "always") {
-      setIsGlitching(true);
-      return;
-    }
+    if (prefersReducedMotion) return undefined;
+    if (trigger !== "random") return undefined;
 
-    if (trigger === "random") {
-      const interval = setInterval(() => {
-        if (Math.random() > 0.85) {
-          setIsGlitching(true);
-          setTimeout(() => setIsGlitching(false), 150 + Math.random() * 200);
+    const intervalId = window.setInterval(() => {
+      if (Math.random() > 0.85) {
+        setIsRandomGlitching(true);
+        if (randomOffTimeoutRef.current !== null) {
+          window.clearTimeout(randomOffTimeoutRef.current);
         }
-      }, 3000);
-      return () => clearInterval(interval);
-    }
-  }, [trigger]);
+        randomOffTimeoutRef.current = window.setTimeout(() => {
+          setIsRandomGlitching(false);
+          randomOffTimeoutRef.current = null;
+        }, 150 + Math.random() * 200);
+      }
+    }, 3000);
+
+    return () => {
+      window.clearInterval(intervalId);
+      if (randomOffTimeoutRef.current !== null) {
+        window.clearTimeout(randomOffTimeoutRef.current);
+        randomOffTimeoutRef.current = null;
+      }
+    };
+  }, [trigger, prefersReducedMotion]);
+
+  const isGlitching =
+    !prefersReducedMotion &&
+    (trigger === "always" ||
+      (trigger === "hover" ? isHovered : isRandomGlitching));
 
   const glitchVariants = {
     initial: { x: 0, y: 0, textShadow: "none" },
@@ -61,8 +78,8 @@ export default function FrankenGlitch({
   return (
     <div
       className={cn("relative inline-block will-change-transform", className)}
-      onMouseEnter={() => trigger === "hover" && setIsGlitching(true)}
-      onMouseLeave={() => trigger === "hover" && setIsGlitching(false)}
+      onMouseEnter={() => trigger === "hover" && setIsHovered(true)}
+      onMouseLeave={() => trigger === "hover" && setIsHovered(false)}
       style={{ transform: "translateZ(0)" }}
     >
       <motion.div
@@ -104,4 +121,3 @@ export default function FrankenGlitch({
     </div>
   );
 }
-

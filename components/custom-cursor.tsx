@@ -1,16 +1,29 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
-import { motion, useSpring, useMotionValue, AnimatePresence, useTransform } from "framer-motion";
+import { useEffect, useState, useMemo } from "react";
+import { motion, useSpring, useMotionValue, AnimatePresence, useReducedMotion, type MotionValue } from "framer-motion";
 
-function DataDebris({ x, y }: { x: any; y: any }) {
+function prng(seed: number): number {
+  // Deterministic pseudo-random in [0, 1). Avoids Math.random during render (React purity).
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function DataDebris({ x, y }: { x: MotionValue<number>; y: MotionValue<number> }) {
   const particles = useMemo(() => {
     return Array.from({ length: 5 }).map((_, i) => ({
       id: i,
-      char: Math.random() > 0.5 ? (Math.random() * 16 | 0).toString(16) : Math.random() > 0.5 ? "0" : "1",
-      offsetX: (Math.random() - 0.5) * 40,
-      offsetY: (Math.random() - 0.5) * 40,
-      duration: 1 + Math.random() * 2,
+      char:
+        prng(i * 17.1) > 0.5
+          ? Math.floor(prng(i * 29.3) * 16).toString(16)
+          : prng(i * 43.7) > 0.5
+            ? "0"
+            : "1",
+      offsetX: (prng(i * 59.9) - 0.5) * 40,
+      offsetY: (prng(i * 71.2) - 0.5) * 40,
+      duration: 1 + prng(i * 83.1) * 2,
+      drift1: (prng(i * 97.3) - 0.5) * 20,
+      drift2: (prng(i * 101.9) - 0.5) * 40,
     }));
   }, []);
 
@@ -29,7 +42,7 @@ function DataDebris({ x, y }: { x: any; y: any }) {
           animate={{
             opacity: [0, 1, 0],
             y: [0, -20, -40],
-            x: [0, (Math.random() - 0.5) * 20, (Math.random() - 0.5) * 40],
+            x: [0, p.drift1, p.drift2],
           }}
           transition={{
             duration: p.duration,
@@ -45,6 +58,7 @@ function DataDebris({ x, y }: { x: any; y: any }) {
 }
 
 export default function CustomCursor() {
+  const prefersReducedMotion = useReducedMotion();
   const [isPointer, setIsPointer] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
   const [isClicking, setIsClicking] = useState(false);
@@ -124,6 +138,8 @@ export default function CustomCursor() {
       document.removeEventListener("mouseenter", handleMouseEnter);
     };
   }, [mouseX, mouseY, isVisible]);
+
+  if (prefersReducedMotion) return null;
 
   return (
     <>
