@@ -1,6 +1,22 @@
 "use client";
 
-import { LucideIcon, Zap, Bug, TreeDeciduous, Trash2, ShieldAlert } from "lucide-react";
+import { 
+  LucideIcon, 
+  Zap, 
+  Bug, 
+  TreeDeciduous, 
+  Trash2, 
+  ShieldAlert, 
+  Lock, 
+  Ghost, 
+  MousePointer2, 
+  Infinity, 
+  Search, 
+  Monitor, 
+  LayoutGrid, 
+  Clock, 
+  Minimize2 
+} from "lucide-react";
 import type { WarStory } from "@/lib/content";
 import { FrankenContainer } from "./franken-elements";
 import Streamdown from "./ui/streamdown";
@@ -11,6 +27,15 @@ const icons: Record<string, LucideIcon> = {
   tree: TreeDeciduous,
   trash: Trash2,
   shield: ShieldAlert,
+  lock: Lock,
+  ghost: Ghost,
+  cursor: MousePointer2,
+  infinity: Infinity,
+  search: Search,
+  monitor: Monitor,
+  layout: LayoutGrid,
+  clock: Clock,
+  minimize: Minimize2,
 };
 
 import FrankenGlitch from "./franken-glitch";

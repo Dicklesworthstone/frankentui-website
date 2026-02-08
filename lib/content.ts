@@ -1272,14 +1272,6 @@ export const warStoriesExtended: WarStory[] = [
     icon: "shield",
   },
   {
-    title: "Terminal Sync Freeze Safety",
-    subtitle: "Crash during render froze the terminal",
-    description: "If an application panicked mid-render while the terminal was in DEC 2026 synchronized output mode, the terminal would remain frozen — requiring a manual `reset` command.",
-    technicalDetails: "TerminalSession::cleanup (the RAII Drop impl) did not emit SYNC_END. The panic hook had this safety, but the destructor did not. Fixed by adding stdout.write_all(SYNC_END) to cleanup, guaranteeing unfreeze on every exit path.",
-    impact: "Terminal never left frozen regardless of crash timing.",
-    icon: "lock",
-  },
-  {
     title: "Shakespeare Search: 100K Allocations",
     subtitle: "O(N) allocs per keystroke",
     description: "The Shakespeare text search allocated a new String (via to_ascii_lowercase) for every line in a 100K+ line document on every keystroke, causing severe input lag during search.",
