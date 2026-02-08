@@ -51,9 +51,9 @@ export default function GettingStartedPage() {
             
             <FrankenGlitch trigger="random" intensity="low">
               <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 leading-none">
-                <DecodingText text="Get" delay={0.2} /> <br />
+                Get <br />
                 <span className="text-animate-green">
-                  <DecodingText text="Started." delay={0.6} />
+                  Started.
                 </span>
               </h1>
             </FrankenGlitch>

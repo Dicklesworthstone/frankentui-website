@@ -62,9 +62,9 @@ export default function HowItWasBuiltPage() {
             
             <FrankenGlitch trigger="random" intensity="low">
               <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-                <DecodingText text="Built in" delay={0.2} /> <br />
+                Built in <br />
                 <span className="text-animate-green">
-                  <DecodingText text="5 Days." delay={0.6} />
+                  5 Days.
                 </span>
               </h1>
             </FrankenGlitch>

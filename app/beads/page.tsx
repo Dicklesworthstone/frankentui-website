@@ -51,9 +51,9 @@ export default function BeadsPage() {
             </motion.div>
 
             <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              <DecodingText text="Project" delay={0.2} /> <br />
+              Project <br />
               <span className="text-animate-green">
-                <DecodingText text="Graph." delay={0.6} />
+                Graph.
               </span>
             </h1>
 

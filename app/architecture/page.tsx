@@ -112,9 +112,9 @@ export default function ArchitecturePage() {
             
             <FrankenGlitch trigger="random" intensity="low">
               <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 text-left">
-                <DecodingText text="Inside the" delay={0.2} /> <br />
+                Inside the <br />
                 <span className="text-animate-green">
-                  <DecodingText text="Machine." delay={0.6} />
+                  Machine.
                 </span>
               </h1>
             </FrankenGlitch>

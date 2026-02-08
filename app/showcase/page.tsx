@@ -35,9 +35,9 @@ export default function ShowcasePage() {
             
             <FrankenGlitch trigger="random" intensity="low">
               <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-                <DecodingText text="The" delay={0.2} /> <br />
+                The <br />
                 <span className="text-animate-green">
-                  <DecodingText text="Showcase." delay={0.6} />
+                  Showcase.
                 </span>
               </h1>
             </FrankenGlitch>
