@@ -77,9 +77,9 @@ export default function WarStoriesMap() {
       </div>
 
       {/* Detail Overlay */}
-      <AnimatePresence>
-        {selectedId && (
-          <Portal>
+      <Portal>
+        <AnimatePresence>
+          {selectedId && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -106,9 +106,9 @@ export default function WarStoriesMap() {
                 </button>
               </motion.div>
             </motion.div>
-          </Portal>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
+      </Portal>
 
 
       {/* Map Labels */}

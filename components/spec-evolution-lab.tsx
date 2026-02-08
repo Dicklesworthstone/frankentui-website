@@ -1054,7 +1054,7 @@ export default function SpecEvolutionLab() {
   return (
     <main
       id="main-content"
-      className="min-h-screen pt-20 bg-[#020408] text-slate-100 selection:bg-green-500/30 overflow-x-hidden relative"
+      className="min-h-screen pt-24 bg-[#020408] text-slate-100 selection:bg-green-500/30 overflow-x-hidden relative"
     >
       {/* Cinematic Background Infrastructure */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
