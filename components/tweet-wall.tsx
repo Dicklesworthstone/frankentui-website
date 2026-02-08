@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { Tweet as ReactTweet } from "react-tweet";
-import { ArrowRight, MessageSquare, Heart, Repeat2, Eye, Bookmark, Zap } from "lucide-react";
+import { ArrowRight, MessageSquare, Heart, Repeat2, Eye, Zap } from "lucide-react";
 import type { Tweet } from "@/lib/content";
 import { FrankenBolt, FrankenStitch } from "./franken-elements";
 import { BorderBeam } from "./motion-wrapper";
@@ -22,28 +22,27 @@ function FallbackContent({ tweet }: { tweet: Tweet }) {
           <Zap className="h-4 w-4" />
         </div>
         <div className="flex flex-col">
-          <p className="text-sm font-black text-white leading-tight">{tweet.author}</p>
-          <p className="text-[10px] font-bold text-green-500/50">{tweet.handle}</p>
+          <p className="text-[15px] font-bold text-white leading-tight tracking-tight">{tweet.author}</p>
+          <p className="text-xs font-bold text-green-500/60 mt-0.5">{tweet.handle}</p>
         </div>
-        <span className="ml-auto text-[10px] font-bold text-slate-600 font-mono">{tweet.date}</span>
+        <span className="ml-auto text-[10px] font-bold text-slate-600 font-mono bg-white/5 px-2 py-1 rounded-md">{tweet.date}</span>
       </div>
 
-      <p className="text-base leading-relaxed text-slate-300 mb-6">{tweet.content}</p>
+      <p className="text-[16px] leading-relaxed text-slate-200 font-medium mb-8 selection:bg-green-500/30">
+        {tweet.content}
+      </p>
 
       {hasMetrics && (
-        <div className="flex items-center gap-5 text-slate-500 text-[11px] font-bold mb-6">
+        <div className="flex items-center gap-6 text-slate-500 text-[12px] font-bold mb-8 border-t border-white/5 pt-6">
           {typeof tweet.replies === "number" && (
-            <span className="flex items-center gap-1.5"><MessageSquare className="h-3.5 w-3.5" />{tweet.replies}</span>
+            <span className="flex items-center gap-2 hover:text-green-400 transition-colors cursor-default"><MessageSquare className="h-4 w-4" />{tweet.replies}</span>
           )}
           {typeof tweet.reposts === "number" && (
-            <span className="flex items-center gap-1.5"><Repeat2 className="h-3.5 w-3.5" />{tweet.reposts}</span>
+            <span className="flex items-center gap-2 hover:text-green-400 transition-colors cursor-default"><Repeat2 className="h-4 w-4" />{tweet.reposts}</span>
           )}
-          <span className="flex items-center gap-1.5"><Heart className="h-3.5 w-3.5" />{tweet.likes}</span>
+          <span className="flex items-center gap-2 hover:text-red-400 transition-colors cursor-default"><Heart className="h-4 w-4" />{tweet.likes}</span>
           {typeof tweet.views === "number" && (
-            <span className="flex items-center gap-1.5"><Eye className="h-3.5 w-3.5" />{(tweet.views / 1000).toFixed(1)}K</span>
-          )}
-          {typeof tweet.bookmarks === "number" && tweet.bookmarks > 0 && (
-            <span className="flex items-center gap-1.5"><Bookmark className="h-3.5 w-3.5" />{tweet.bookmarks}</span>
+            <span className="flex items-center gap-2 hover:text-blue-400 transition-colors cursor-default"><Eye className="h-4 w-4" />{(tweet.views / 1000).toFixed(1)}K</span>
           )}
         </div>
       )}
@@ -53,9 +52,10 @@ function FallbackContent({ tweet }: { tweet: Tweet }) {
           href={tweet.tweetUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-[11px] font-black uppercase tracking-widest text-green-400 hover:text-green-300 transition-colors"
+          className="group/link inline-flex items-center gap-2.5 text-xs font-black uppercase tracking-[0.2em] text-green-500 hover:text-green-400 transition-colors mt-auto"
         >
-          View Source <ArrowRight className="h-3 w-3" />
+          VIEW_ORIGIN_PROTOCOL 
+          <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover/link:translate-x-1" />
         </a>
       )}
     </div>
@@ -74,9 +74,9 @@ function GlassFrankenCard({
   className?: string;
 }) {
   return (
-    <div className={`franken-tweet-card relative rounded-2xl overflow-hidden border border-green-500/10 bg-[rgba(5,18,5,0.6)] backdrop-blur-md shadow-[0_4px_30px_rgba(0,0,0,0.4)] hover:border-green-500/30 hover:shadow-[0_0_40px_rgba(34,197,94,0.15)] transition-all duration-500 hover:-translate-y-1 ${className ?? ""}`}>
+    <div className={`franken-tweet-card relative rounded-2xl overflow-hidden border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl hover:border-green-500/30 transition-all duration-700 hover:shadow-green-500/10 ${className ?? ""}`}>
       {/* Top stitch + bolts */}
-      <FrankenStitch className="absolute top-0 left-1/4 right-1/4 w-1/2 opacity-20 group-hover:opacity-60 transition-opacity duration-500" />
+      <FrankenStitch className="absolute top-0 left-1/4 right-1/4 w-1/2 opacity-10 group-hover:opacity-40 transition-opacity duration-700" />
       <FrankenBolt className="absolute -left-1 -top-1 z-20" />
       <FrankenBolt className="absolute -right-1 -top-1 z-20" />
 
@@ -88,7 +88,7 @@ function GlassFrankenCard({
       )}
 
       {/* Animated border beam — visible on hover */}
-      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-700">
         <BorderBeam />
       </div>
 
@@ -98,8 +98,8 @@ function GlassFrankenCard({
       </div>
 
       {/* Bottom glow seam + stitch */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
-      <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 rotate-180 opacity-20 group-hover:opacity-60 transition-opacity duration-500" />
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
+      <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 rotate-180 opacity-10 group-hover:opacity-40 transition-opacity duration-700" />
     </div>
   );
 }
@@ -109,14 +109,14 @@ function GlassFrankenCard({
 function EmbeddedTweetCard({ tweet, index }: { tweet: Tweet; index: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.97 }}
+      initial={{ opacity: 0, y: 40, scale: 0.98 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: (index % 3) * 0.1, duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
-      viewport={{ once: true }}
-      className="tweet-embed-wrapper group"
+      transition={{ delay: (index % 3) * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, margin: "-100px" }}
+      className="tweet-embed-wrapper group mb-8 break-inside-avoid"
     >
       <GlassFrankenCard>
-        <div data-theme="dark">
+        <div data-theme="dark" className="p-1">
           <ReactTweet
             id={tweet.tweetId!}
             fallback={<FallbackContent tweet={tweet} />}
@@ -132,11 +132,11 @@ function EmbeddedTweetCard({ tweet, index }: { tweet: Tweet; index: number }) {
 function FallbackCard({ tweet, index }: { tweet: Tweet; index: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30, scale: 0.97 }}
+      initial={{ opacity: 0, y: 40, scale: 0.98 }}
       whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      transition={{ delay: (index % 3) * 0.1, duration: 0.5 }}
-      viewport={{ once: true }}
-      className="group"
+      transition={{ delay: (index % 3) * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      viewport={{ once: true, margin: "-100px" }}
+      className="group mb-8 break-inside-avoid"
     >
       <GlassFrankenCard withBottomBolts>
         <FallbackContent tweet={tweet} />
@@ -151,18 +151,18 @@ export default function TweetWall({ tweets }: { tweets: Tweet[] }) {
   return (
     <div className="relative">
       {/* Floating Frankenstein decoration — large screens only */}
-      <div className="absolute -right-4 -top-32 w-64 h-64 opacity-[0.07] pointer-events-none hidden xl:block select-none">
+      <div className="absolute -right-12 -top-40 w-80 h-80 opacity-[0.05] pointer-events-none hidden xl:block select-none">
         <Image
           src="/images/frankentui-alien-artifact.webp"
           alt=""
           fill
-          sizes="256px"
-          className="object-contain rotate-6 blur-[0.5px]"
+          sizes="320px"
+          className="object-contain rotate-12 blur-[1px]"
           aria-hidden="true"
         />
       </div>
 
-      <div className="tweet-wall-grid grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="tweet-wall-columns columns-1 sm:columns-2 lg:columns-3 gap-8">
         {tweets.map((tweet, i) =>
           tweet.tweetId ? (
             <EmbeddedTweetCard key={tweet.tweetId} tweet={tweet} index={i} />

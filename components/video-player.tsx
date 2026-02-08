@@ -32,7 +32,7 @@ export default function VideoPlayer({ video }: { video: Video }) {
           poster={video.poster}
           playsInline
           controls={hasStarted}
-          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.02]"
+          className="w-full h-full object-contain transition-transform duration-1000 group-hover:scale-[1.02]"
           onEnded={() => setHasStarted(false)}
         >
           {video.sources.map((source) => (

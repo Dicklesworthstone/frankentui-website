@@ -70,14 +70,15 @@ code, pre {
    3. Global Effects
    -------------------------------------------------------------------------- */
 
-/* Static noise texture (more efficient than dynamic SVG filter) */
+/* Subtle noise overlay (inline; avoids external requests). */
 body::before {
   content: "";
   position: fixed;
   inset: 0;
   width: 100%;
   height: 100%;
-  background-image: url("https://res.cloudinary.com/dz3vsvuad/image/upload/v1603209355/grain_vqc9ik.png");
+  /* Inline noise to avoid external requests (and 404s) while keeping the grain effect. */
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%27120%27%20height%3D%27120%27%3E%3Cfilter%20id%3D%27n%27%3E%3CfeTurbulence%20type%3D%27fractalNoise%27%20baseFrequency%3D%270.85%27%20numOctaves%3D%272%27%20stitchTiles%3D%27stitch%27%20seed%3D%272%27/%3E%3C/filter%3E%3Crect%20width%3D%27120%27%20height%3D%27120%27%20filter%3D%27url(%23n)%27/%3E%3C/svg%3E");
   opacity: 0.03;
   pointer-events: none;
   z-index: 9999;

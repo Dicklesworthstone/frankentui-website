@@ -118,18 +118,18 @@ export default function HomePage() {
             </div>
 
             <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-            <FrankenContainer withBolts={false} className="relative glass-modern p-2 md:p-0 overflow-hidden shadow-2xl w-full">
+            <FrankenContainer withBolts={false} className="relative glass-modern p-0 overflow-hidden shadow-2xl w-full">
               <BorderBeam />
 
               {/* Auto-playing Rio Recording */}
-              <div className="relative aspect-[1428/972] bg-black rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+              <div className="relative bg-black overflow-hidden">
                  <video
                   autoPlay
                   muted
                   loop
                   playsInline
                   poster="/screenshots/visual_effects_clifford_attractor.webp"
-                  className="absolute inset-0 block w-full h-full object-cover"
+                  className="block w-full h-auto"
                  >
                   <source src="/videos/frankentui-rio-crt.webm" type="video/webm" />
                   <source src="/videos/frankentui-rio-crt.mp4" type="video/mp4" />
@@ -275,7 +275,7 @@ export default function HomePage() {
               <p className="text-xs font-bold uppercase tracking-widest text-green-400/90">
                 From the Author
               </p>
-              <p className="text-[10px] text-slate-600 font-bold mt-0.5">
+              <p className="text-xs text-slate-400 font-bold mt-1 italic leading-relaxed">
                 &ldquo;Hey, it fell off the back of a Spaceship.&rdquo;
               </p>
             </div>
