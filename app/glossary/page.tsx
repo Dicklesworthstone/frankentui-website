@@ -9,6 +9,7 @@ import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
 import DecodingText from "@/components/decoding-text";
 import FrankenGlitch from "@/components/franken-glitch";
+import Streamdown from "@/components/ui/streamdown";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -42,7 +43,9 @@ function TermDetail({ entry }: { entry: JargonTerm }) {
     <div className="space-y-8 text-sm leading-relaxed text-slate-400">
       <div className="space-y-4 text-left">
         <p className="text-2xl md:text-3xl font-black text-white leading-tight tracking-tight">{entry.short}</p>
-        <p className="text-lg font-medium leading-relaxed">{entry.long}</p>
+        <div className="text-lg font-medium leading-relaxed">
+          <Streamdown content={entry.long} />
+        </div>
       </div>
 
       {entry.analogy && (
@@ -230,9 +233,9 @@ export default function GlossaryPage() {
                               {term.term}
                             </h3>
                           </FrankenGlitch>
-                          <p className="text-base font-medium leading-relaxed text-slate-400 group-hover:text-slate-300 transition-colors line-clamp-3 mb-8 flex-1">
-                            {term.short}
-                          </p>
+                          <div className="text-base font-medium leading-relaxed text-slate-400 group-hover:text-slate-300 transition-colors line-clamp-3 mb-8 flex-1">
+                            <Streamdown content={term.short} />
+                          </div>
                           <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-green-500 transition-colors">
                             <span>Inspect Spec</span>
                             <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
