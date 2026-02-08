@@ -61,16 +61,23 @@ function DecisionCard({
   icon: Icon,
   title,
   description,
+  eyebrow,
 }: {
   icon: LucideIcon;
   title: string;
   description: string;
+  eyebrow: string;
 }) {
   return (
     <FrankenContainer withStitches={false} className="group glass-modern h-full p-6 md:p-10 transition-all hover:bg-white/[0.03]">
       <div className="flex flex-col h-full">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/5 border border-green-500/20 text-green-400 mb-8 group-hover:scale-110 transition-transform">
-          <Icon className="h-6 w-6" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/5 border border-green-500/20 text-green-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+            <Icon className="h-6 w-6" />
+          </div>
+          <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] group-hover:text-green-500/40 transition-colors">
+            {eyebrow}
+          </span>
         </div>
         <h3 className="text-2xl font-black text-white mb-4 group-hover:text-green-400 transition-colors">
           {title}
@@ -183,11 +190,16 @@ export default function ArchitecturePage() {
                 {i < pipelineStages.length - 1 && (
                   <div className="hidden md:flex absolute top-1/2 -right-4 lg:-right-6 z-20 items-center justify-center pointer-events-none w-8 lg:w-12">
                     <motion.div
-                      animate={{ x: [0, 20, 0], opacity: [0, 1, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, ease: "linear", delay: i * 0.4 }}
-                      className="h-1 w-1 rounded-full bg-green-400 shadow-[0_0_8px_#4ade80]"
+                      animate={{ 
+                        x: [0, 32, 0], 
+                        opacity: [0, 1, 0],
+                        scale: [1, 1.5, 1],
+                        filter: ["blur(0px)", "blur(2px)", "blur(0px)"]
+                      }}
+                      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: i * 0.4 }}
+                      className="h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_12px_#4ade80,0_0_20px_#22c55e]"
                     />
-                    <ArrowRight className="absolute h-4 w-4 text-green-500/20" />
+                    <ArrowRight className="absolute h-5 w-5 text-green-500/30 group-hover:text-green-400/60 transition-colors duration-500" />
                   </div>
                 )}
               </motion.div>
@@ -283,10 +295,10 @@ export default function ArchitecturePage() {
       >
         <div className="grid gap-6 md:grid-cols-2">
           {[
-            { icon: Lock, title: "One-Writer Rule", desc: "All stdout goes through TerminalWriter. Single serialization point eliminates race conditions." },
-            { icon: Shield, title: "RAII Cleanup", desc: "State restored on drop—even on panic. Your terminal never stays broken." },
-            { icon: Activity, title: "Deterministic", desc: "Identical Model state + terminal size = bit-identical ANSI output. Always." },
-            { icon: Zap, title: "Zero Unsafe", desc: "#![forbid(unsafe_code)] across all core rendering and layout crates." }
+            { icon: Lock, title: "One-Writer Rule", desc: "All stdout goes through TerminalWriter. Single serialization point eliminates race conditions.", eyebrow: "Concurrency_Safety" },
+            { icon: Shield, title: "RAII Cleanup", desc: "State restored on drop—even on panic. Your terminal never stays broken.", eyebrow: "Kernel_Integrity" },
+            { icon: Activity, title: "Deterministic", desc: "Identical Model state + terminal size = bit-identical ANSI output. Always.", eyebrow: "Correctness_Protocol" },
+            { icon: Zap, title: "Zero Unsafe", desc: "#![forbid(unsafe_code)] across all core rendering and layout crates.", eyebrow: "Memory_Security" }
           ].map((item, i) => (
             <motion.div
               key={item.title}
@@ -299,6 +311,7 @@ export default function ArchitecturePage() {
                 icon={item.icon}
                 title={item.title}
                 description={item.desc}
+                eyebrow={item.eyebrow}
               />
             </motion.div>
           ))}
