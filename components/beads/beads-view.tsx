@@ -6,7 +6,6 @@ import { createPortal } from "react-dom";
 import { 
   Binary, 
   Activity, 
-  Cpu, 
   Shield, 
   Zap, 
   Search, 
@@ -26,6 +25,58 @@ import { cn, formatDate } from "@/lib/utils";
 import Script from "next/script";
 import BeadHUD from "@/components/bead-hud";
 import Streamdown from "@/components/ui/streamdown";
+
+// --- Minimal types for the embedded sql.js + force-graph viewer (loaded via <Script>) ---
+type SqlExecResult = { columns: string[]; values: unknown[][] };
+
+type SqlJsDatabase = {
+  exec: (sql: string, params?: unknown[]) => SqlExecResult[];
+};
+
+type SqlJsStatic = {
+  Database: new (data: Uint8Array) => SqlJsDatabase;
+};
+
+type ForceGraphNode = {
+  id: string;
+  title: string;
+  status: string;
+  priority: number;
+  val: number;
+  x?: number;
+  y?: number;
+};
+
+type ForceGraphLink = { source: string; target: string };
+
+interface ForceGraphInstance {
+  graphData: (data: { nodes: ForceGraphNode[]; links: ForceGraphLink[] }) => ForceGraphInstance;
+  nodeColor: (fn: (node: ForceGraphNode) => string) => ForceGraphInstance;
+  nodeLabel: (fn: (node: ForceGraphNode) => string) => ForceGraphInstance;
+  linkColor: (fn: () => string) => ForceGraphInstance;
+  linkDirectionalParticles: (n: number) => ForceGraphInstance;
+  linkDirectionalParticleSpeed: (s: number) => ForceGraphInstance;
+  linkDirectionalParticleColor: (fn: () => string) => ForceGraphInstance;
+  linkDirectionalParticleWidth: (w: number) => ForceGraphInstance;
+  backgroundColor: (c: string) => ForceGraphInstance;
+  width: (w: number) => ForceGraphInstance;
+  height: (h: number) => ForceGraphInstance;
+  nodeCanvasObject: (fn: (node: ForceGraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => void) => ForceGraphInstance;
+  onNodeClick: (fn: (node: ForceGraphNode) => void) => ForceGraphInstance;
+  zoom(): number;
+  zoom(zoom: number, ms?: number): ForceGraphInstance;
+  zoomToFit: (ms: number, padding?: number) => ForceGraphInstance;
+}
+
+type ForceGraphConstructor = () => (el: HTMLElement) => ForceGraphInstance;
+
+declare global {
+  interface Window {
+    initSqlJs?: (config: { locateFile: (file: string) => string }) => Promise<SqlJsStatic>;
+    d3?: unknown;
+    ForceGraph?: ForceGraphConstructor;
+  }
+}
 
 // --- Types ---
 interface Issue {
@@ -64,6 +115,36 @@ const STATUS_COLORS: Record<string, string> = {
 
 // --- Helper Components ---
 
+type StatusStats = Record<string, number> & { total: number };
+
+function asString(value: unknown): string {
+  if (value == null) return "";
+  return typeof value === "string" ? value : String(value);
+}
+
+function asNumber(value: unknown): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function normalizeIssueRow(row: Record<string, unknown>): Issue {
+  return {
+    id: asString(row.id),
+    title: asString(row.title),
+    description: asString(row.description),
+    status: asString(row.status),
+    priority: asNumber(row.priority),
+    issue_type: asString(row.issue_type),
+    assignee: asString(row.assignee),
+    labels: asString(row.labels),
+    created_at: asString(row.created_at),
+    updated_at: asString(row.updated_at),
+    blocks_count: row.blocks_count == null ? undefined : asNumber(row.blocks_count),
+    blocked_by_count: row.blocked_by_count == null ? undefined : asNumber(row.blocked_by_count),
+    triage_score: row.triage_score == null ? undefined : asNumber(row.triage_score),
+  };
+}
+
 function StatusPill({ status }: { status: string }) {
   const color = STATUS_COLORS[status] || THEME.green;
   return (
@@ -82,21 +163,25 @@ function StatusPill({ status }: { status: string }) {
 
 function Portal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-  return mounted ? createPortal(children, document.body) : null;
+  useEffect(() => {
+    const rafId = window.requestAnimationFrame(() => setMounted(true));
+    return () => window.cancelAnimationFrame(rafId);
+  }, []);
+  if (!mounted) return null;
+  return createPortal(children, document.body);
 }
 
 // --- Main Component ---
 
 export default function BeadsView() {
-  const [db, setDb] = useState<any>(null);
+  const [db, setDb] = useState<SqlJsDatabase | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingMessage, setLoadingMessage] = useState("Initializing System...");
   
   // Data State
   const [issues, setIssues] = useState<Issue[]>([]);
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<StatusStats | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   
@@ -105,7 +190,7 @@ export default function BeadsView() {
   const [d3Loaded, setD3Loaded] = useState(false);
   const [forceGraphLoaded, setForceGraphLoaded] = useState(false);
   
-  const graphRef = useRef<any>(null);
+  const graphRef = useRef<ForceGraphInstance | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Reassemble database chunks
@@ -119,11 +204,13 @@ export default function BeadsView() {
       
       const configResp = await fetch("/beads-viewer/beads.sqlite3.config.json");
       if (!configResp.ok) throw new Error("Database configuration not found.");
-      const config = await configResp.json();
+      const config = (await configResp.json()) as { chunk_count?: unknown };
+      const chunkCount = asNumber(config.chunk_count);
+      if (chunkCount <= 0) throw new Error("Invalid database configuration.");
       
-      const chunks = [];
-      for (let i = 0; i < config.chunk_count; i++) {
-        setLoadingMessage(`Downloading Neural Chunk ${i+1}/${config.chunk_count}...`);
+      const chunks: Uint8Array[] = [];
+      for (let i = 0; i < chunkCount; i++) {
+        setLoadingMessage(`Downloading Neural Chunk ${i + 1}/${chunkCount}...`);
         const chunkPath = `/beads-viewer/chunks/${String(i).padStart(5, '0')}.bin`;
         const response = await fetch(chunkPath);
         if (!response.ok) throw new Error(`Neural Chunk ${i} extraction failed.`);
@@ -140,12 +227,10 @@ export default function BeadsView() {
         offset += chunk.length;
       }
 
-      // @ts-ignore
       if (typeof window.initSqlJs !== "function") {
         throw new Error("SQL Engine not found in namespace.");
       }
 
-      // @ts-ignore
       const SQL = await window.initSqlJs({
         locateFile: (file: string) => `/beads-viewer/vendor/${file}`
       });
@@ -153,33 +238,15 @@ export default function BeadsView() {
       const database = new SQL.Database(combined);
       setDb(database);
       setLoading(false);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Failed to load database:", err);
-      setError(err.message || "Unknown system failure.");
+      const message =
+        err instanceof Error ? err.message : (typeof err === "string" ? err : "Unknown system failure.");
+      setError(message);
       setLoadingMessage("CRITICAL_FAILURE: System corruption detected.");
       setLoading(false);
     }
   }, [db]);
-
-  // Handle global variable availability
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      // @ts-ignore
-      if (window.initSqlJs && !sqlLoaded) setSqlLoaded(true);
-      // @ts-ignore
-      if (window.d3 && !d3Loaded) setD3Loaded(true);
-      // @ts-ignore
-      if (window.ForceGraph && !forceGraphLoaded) setForceGraphLoaded(true);
-      
-      // @ts-ignore
-      if (window.initSqlJs && window.d3 && window.ForceGraph) {
-        clearInterval(checkInterval);
-      }
-    }, 100);
-    
-    return () => clearInterval(checkInterval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (sqlLoaded && !db) {
@@ -194,13 +261,17 @@ export default function BeadsView() {
     const fetchInitialData = () => {
       try {
         // Stats
-        const statusCounts = db.exec(`SELECT status, COUNT(*) as count FROM issues GROUP BY status`);
-        const statsObj: any = { total: 0 };
-        if (statusCounts.length) {
-          statusCounts[0].values.forEach((row: any) => {
-            statsObj[row[0]] = row[1];
-            statsObj.total += row[1];
-          });
+        const statusCounts = db.exec(
+          `SELECT status, COUNT(*) as count FROM issues GROUP BY status`
+        );
+        const statsObj: StatusStats = { total: 0 };
+        if (statusCounts.length > 0) {
+          for (const row of statusCounts[0].values) {
+            const status = asString(row[0]);
+            const count = asNumber(row[1]);
+            statsObj[status] = count;
+            statsObj.total += count;
+          }
         }
         setStats(statsObj);
 
@@ -214,12 +285,14 @@ export default function BeadsView() {
           LIMIT 100
         `);
         
-        if (issuesResult.length) {
+        if (issuesResult.length > 0) {
           const columns = issuesResult[0].columns;
-          const rows = issuesResult[0].values.map((row: any) => {
-            const obj: any = {};
-            columns.forEach((col: string, i: number) => obj[col] = row[i]);
-            return obj;
+          const rows: Issue[] = issuesResult[0].values.map((row) => {
+            const obj: Record<string, unknown> = {};
+            columns.forEach((col, i) => {
+              obj[col] = row[i];
+            });
+            return normalizeIssueRow(obj);
           });
           setIssues(rows);
         }
@@ -232,11 +305,11 @@ export default function BeadsView() {
   }, [db]);
 
   const renderGraph = useCallback(() => {
-    // @ts-ignore
-    if (!db || !containerRef.current || !forceGraphLoaded || !d3Loaded || !window.ForceGraph) return;
+    const container = containerRef.current;
+    if (!db || !container || !forceGraphLoaded || !d3Loaded || !window.ForceGraph) return undefined;
 
     try {
-      containerRef.current.innerHTML = "";
+      container.innerHTML = "";
 
       // Fetch graph data
       const nodesRes = db.exec(`SELECT id, title, status, priority FROM issues`);
@@ -244,34 +317,40 @@ export default function BeadsView() {
 
       if (!nodesRes.length) return;
 
-      const nodes = nodesRes[0].values.map((row: any) => ({
-        id: row[0],
-        title: row[1],
-        status: row[2],
-        priority: row[3],
-        val: (5 - row[3]) * 2 + 2
-      }));
+      const nodes: ForceGraphNode[] = nodesRes[0].values.map((row) => {
+        const priority = asNumber(row[3]);
+        return {
+          id: asString(row[0]),
+          title: asString(row[1]),
+          status: asString(row[2]),
+          priority,
+          val: (5 - priority) * 2 + 2,
+        };
+      });
 
-      const links = linksRes[0].values.map((row: any) => ({
-        source: row[0],
-        target: row[1]
-      }));
+      const links: ForceGraphLink[] = linksRes.length
+        ? linksRes[0].values.map((row) => ({
+            source: asString(row[0]),
+            target: asString(row[1]),
+          }))
+        : [];
 
-      // @ts-ignore
-      const Graph = window.ForceGraph()(containerRef.current)
+      const Graph = window.ForceGraph()(container)
         .graphData({ nodes, links })
-        .nodeColor((node: any) => STATUS_COLORS[node.status] || THEME.green)
-        .nodeLabel((node: any) => `${node.id}: ${node.title}`)
+        .nodeColor((node) => STATUS_COLORS[node.status] || THEME.green)
+        .nodeLabel((node) => `${node.id}: ${node.title}`)
         .linkColor(() => "rgba(34, 197, 94, 0.15)")
         .linkDirectionalParticles(2)
         .linkDirectionalParticleSpeed(0.005)
         .linkDirectionalParticleColor(() => THEME.green)
         .linkDirectionalParticleWidth(2)
         .backgroundColor("rgba(0,0,0,0)")
-        .width(containerRef.current.clientWidth)
-        .height(containerRef.current.clientHeight || 650)
-        .nodeCanvasObject((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+        .width(container.clientWidth)
+        .height(container.clientHeight || 650)
+        .nodeCanvasObject((node, ctx: CanvasRenderingContext2D, globalScale: number) => {
           const size = (5 - node.priority) * 1.5 + 3;
+          const x = typeof node.x === "number" ? node.x : 0;
+          const y = typeof node.y === "number" ? node.y : 0;
           
           ctx.save();
           // Glow effect
@@ -279,7 +358,7 @@ export default function BeadsView() {
           ctx.shadowBlur = 15 / globalScale;
           
           ctx.beginPath(); 
-          ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false); 
+          ctx.arc(x, y, size, 0, 2 * Math.PI, false); 
           ctx.fillStyle = STATUS_COLORS[node.status] || THEME.green;
           ctx.fill();
           
@@ -292,11 +371,11 @@ export default function BeadsView() {
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillStyle = "rgba(255,255,255,0.8)";
-            ctx.fillText(label, node.x, node.y + size + (5 / globalScale));
+            ctx.fillText(label, x, y + size + (5 / globalScale));
           }
           ctx.restore();
         })
-        .onNodeClick((node: any) => {
+        .onNodeClick((node) => {
           try {
             const result = db.exec(`
               SELECT i.*, 
@@ -308,9 +387,11 @@ export default function BeadsView() {
             if (result && result.length > 0 && result[0].values.length > 0) {
               const columns = result[0].columns;
               const row = result[0].values[0];
-              const obj: any = {};
-              columns.forEach((col: string, i: number) => obj[col] = row[i]);
-              setSelectedIssue(obj);
+              const obj: Record<string, unknown> = {};
+              columns.forEach((col, i) => {
+                obj[col] = row[i];
+              });
+              setSelectedIssue(normalizeIssueRow(obj));
             }
           } catch (err) {
             console.error("Failed to fetch issue details:", err);
@@ -320,23 +401,38 @@ export default function BeadsView() {
       graphRef.current = Graph;
 
       const resizeObserver = new ResizeObserver(() => {
-        if (containerRef.current && Graph) {
-          Graph.width(containerRef.current.clientWidth);
-          Graph.height(containerRef.current.clientHeight || 650);
+        if (container) {
+          Graph.width(container.clientWidth);
+          Graph.height(container.clientHeight || 650);
         }
       });
-      resizeObserver.observe(containerRef.current);
-      return () => resizeObserver.disconnect();
+      resizeObserver.observe(container);
+
+      return () => {
+        resizeObserver.disconnect();
+        graphRef.current = null;
+        // Best-effort teardown: remove canvas and let GC reclaim the instance.
+        container.innerHTML = "";
+      };
     } catch (err) {
       console.error("Graph render error:", err);
     }
+
+    return undefined;
   }, [db, forceGraphLoaded, d3Loaded]);
 
   useEffect(() => {
-    if (!loading && db && forceGraphLoaded && d3Loaded) {
-      const timer = setTimeout(renderGraph, 500);
-      return () => clearTimeout(timer);
-    }
+    if (loading || !db || !forceGraphLoaded || !d3Loaded) return undefined;
+
+    let cleanup: undefined | (() => void);
+    const timer = window.setTimeout(() => {
+      cleanup = renderGraph();
+    }, 500);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (cleanup) cleanup();
+    };
   }, [loading, db, forceGraphLoaded, d3Loaded, renderGraph]);
 
   const filteredIssues = useMemo(() => {
@@ -404,8 +500,26 @@ export default function BeadsView() {
               <div ref={containerRef} className="w-full h-full min-h-[400px] md:min-h-[650px]" />
               <BeadHUD />
               <div className="absolute top-8 right-8 flex flex-col gap-3 pointer-events-auto">
-                <button onClick={() => graphRef.current?.zoom(graphRef.current.zoom() * 1.5, 400)} className="h-12 w-12 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-slate-400 flex items-center justify-center hover:bg-green-500 hover:text-black hover:border-green-400 transition-all shadow-2xl group"><Maximize2 className="h-5 w-5 group-hover:scale-110 transition-transform" /></button>
-                <button onClick={() => graphRef.current?.zoomToFit(600, 80)} className="h-12 w-12 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-slate-400 flex items-center justify-center hover:bg-green-500 hover:text-black hover:border-green-400 transition-all shadow-2xl group"><Network className="h-5 w-5 group-hover:rotate-180 transition-transform duration-700" /></button>
+                <button
+                  onClick={() => {
+                    const g = graphRef.current;
+                    if (!g) return;
+                    g.zoom(g.zoom() * 1.5, 400);
+                  }}
+                  className="h-12 w-12 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-slate-400 flex items-center justify-center hover:bg-green-500 hover:text-black hover:border-green-400 transition-all shadow-2xl group"
+                >
+                  <Maximize2 className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                </button>
+                <button
+                  onClick={() => {
+                    const g = graphRef.current;
+                    if (!g) return;
+                    g.zoomToFit(600, 80);
+                  }}
+                  className="h-12 w-12 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-slate-400 flex items-center justify-center hover:bg-green-500 hover:text-black hover:border-green-400 transition-all shadow-2xl group"
+                >
+                  <Network className="h-5 w-5 group-hover:rotate-180 transition-transform duration-700" />
+                </button>
               </div>
               <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-8 px-8 py-4 rounded-full bg-black/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] scale-75 md:scale-100">
                 {Object.entries(STATUS_COLORS).map(([status, color]) => (
