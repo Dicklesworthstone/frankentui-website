@@ -204,7 +204,7 @@ export function FrankenContainer({
 }) {
   return (
     <div className={cn("relative group/container rounded-2xl border border-white/5 bg-black/20", className)}>
-      {withPulse && <NeuralPulse className="opacity-0 group-hover/container:opacity-100 transition-opacity duration-500" />}
+      {withPulse && <NeuralPulse className="opacity-0 group-hover/container:opacity-100 transition-opacity duration-500 z-0" />}
       
       {withBolts && (
         <>
@@ -217,12 +217,15 @@ export function FrankenContainer({
 
       {withStitches && (
         <>
-          <FrankenStitch className="absolute top-0 left-1/4 right-1/4 w-1/2 group-hover/container:opacity-100" />
-          <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 rotate-180 group-hover/container:opacity-100" />
+          <FrankenStitch className="absolute top-0 left-1/4 right-1/4 w-1/2 group-hover/container:opacity-100 z-10" />
+          <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 rotate-180 group-hover/container:opacity-100 z-10" />
         </>
       )}
 
-      {children}
+      <div className="relative z-20 h-full w-full">
+        {children}
+      </div>
     </div>
   );
 }
+
