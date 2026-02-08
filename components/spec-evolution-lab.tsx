@@ -32,6 +32,13 @@ import {
   type PerFileContribution,
 } from "@/lib/spec-evolution-compare";
 import { LRUCache } from "@/lib/lru-cache";
+import {
+  CorpusIndex,
+  searchSingleCommit,
+  type SearchHit,
+  type SearchScope,
+  type IndexProgress,
+} from "@/lib/spec-evolution-search";
 
 type BucketKey = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 type BucketMode = "day" | "hour" | "15m" | "5m";
@@ -130,6 +137,7 @@ function clampInt(n: number, lo: number, hi: number) {
 const markdownHtmlCache = new LRUCache<string>(16);
 const patchParseCache = new LRUCache<PatchFile[]>(32);
 const snapshotMdCache = new LRUCache<string>(32);
+const corpusIndex = new CorpusIndex();
 
 type PerfEntry = { label: string; ms: number; ts: number };
 const perfLog: PerfEntry[] = [];
@@ -833,6 +841,13 @@ export default function SpecEvolutionLab() {
 
   const [distanceOut, setDistanceOut] = useState<string>("");
 
+  // Full-text search state
+  const [searchScope, setSearchScope] = useState<SearchScope>("thisCommit");
+  const [searchResults, setSearchResults] = useState<SearchHit[]>([]);
+  const [indexProgress, setIndexProgress] = useState<IndexProgress>({ indexed: 0, total: 0, done: false });
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchResultsRef = useRef<HTMLDivElement | null>(null);
+
   const legendDialogRef = useRef<HTMLDialogElement | null>(null);
   const bucketInfoDialogRef = useRef<HTMLDialogElement | null>(null);
   const controlsDialogRef = useRef<HTMLDialogElement | null>(null);
@@ -931,7 +946,76 @@ export default function SpecEvolutionLab() {
     });
   }, [bucketFilter, commits, searchQuery, showReviewedOnly]);
 
+  // Incremental corpus indexing for all-commits search
+  useEffect(() => {
+    if (commits.length === 0) return;
+    corpusIndex.init(commits.map((c) => ({
+      idx: c.idx,
+      short: c.short,
+      date: c.date,
+      subject: c.subject || "",
+      files: c.files,
+    })));
+    setIndexProgress(corpusIndex.progress);
+
+    const BATCH_SIZE = 3;
+    let cancelled = false;
+
+    function indexNextBatch() {
+      if (cancelled || corpusIndex.done) return;
+      const hasMore = corpusIndex.indexBatch(BATCH_SIZE);
+      setIndexProgress({ ...corpusIndex.progress });
+      if (hasMore) {
+        if ("requestIdleCallback" in window) {
+          (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(indexNextBatch);
+        } else {
+          setTimeout(indexNextBatch, 16);
+        }
+      }
+    }
+
+    if ("requestIdleCallback" in window) {
+      (window as unknown as { requestIdleCallback: (cb: () => void) => void }).requestIdleCallback(indexNextBatch);
+    } else {
+      setTimeout(indexNextBatch, 16);
+    }
+
+    return () => { cancelled = true; };
+  }, [commits]);
+
   const selectedCommit = commits[selectedIndex];
+
+  // Execute search when query, scope, or selected commit changes
+  useEffect(() => {
+    const q = searchQuery.trim();
+    if (!q || q.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    if (searchScope === "thisCommit") {
+      if (!selectedCommit) {
+        setSearchResults([]);
+        return;
+      }
+      const hits = perfTime("searchSingleCommit", () =>
+        searchSingleCommit({
+          idx: selectedCommit.idx,
+          short: selectedCommit.short,
+          date: selectedCommit.date,
+          subject: selectedCommit.subject || "",
+          files: selectedCommit.files,
+        }, q, 50)
+      );
+      setSearchResults(hits);
+      setShowSearchResults(hits.length > 0);
+    } else {
+      const hits = perfTime("corpusSearch", () => corpusIndex.search(q, 100));
+      setSearchResults(hits);
+      setShowSearchResults(hits.length > 0);
+    }
+  }, [searchQuery, searchScope, selectedCommit, indexProgress.done]);
   const compareBaseCommit = compareBaseIndex !== null ? commits[compareBaseIndex] : null;
 
   useEffect(() => {
@@ -1120,6 +1204,13 @@ export default function SpecEvolutionLab() {
     setDistanceOut("");
   }, [commits.length]);
 
+  const handleSearchResultClick = useCallback((hit: SearchHit) => {
+    selectCommit(hit.commitIdx);
+    if (hit.filePath) setFileChoice(hit.filePath);
+    setActiveTab("snapshot");
+    setShowSearchResults(false);
+  }, [selectCommit]);
+
   const navigateFiltered = useCallback((direction: 1 | -1) => {
     if (filteredCommits.length === 0) return;
     
@@ -1189,6 +1280,10 @@ export default function SpecEvolutionLab() {
         return;
       }
       if (e.key === "Escape") {
+        if (showSearchResults) {
+          setShowSearchResults(false);
+          return;
+        }
         [legendDialogRef, bucketInfoDialogRef, controlsDialogRef, commitsDialogRef, helpDialogRef].forEach((r) => {
           if (r.current?.open) r.current.close();
         });
@@ -1201,7 +1296,7 @@ export default function SpecEvolutionLab() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [navigateFiltered]);
+  }, [navigateFiltered, showSearchResults]);
 
   if (loadError) {
     return (
@@ -1309,7 +1404,7 @@ export default function SpecEvolutionLab() {
             </div>
 
             <div className="hidden xl:flex items-center gap-4">
-              <div className="relative group">
+              <div className="relative group" data-testid="search-container">
                 <div className="absolute -inset-0.5 bg-green-500/20 rounded-full blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
                 <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500 group-focus-within:text-green-400 transition-colors z-10" />
                 <input
@@ -1317,9 +1412,75 @@ export default function SpecEvolutionLab() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="SCRUB_ARCHIVE_DATA..."
-                  className="relative w-[320px] rounded-full border border-white/10 bg-black/40 pl-10 pr-4 py-2.5 text-[11px] font-bold tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:border-green-500/40 transition-all z-10"
+                  onFocus={() => { if (searchResults.length > 0) setShowSearchResults(true); }}
+                  placeholder={searchScope === "allCommits" ? "SEARCH_ALL_NODES..." : "SEARCH_THIS_NODE..."}
+                  className="relative w-[320px] rounded-full border border-white/10 bg-black/40 pl-10 pr-24 py-2.5 text-[11px] font-bold tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:border-green-500/40 transition-all z-10"
                 />
+                {/* Scope toggle inside search bar */}
+                <button
+                  type="button"
+                  data-testid="search-scope-toggle"
+                  onClick={() => setSearchScope((s) => s === "thisCommit" ? "allCommits" : "thisCommit")}
+                  className={clsx(
+                    "absolute right-2 top-1/2 -translate-y-1/2 z-20 px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-wider transition-all border",
+                    searchScope === "allCommits"
+                      ? "bg-green-500/15 text-green-400 border-green-500/30"
+                      : "bg-white/5 text-slate-500 border-white/10 hover:text-slate-300"
+                  )}
+                >
+                  {searchScope === "allCommits" ? "ALL" : "THIS"}
+                </button>
+
+                {/* Search Results Dropdown */}
+                {showSearchResults && searchResults.length > 0 && (
+                  <div
+                    ref={searchResultsRef}
+                    data-testid="search-results-tray"
+                    className="absolute top-full left-0 right-0 mt-2 rounded-2xl border border-white/10 bg-black/95 backdrop-blur-xl shadow-2xl max-h-[400px] overflow-y-auto z-50"
+                  >
+                    <div className="sticky top-0 flex items-center justify-between px-4 py-2 bg-black/95 border-b border-white/5">
+                      <span className="text-[9px] font-black text-green-400 uppercase tracking-widest">
+                        {searchResults.length} MATCH{searchResults.length !== 1 ? "ES" : ""}
+                        {searchScope === "allCommits" && !indexProgress.done && (
+                          <span className="ml-2 text-slate-600">
+                            (indexing {indexProgress.indexed}/{indexProgress.total})
+                          </span>
+                        )}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowSearchResults(false)}
+                        className="text-slate-500 hover:text-white"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                    {searchResults.slice(0, 50).map((hit, i) => (
+                      <button
+                        key={`${hit.commitIdx}-${hit.filePath}-${hit.lineNo}-${i}`}
+                        type="button"
+                        data-testid="search-result-item"
+                        onClick={() => handleSearchResultClick(hit)}
+                        className="w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 transition-colors group"
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="font-mono text-[9px] font-black text-green-500">{hit.commitShort}</span>
+                          <span className="font-mono text-[9px] text-slate-600">{hit.commitDate.split("T")[0]}</span>
+                          <span className="text-[9px] text-slate-700">·</span>
+                          <span className="font-mono text-[9px] text-slate-500 truncate">{hit.filePath}</span>
+                          <span className="text-[9px] text-slate-700">:{hit.lineNo}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono truncate group-hover:text-slate-200">
+                          {hit.snippet.slice(0, hit.matchOffset)}
+                          <span className="text-green-400 bg-green-500/10 px-0.5 rounded font-bold">
+                            {hit.snippet.slice(hit.matchOffset, hit.matchOffset + hit.matchLength)}
+                          </span>
+                          {hit.snippet.slice(hit.matchOffset + hit.matchLength)}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-2 bg-white/[0.03] p-1 rounded-full border border-white/5">
@@ -2659,14 +2820,28 @@ export default function SpecEvolutionLab() {
       >
         <div className="space-y-6">
           <div className="space-y-2">
-            <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">SEARCH_ARCHIVE</div>
+            <div className="flex items-center justify-between px-1">
+              <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">SEARCH_ARCHIVE</div>
+              <button
+                type="button"
+                onClick={() => setSearchScope((s) => s === "thisCommit" ? "allCommits" : "thisCommit")}
+                className={clsx(
+                  "px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-wider transition-all border",
+                  searchScope === "allCommits"
+                    ? "bg-green-500/15 text-green-400 border-green-500/30"
+                    : "bg-white/5 text-slate-500 border-white/10"
+                )}
+              >
+                {searchScope === "allCommits" ? "ALL_NODES" : "THIS_NODE"}
+              </button>
+            </div>
             <div className="relative">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="SEARCH_FORENSIC_DATA..."
+                placeholder={searchScope === "allCommits" ? "SEARCH_ALL_NODES..." : "SEARCH_THIS_NODE..."}
                 className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-4 py-4 text-xs font-bold tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/40"
               />
             </div>
