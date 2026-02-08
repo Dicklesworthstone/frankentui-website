@@ -6,25 +6,37 @@ import { cn } from "@/lib/utils";
 export default function FrankenEye({ className }: { className?: string }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const eyeRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<number | null>(null);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!eyeRef.current) return;
-      const rect = eyeRef.current.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      
-      const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
-      const distance = Math.min(rect.width / 4, Math.hypot(e.clientX - centerX, e.clientY - centerY) / 10);
-      
-      setMousePos({
-        x: Math.cos(angle) * distance,
-        y: Math.sin(angle) * distance,
+      if (frameRef.current) return;
+
+      frameRef.current = requestAnimationFrame(() => {
+        if (!eyeRef.current) {
+          frameRef.current = null;
+          return;
+        }
+        const rect = eyeRef.current.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+        const distance = Math.min(rect.width / 4, Math.hypot(e.clientX - centerX, e.clientY - centerY) / 10);
+        
+        setMousePos({
+          x: Math.cos(angle) * distance,
+          y: Math.sin(angle) * distance,
+        });
+        frameRef.current = null;
       });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    };
   }, []);
 
   return (

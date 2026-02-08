@@ -3,7 +3,6 @@ import Link from "next/link";
 import {
   Github,
   ArrowRight,
-  Sparkles,
   Rocket,
   Package,
 } from "lucide-react";
@@ -18,7 +17,7 @@ import RustCodeBlock from "@/components/rust-code-block";
 import Timeline from "@/components/timeline";
 import TweetWall from "@/components/tweet-wall";
 import FrankenEye from "@/components/franken-eye";
-import { FrankenBolt, FrankenContainer } from "@/components/franken-elements";
+import { FrankenContainer } from "@/components/franken-elements";
 import {
   siteConfig,
   heroStats,
@@ -34,95 +33,96 @@ export default function HomePage() {
   return (
     <main id="main-content">
       {/* ================================================================
-          1. HERO
+          1. LIVING HERO (Stripe-Grade Visuals)
           ================================================================ */}
-      <section className="bg-gradient-franken-hero relative isolate overflow-hidden pb-20 pt-32 md:pb-32 md:pt-44 lg:pt-52">
-        <GlowOrbits />
+      <section className="relative min-h-[90vh] flex items-center justify-center pt-24 pb-20 overflow-hidden text-left">
+        {/* Living Background Layers */}
+        <div className="absolute inset-0 z-0">
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[80px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[100px]" />
+          <GlowOrbits />
+        </div>
 
-        <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          {/* Monster eyes peering from the top corner */}
-          <div className="absolute -top-12 right-12 hidden lg:flex gap-4 opacity-40 hover:opacity-100 transition-opacity">
-            <FrankenEye className="rotate-[-10deg] scale-75 md:scale-100" />
-            <FrankenEye className="rotate-[5deg] scale-90 md:scale-110" />
-          </div>
-
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16">
-            {/* Left column: copy + CTAs */}
-            <div className="max-w-2xl">
-              <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/5 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-green-400">
-                <Sparkles className="h-3.5 w-3.5" />
-                Open Source &middot; MIT License
-              </p>
-
-              <h1
-                className="text-gradient-franken font-bold tracking-tighter"
-                style={{ fontSize: "clamp(3rem, 8vw, 5rem)", lineHeight: 1.05 }}
+        <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8 w-full mt-12 md:mt-0">
+          <div className="grid items-center gap-16 lg:grid-cols-12 lg:gap-8">
+            
+            {/* LEFT: Massive Typography & CTAs */}
+            <div className="lg:col-span-7 flex flex-col items-start text-left">
+              <div
+                className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/30 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.2em] text-green-400 mb-8"
               >
-                FrankenTUI
+                <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-ping" />
+                V0.1.1 Alive on Crates.io
+              </div>
+
+              <h1 className="text-[clamp(3.5rem,10vw,7rem)] font-black tracking-tight leading-[0.85] text-white mb-10">
+                The <span className="text-animate-green">Monster</span> <br /> 
+                Terminal Kernel.
               </h1>
 
-              <p className="mt-4 text-xl font-semibold tracking-tight text-slate-200 md:text-2xl">
-                Terminal UI Kernel for Rust
+              <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mb-12">
+                Stitched together from the finest Rust algorithms and 
+                brought to life with deterministic math. Minimal, high-performance,
+                and architecturally pure.
               </p>
 
-              <p className="mt-6 max-w-xl text-base leading-relaxed text-slate-400 md:text-lg md:leading-relaxed">
-                Stitched together from the finest algorithms and brought to life with deterministic math.
-              </p>
-
-              {/* CTA buttons */}
-              <div className="mt-10 flex flex-wrap items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+                <Link
+                  href="/getting-started"
+                  className="px-10 py-5 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white hover:scale-105 transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
+                >
+                  <Rocket className="h-5 w-5" />
+                  GET STARTED
+                </Link>
                 <a
                   href={siteConfig.github}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="glow-green inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 px-7 py-3.5 text-sm font-bold text-white shadow-lg shadow-green-900/30 transition-all hover:from-green-500 hover:to-emerald-500 hover:shadow-green-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020a02]"
+                  className="px-10 py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-3 active:scale-95"
                 >
                   <Github className="h-5 w-5" />
-                  View on GitHub
+                  VIEW SOURCE
                 </a>
-
-                <Link
-                  href="/getting-started"
-                  className="group inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-7 py-3.5 text-sm font-bold text-slate-200 backdrop-blur-sm transition-all hover:border-green-500/30 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020a02]"
-                >
-                  Get Started
-                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
               </div>
             </div>
 
-            {/* Right column: illustration */}
-            <div className="relative flex items-center justify-center lg:justify-end">
-              <div className="relative w-full max-w-lg lg:max-w-xl group">
-                {/* Bolts for the image frame */}
-                <FrankenBolt className="absolute -left-1.5 -top-1.5 z-20 scale-125 md:scale-150" />
-                <FrankenBolt className="absolute -right-1.5 -top-1.5 z-20 scale-125 md:scale-150" />
-                <FrankenBolt className="absolute -left-1.5 -bottom-1.5 z-20 scale-125 md:scale-150" />
-                <FrankenBolt className="absolute -right-1.5 -bottom-1.5 z-20 scale-125 md:scale-150" />
+            {/* RIGHT: High-Impact Visual */}
+            <div className="hidden lg:flex lg:col-span-5 relative justify-end">
+              {/* Floating Peeking Eye */}
+              <div className="absolute top-[-100px] right-[20%] z-20 animate-bounce transition-all duration-1000">
+                <FrankenEye className="scale-150 rotate-12 drop-shadow-[0_0_20px_rgba(255,255,255,0.2)]" />
+              </div>
 
-                <div
-                  className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-green-500/20 via-emerald-500/10 to-lime-500/20 opacity-60 blur-2xl transition-all group-hover:opacity-80 group-hover:blur-3xl"
-                  aria-hidden="true"
-                />
-                <Image
-                  src="/images/frankentui_illustration.webp"
-                  alt="FrankenTUI illustration showing a terminal UI brought to life"
-                  width={800}
-                  height={600}
-                  className="relative rounded-2xl border border-white/10 shadow-2xl shadow-green-950/40 transition-transform duration-500 group-hover:scale-[1.02]"
-                  priority
-                  sizes="(max-width: 1024px) 100vw, 50vw"
-                />
+              <div className="relative group">
+                <div className="absolute -inset-1 bg-gradient-to-r from-green-500 to-emerald-500 rounded-[2rem] blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
+                <FrankenContainer className="relative glass-modern p-2 overflow-hidden shadow-2xl transition-transform duration-700 hover:scale-[1.02] hover:-rotate-1">
+                  <Image
+                    src="/images/frankentui_illustration.webp"
+                    alt="FrankenTUI Kernel"
+                    width={600}
+                    height={450}
+                    className="rounded-2xl border border-white/10 shadow-2xl"
+                    priority
+                  />
+                </FrankenContainer>
+                
+                {/* Embedded Stats Card */}
+                <div className="absolute -bottom-12 -left-12 glass-modern p-8 rounded-[2rem] border border-green-500/20 shadow-2xl animate-float">
+                  <div className="flex flex-col">
+                    <span className="text-4xl font-black text-green-400 tabular-nums">100h</span>
+                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">Build Time</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-
-          {/* Hero stats */}
-          <div className="mt-20 md:mt-28">
-            <StatsGrid stats={heroStats} />
           </div>
         </div>
       </section>
+
+      {/* Hero stats (Repositioned for flow) */}
+      <div className="max-w-7xl mx-auto px-6 mb-44">
+        <StatsGrid stats={heroStats} />
+      </div>
 
       {/* ================================================================
           1b. TERMINAL DEMO
@@ -232,7 +232,9 @@ export default function HomePage() {
               From the Author
             </p>
           </div>
-          <TweetWall tweets={tweets} limit={4} />
+          <FrankenContainer className="bg-transparent border-none">
+            <TweetWall tweets={tweets} limit={4} />
+          </FrankenContainer>
         </div>
       </SectionShell>
 

@@ -8,7 +8,13 @@ import {
   Github,
   BookOpen,
 } from "lucide-react";
-import { codeExample, dashboardExample, inlineModeExample, faq, siteConfig } from "@/lib/content";
+import {
+  codeExample, dashboardExample, inlineModeExample, faq, siteConfig,
+  widgets, featureFlags, screenModes, troubleshooting, envVars,
+  glyphOverrides, visualFxExample, keybindingExample,
+  type Widget, type FeatureFlag, type ScreenModeRow, type TroubleshootItem, type EnvVar,
+  type GlyphOverride,
+} from "@/lib/content";
 import SectionShell from "@/components/section-shell";
 import RustCodeBlock from "@/components/rust-code-block";
 import CrateGrid from "@/components/crate-grid";
@@ -203,6 +209,215 @@ export default function GettingStartedPage() {
         <div className="space-y-8">
           <RustCodeBlock code={dashboardExample} title="examples/dashboard.rs" />
           <RustCodeBlock code={inlineModeExample} title="examples/inline_progress.rs" />
+        </div>
+      </SectionShell>
+
+      {/* ── Widget Table ──────────────────────────────────── */}
+      <SectionShell
+        id="widgets"
+        icon="blocks"
+        title="Widget Library"
+        kicker="FrankenTUI ships 15+ production-ready widgets. Each is composable, styleable, and tested."
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="py-3 pr-4 text-left font-mono text-xs font-bold uppercase tracking-widest text-green-400">Widget</th>
+                <th className="py-3 pr-4 text-left font-bold text-xs uppercase tracking-widest text-slate-500">Description</th>
+                <th className="py-3 text-left font-bold text-xs uppercase tracking-widest text-slate-500">Key Feature</th>
+              </tr>
+            </thead>
+            <tbody>
+              {widgets.map((w: Widget) => (
+                <tr key={w.name} className="border-b border-white/5 transition-colors hover:bg-green-500/[0.03]">
+                  <td className="py-3 pr-4 font-mono text-sm font-semibold text-white">{w.name}</td>
+                  <td className="py-3 pr-4 text-sm text-slate-400">{w.description}</td>
+                  <td className="py-3 text-sm text-slate-500">{w.keyFeature}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionShell>
+
+      {/* ── Feature Flags ──────────────────────────────────── */}
+      <SectionShell
+        id="feature-flags"
+        icon="package"
+        title="Feature Flags"
+        kicker="Fine-grained control over what gets compiled. Enable only the features you need to minimize binary size and compile time."
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="py-3 pr-4 text-left font-mono text-xs font-bold uppercase tracking-widest text-green-400">Crate</th>
+                <th className="py-3 pr-4 text-left font-mono text-xs font-bold uppercase tracking-widest text-lime-400">Flag</th>
+                <th className="py-3 text-left font-bold text-xs uppercase tracking-widest text-slate-500">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {featureFlags.map((f: FeatureFlag) => (
+                <tr key={`${f.crate}-${f.flag}`} className="border-b border-white/5 transition-colors hover:bg-green-500/[0.03]">
+                  <td className="py-3 pr-4 font-mono text-xs text-slate-500">{f.crate}</td>
+                  <td className="py-3 pr-4 font-mono text-sm font-semibold text-white">{f.flag}</td>
+                  <td className="py-3 text-sm text-slate-400">{f.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionShell>
+
+      {/* ── Screen Modes ───────────────────────────────────── */}
+      <SectionShell
+        id="screen-modes"
+        icon="layers"
+        title="Screen Modes"
+        kicker="Choose Inline for CLI tools that live alongside your shell, or Alternate for full-screen dashboards. Switch at any time without losing state."
+      >
+        <div className="grid gap-6 lg:grid-cols-2 mb-8">
+          <div className="rounded-2xl border border-white/5 bg-black/20 p-6">
+            <h3 className="text-lg font-bold text-green-400 mb-3">Inline Mode</h3>
+            <pre className="font-mono text-xs text-slate-400 leading-relaxed mb-4">{`[prior shell output]
+[log line 1]
+[log line 2]
++----------------------------+
+| Status: Running tool...    |
+| > Command: _               |
++----------------------------+`}</pre>
+            <p className="text-sm text-slate-400 leading-relaxed">Scrollback is preserved. Logs remain visible after exit. UI occupies a fixed-height region anchored to the bottom.</p>
+          </div>
+          <div className="rounded-2xl border border-white/5 bg-black/20 p-6">
+            <h3 className="text-lg font-bold text-emerald-400 mb-3">Alt-Screen Mode</h3>
+            <pre className="font-mono text-xs text-slate-400 leading-relaxed mb-4">{`+----------------------------+
+| Full-screen UI             |
+| (no scrollback)            |
+|                            |
+|                            |
++----------------------------+`}</pre>
+            <p className="text-sm text-slate-400 leading-relaxed">Full-screen clears are safe. Previous screen restores on exit. Classic TUI experience.</p>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="py-3 pr-4 text-left font-bold text-xs uppercase tracking-widest text-slate-500">Feature</th>
+                <th className="py-3 pr-4 text-center font-bold text-xs uppercase tracking-widest text-green-400">Inline</th>
+                <th className="py-3 text-center font-bold text-xs uppercase tracking-widest text-emerald-400">Alt-Screen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {screenModes.map((row: ScreenModeRow) => (
+                <tr key={row.feature} className="border-b border-white/5">
+                  <td className="py-3 pr-4 text-sm text-white">{row.feature}</td>
+                  <td className="py-3 pr-4 text-center text-sm text-slate-400">{row.inline}</td>
+                  <td className="py-3 text-center text-sm text-slate-400">{row.altScreen}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionShell>
+
+      {/* ── Environment Variables ──────────────────────────── */}
+      <SectionShell
+        id="env-vars"
+        icon="terminal"
+        title="Environment Variables"
+        kicker="Configure FrankenTUI's harness and runtime behavior without changing code."
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="py-3 pr-4 text-left font-mono text-xs font-bold uppercase tracking-widest text-green-400">Variable</th>
+                <th className="py-3 pr-4 text-left font-bold text-xs uppercase tracking-widest text-slate-500">Description</th>
+                <th className="py-3 text-left font-mono text-xs font-bold uppercase tracking-widest text-slate-600">Example</th>
+              </tr>
+            </thead>
+            <tbody>
+              {envVars.map((v: EnvVar) => (
+                <tr key={v.name} className="border-b border-white/5 transition-colors hover:bg-green-500/[0.03]">
+                  <td className="py-3 pr-4 font-mono text-xs font-semibold text-white whitespace-nowrap">{v.name}</td>
+                  <td className="py-3 pr-4 text-sm text-slate-400">{v.description}</td>
+                  <td className="py-3 font-mono text-xs text-slate-600">{v.example}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionShell>
+
+      {/* ── Glyph Policy Overrides ─────────────────────────── */}
+      <SectionShell
+        id="glyph-overrides"
+        icon="eye"
+        title="Glyph Policy Overrides"
+        kicker="Force deterministic glyph behavior via environment variables. Useful for CI, accessibility, or terminals with limited Unicode support."
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="pb-3 pr-6 font-bold text-white">Variable</th>
+                <th className="pb-3 pr-6 font-bold text-white">Values</th>
+                <th className="pb-3 font-bold text-white">Description</th>
+              </tr>
+            </thead>
+            <tbody>
+              {glyphOverrides.map((g: GlyphOverride) => (
+                <tr key={g.envVar} className="border-b border-white/5 transition-colors hover:bg-green-500/[0.03]">
+                  <td className="py-3 pr-6 font-mono text-xs font-semibold text-green-400 whitespace-nowrap">{g.envVar}</td>
+                  <td className="py-3 pr-6 font-mono text-xs text-slate-400">{g.values}</td>
+                  <td className="py-3 text-sm text-slate-400">{g.description}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </SectionShell>
+
+      {/* ── Visual Effects Example ──────────────────────────── */}
+      <SectionShell
+        id="visual-fx"
+        icon="sparkles"
+        title="Visual Effects Example"
+        kicker="Layer animated backgrounds behind any widget without modifying the child's rendering logic. Stacked effects, opacity control, and automatic quality degradation."
+      >
+        <RustCodeBlock code={visualFxExample} title="fx_demo.rs" />
+      </SectionShell>
+
+      {/* ── Keybinding Config Example ──────────────────────── */}
+      <SectionShell
+        id="keybinding-config"
+        icon="terminal"
+        title="Keybinding Configuration"
+        kicker="Configure key behavior via runtime config or environment variables. Ctrl+C idle action, Esc sequence detection timing, and multi-key sequence control."
+      >
+        <RustCodeBlock code={keybindingExample} title="keybinding_config.rs" />
+      </SectionShell>
+
+      {/* ── Troubleshooting ────────────────────────────────── */}
+      <SectionShell
+        id="troubleshooting"
+        icon="shield"
+        title="Troubleshooting"
+        kicker="Common issues and how to fix them."
+      >
+        <div className="space-y-4">
+          {troubleshooting.map((item: TroubleshootItem) => (
+            <div key={item.symptom} className="rounded-2xl border border-white/5 bg-black/20 p-6 transition-all hover:border-red-500/10 hover:bg-black/30">
+              <h3 className="text-sm font-bold text-red-400">{item.symptom}</h3>
+              <p className="mt-2 text-xs uppercase tracking-widest text-slate-600">Cause</p>
+              <p className="mt-1 text-sm text-slate-400">{item.cause}</p>
+              <p className="mt-3 text-xs uppercase tracking-widest text-green-400/60">Fix</p>
+              <p className="mt-1 text-sm text-slate-300">{item.fix}</p>
+            </div>
+          ))}
         </div>
       </SectionShell>
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Eye } from "lucide-react";
 import { screenshots, videos } from "@/lib/content";
 import type { Video } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
@@ -15,36 +15,36 @@ export const metadata: Metadata = {
 
 export default function ShowcasePage() {
   return (
-    <main id="main-content" className="relative min-h-screen bg-black">
-      {/* ── Page header ──────────────────────────────────────── */}
-      <header className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-black to-black" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-900/20 via-transparent to-transparent" />
+    <main id="main-content" className="relative min-h-screen bg-black overflow-x-hidden">
+      {/* ── CINEMATIC HEADER ─────────────────────────────────── */}
+      <header className="relative pt-44 pb-20 overflow-hidden border-b border-white/5">
+        <div className="absolute inset-0 z-0">
+           <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-green-500/5 rounded-full blur-[80px]" />
+           <div className="absolute bottom-0 left-[10%] w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[60px]" />
+        </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-36 sm:px-6 md:pb-24 md:pt-44 lg:px-8">
-          {/* Peeking eyes */}
-          <div className="absolute top-24 right-8 hidden md:block opacity-30 hover:opacity-100 transition-opacity">
-            <FrankenEye className="rotate-12 scale-75" />
-          </div>
-
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-px w-6 bg-gradient-to-r from-green-500/80 to-transparent" />
-            <p className="text-xs font-bold uppercase tracking-widest text-green-400/90">
-              Gallery
+        <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="flex flex-col items-start text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+              <Eye className="h-3 w-3" />
+              Visual Gallery
+            </div>
+            
+            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
+              The <br /><span className="text-animate-green">Showcase.</span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+              Explore dashboards, data visualizations, 
+              and complex visual effects rendered entirely 
+              within the terminal grid.
             </p>
           </div>
+        </div>
 
-          <h1
-            className="font-bold tracking-tighter text-white"
-            style={{ fontSize: "clamp(2.25rem, 6vw, 4.5rem)" }}
-          >
-            Showcase
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-400/90 md:text-xl md:leading-relaxed">
-            See FrankenTUI in action. Explore screenshots of every major feature
-            and watch full video demos of the terminal UI framework running in
-            real terminals.
-          </p>
+        {/* Floating Peeking Eye */}
+        <div className="absolute top-48 right-[15%] hidden lg:block opacity-30 hover:opacity-100 transition-opacity">
+          <FrankenEye className="scale-[2] rotate-12" />
         </div>
       </header>
 
@@ -65,7 +65,7 @@ export default function ShowcasePage() {
         title="Video Demos"
         kicker="Watch FrankenTUI running live in real terminal emulators with resize handling, CRT effects, and full interactivity."
       >
-        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
+        <div className="mx-auto max-w-4xl space-y-8">
           {videos.map((video: Video) => (
             <VideoPlayer key={video.title} video={video} />
           ))}

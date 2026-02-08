@@ -5,9 +5,13 @@ import {
   BarChart3,
   Blocks,
   Clock,
+  Cpu,
   Eye,
+  FileText,
   GitCompare,
+  Keyboard,
   Layers,
+  Monitor,
   Package,
   Play,
   Rocket,
@@ -17,6 +21,7 @@ import {
   Terminal,
   Twitter,
   Zap,
+  Activity,
 } from "lucide-react";
 import { useIntersectionObserver } from "@/hooks/use-intersection-observer";
 import { cn } from "@/lib/utils";
@@ -26,9 +31,13 @@ const sectionIcons = {
   barChart3: BarChart3,
   blocks: Blocks,
   clock: Clock,
+  cpu: Cpu,
   eye: Eye,
+  fileText: FileText,
   gitCompare: GitCompare,
+  keyboard: Keyboard,
   layers: Layers,
+  monitor: Monitor,
   package: Package,
   play: Play,
   rocket: Rocket,
@@ -38,6 +47,7 @@ const sectionIcons = {
   terminal: Terminal,
   twitter: Twitter,
   zap: Zap,
+  activity: Activity,
 } as const;
 
 type SectionIcon = keyof typeof sectionIcons;
@@ -69,7 +79,8 @@ export default function SectionShell({
   const prefersReducedMotion = useReducedMotion();
 
   const headingId = id ? `${id}-heading` : undefined;
-  const animateIn = isIntersecting && !prefersReducedMotion;
+  // Important: reduced-motion users must still see content (no "animate-in" gating).
+  const reveal = prefersReducedMotion ? true : isIntersecting;
 
   return (
     <section
@@ -78,82 +89,73 @@ export default function SectionShell({
       id={id}
       aria-labelledby={headingId}
       className={cn(
-        "relative mx-auto max-w-7xl px-4 py-28 sm:px-6 md:py-36 lg:px-8 lg:py-44",
+        "relative mx-auto max-w-7xl px-6 py-24 md:py-40 lg:py-56",
         className
       )}
     >
-      <motion.div
-        initial={false}
-        animate={{
-          opacity: 1,
-          y: animateIn ? 0 : 20
-        }}
-        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10"
-        style={{ opacity: 1 }}
-      >
-        <div className="mb-16 max-w-3xl md:mb-24">
-          {eyebrow && (
-            <div className="mb-6 flex items-center gap-3">
-              <div className="h-px w-6 bg-gradient-to-r from-green-500/80 to-transparent" />
-              <p className="text-xs font-bold uppercase tracking-widest text-green-400/90">
-                {eyebrow}
-              </p>
-            </div>
-          )}
-
-          <div className="flex flex-col gap-6">
-            <div className="flex items-start gap-5 md:items-center">
-              {Icon && (
-                <motion.div
-                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-green-900/60 bg-gradient-to-br from-green-950/80 to-emerald-900/50 text-green-400 shadow-lg shadow-green-900/10 backdrop-blur-sm"
-                  initial={false}
-                  animate={animateIn ? {
-                    boxShadow: "0 0 20px -5px rgba(34, 197, 94, 0.3), 0 10px 15px -3px rgba(0, 0, 0, 0.1)"
-                  } : {
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)"
-                  }}
-                  transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.8, delay: 0.2 }}
-                  aria-hidden="true"
-                >
-                  <Icon className="h-5 w-5" />
-                </motion.div>
-              )}
-              <HeadingTag
-                id={headingId}
-                className="font-bold tracking-tighter text-white"
-                style={{ fontSize: "clamp(1.875rem, 5vw, 3.75rem)" }}
-              >
-                {title}
-              </HeadingTag>
-            </div>
-
-            {kicker && (
-              <p className="max-w-2xl text-lg font-normal leading-relaxed text-slate-400/90 md:ml-1 md:text-xl md:leading-relaxed">
-                {kicker}
-              </p>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-24 items-start">
+        
+        {/* SIDEBAR HEADER (Stripe Style) */}
+        <div className="lg:col-span-4 lg:sticky lg:top-32 space-y-10">
+          <motion.div
+            initial={prefersReducedMotion ? false : { opacity: 0, x: -20 }}
+            animate={reveal ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+          >
+            {eyebrow && (
+              <div className="inline-flex items-center gap-3 mb-8">
+                <div className="h-px w-8 bg-green-500/40" />
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500/80">
+                  {eyebrow}
+                </span>
+              </div>
             )}
+
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/5 border border-green-500/20 text-green-400">
+                  {Icon ? <Icon className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
+                </div>
+                <HeadingTag
+                  id={headingId}
+                  className="text-4xl md:text-5xl font-black tracking-tight text-white leading-tight"
+                >
+                  {title}
+                </HeadingTag>
+              </div>
+
+              {kicker && (
+                <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed">
+                  {kicker}
+                </p>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Decorative monster-tech elements */}
+          <div className="hidden lg:block opacity-20 pointer-events-none">
+             <FrankenStitch orientation="vertical" className="h-32" />
           </div>
         </div>
 
-        <motion.div
-          className="relative"
-          initial={false}
-          animate={{
-            opacity: 1,
-            y: animateIn ? 0 : 12
-          }}
-          transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
-          style={{ opacity: 1 }}
-        >
-          {children}
-        </motion.div>
-      </motion.div>
-
-      {/* Subtle stitched divider at the bottom of the section */}
-      <div className="absolute bottom-0 left-0 right-0 h-12 flex items-center justify-center overflow-hidden opacity-20 pointer-events-none">
-        <FrankenStitch className="w-[120%] -rotate-1 scale-110" color="slate" />
+        {/* CONTENT AREA */}
+        <div className="lg:col-span-8">
+          <motion.div
+            initial={prefersReducedMotion ? false : { opacity: 0, y: 40 }}
+            animate={reveal ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+            transition={
+              prefersReducedMotion
+                ? { duration: 0 }
+                : { duration: 1, ease: [0.19, 1, 0.22, 1], delay: 0.2 }
+            }
+          >
+            {children}
+          </motion.div>
+        </div>
       </div>
+
+      {/* Kinetic Border at Bottom */}
+      <div className="absolute bottom-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-green-500/10 to-transparent" />
     </section>
   );
 }

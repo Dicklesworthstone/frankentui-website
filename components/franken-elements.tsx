@@ -9,7 +9,8 @@ export function FrankenBolt({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "h-3.5 w-3.5 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border border-slate-600/50 shadow-[inset_0_1px_1px_rgba(255,255,255,0.1),0_1px_2px_rgba(0,0,0,0.4)] flex items-center justify-center overflow-hidden",
+        "h-3.5 w-3.5 rounded-full bg-gradient-to-br from-slate-700 via-green-900 to-slate-900 border border-green-800/50 shadow-[inset_0_1px_1px_rgba(34,197,94,0.1),0_1px_2px_rgba(0,0,0,0.4)] flex items-center justify-center overflow-hidden",
+        "group-hover:animate-pulse",
         className
       )}
     >

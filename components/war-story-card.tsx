@@ -16,40 +16,41 @@ export default function WarStoryCard({ story }: { story: WarStory }) {
   const Icon = icons[story.icon] || Bug;
 
   return (
-    <FrankenContainer className="group h-full bg-black/30 transition-all hover:border-red-500/20 hover:bg-black/40">
-      <div className="flex h-full flex-col p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500/10 text-red-400 group-hover:bg-red-500/20 group-hover:scale-110 transition-all">
-            <Icon className="h-5 w-5" />
+    <FrankenContainer withStitches={false} className="group h-full glass-modern transition-all duration-500 hover:bg-white/[0.03] hover:border-red-500/30 hover:-translate-y-1">
+      <div className="flex h-full flex-col p-8 md:p-10 text-left">
+        <div className="mb-8 flex items-center justify-between">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/5 border border-red-500/20 text-red-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
+            <Icon className="h-6 w-6" />
           </div>
-          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 group-hover:text-slate-400">
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-red-500/60 transition-colors">
             Bug Report
           </span>
         </div>
 
-        <h3 className="text-lg font-bold text-white group-hover:text-red-400 transition-colors">
+        <h3 className="text-2xl font-black text-white mb-2 group-hover:text-red-400 transition-colors tracking-tight">
           {story.title}
         </h3>
-        <p className="text-xs font-mono text-red-400/80 mb-3 uppercase tracking-wide">
+        <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-6">
           {story.subtitle}
         </p>
 
-        <p className="text-sm leading-relaxed text-slate-400 group-hover:text-slate-300 transition-colors">
+        <p className="text-base font-medium leading-relaxed text-slate-400 group-hover:text-slate-300 transition-colors mb-10">
           {story.description}
         </p>
 
-        <div className="mt-4 flex-1 rounded-lg bg-red-950/20 border border-red-500/10 px-3 py-3">
-          <p className="text-[10px] font-bold uppercase text-red-400 mb-1">Technical Root Cause</p>
-          <p className="text-xs leading-relaxed text-slate-400/90 font-mono">
-            {story.technicalDetails}
-          </p>
+        <div className="mt-auto relative group/debug">
+          <div className="absolute -inset-2 bg-red-500/5 rounded-xl opacity-0 group-hover/debug:opacity-100 transition-opacity" />
+          <div className="relative rounded-xl bg-black/40 border border-white/5 p-6">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-red-500 mb-3">Root Cause Analysis</p>
+            <p className="text-xs leading-relaxed text-slate-500 font-mono group-hover:text-slate-400 transition-colors">
+              {story.technicalDetails}
+            </p>
+          </div>
         </div>
 
-        <div className="mt-5 flex items-center gap-2">
-          <div className="h-px flex-1 bg-gradient-to-r from-red-500/20 to-transparent" />
-          <p className="text-[10px] font-bold uppercase tracking-wider text-red-400/60">
-            {story.impact}
-          </p>
+        <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
+          <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Resolution Impact</span>
+          <span className="text-[10px] font-bold text-red-500/80 uppercase tracking-tighter">{story.impact}</span>
         </div>
       </div>
     </FrankenContainer>

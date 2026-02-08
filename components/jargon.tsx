@@ -24,13 +24,17 @@ export default function Jargon({ term, children }: JargonProps) {
   return (
     <>
       <button
+        type="button"
         onClick={handleOpen}
         className={cn(
           "relative inline cursor-help border-b border-dashed border-green-500/40 text-green-400",
-          "transition-colors hover:border-green-400 hover:text-green-300"
+          "transition-colors hover:border-green-400 hover:text-green-300",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
         )}
         title={entry.short}
         aria-label={`Learn more about ${entry.term}`}
+        aria-haspopup="dialog"
+        aria-expanded={isOpen}
       >
         {children ?? entry.term}
       </button>

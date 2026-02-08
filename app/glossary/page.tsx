@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import { Search, BookOpen } from "lucide-react";
+import { Search, Binary, ArrowRight, X } from "lucide-react";
+import { motion } from "framer-motion";
 import { getAllJargon, searchJargon, type JargonTerm } from "@/lib/jargon";
 import BottomSheet from "@/components/ui/bottom-sheet";
-import { cn } from "@/lib/utils";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
 
@@ -12,7 +12,6 @@ import { FrankenContainer } from "@/components/franken-elements";
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Group an array of [key, term] entries by the uppercase first letter of the term name. */
 function groupByLetter(
   entries: [string, JargonTerm][]
 ): Map<string, [string, JargonTerm][]> {
@@ -23,7 +22,6 @@ function groupByLetter(
     if (!groups.has(bucket)) groups.set(bucket, []);
     groups.get(bucket)!.push(entry);
   }
-  // Sort keys alphabetically, with "#" (non-alpha) at the end
   return new Map(
     [...groups.entries()].sort(([a], [b]) => {
       if (a === "#") return 1;
@@ -39,38 +37,40 @@ function groupByLetter(
 
 function TermDetail({ entry }: { entry: JargonTerm }) {
   return (
-    <div className="space-y-5 text-sm leading-relaxed text-white/70">
-      <p className="text-base text-white/90">{entry.short}</p>
-      <p>{entry.long}</p>
+    <div className="space-y-8 text-sm leading-relaxed text-slate-400">
+      <div className="space-y-4 text-left">
+        <p className="text-2xl md:text-3xl font-black text-white leading-tight tracking-tight">{entry.short}</p>
+        <p className="text-lg font-medium leading-relaxed">{entry.long}</p>
+      </div>
 
       {entry.analogy && (
-        <div className="rounded-lg border border-green-500/10 bg-green-500/5 p-4">
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-green-400">
-            Analogy
+        <FrankenContainer withBolts={false} className="glass-modern p-8 bg-green-500/5 text-left border-green-500/20">
+          <p className="mb-3 text-[10px] font-black uppercase tracking-[0.3em] text-green-400">
+            Monster Analogy
           </p>
-          <p className="text-white/80">{entry.analogy}</p>
-        </div>
+          <p className="text-slate-200 font-medium leading-relaxed italic text-lg">&ldquo;{entry.analogy}&rdquo;</p>
+        </FrankenContainer>
       )}
 
       {entry.why && (
-        <div className="rounded-lg border border-lime-500/10 bg-lime-500/5 p-4">
-          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-lime-400">
-            Why it matters
+        <div className="space-y-3 text-left">
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+            Technical Rationale
           </p>
-          <p className="text-white/80">{entry.why}</p>
+          <p className="text-slate-300 leading-relaxed font-medium text-base">{entry.why}</p>
         </div>
       )}
 
       {entry.related && entry.related.length > 0 && (
-        <div>
-          <p className="mb-2 text-xs font-bold uppercase tracking-widest text-white/40">
-            Related
+        <div className="pt-8 border-t border-white/5 text-left">
+          <p className="mb-4 text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">
+            Connected Nodes
           </p>
           <div className="flex flex-wrap gap-2">
             {entry.related.map((r) => (
               <span
                 key={r}
-                className="rounded-full bg-white/5 px-3 py-1 font-mono text-xs text-white/50"
+                className="px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]"
               >
                 {r}
               </span>
@@ -88,19 +88,14 @@ function TermDetail({ entry }: { entry: JargonTerm }) {
 
 export default function GlossaryPage() {
   const [query, setQuery] = useState("");
-  const [selectedEntry, setSelectedEntry] = useState<
-    [string, JargonTerm] | null
-  >(null);
+  const [selectedEntry, setSelectedEntry] = useState<[string, JargonTerm] | null>(null);
 
-  // Compute matching entries (all when no query)
   const entries = useMemo(
     () => (query.trim() === "" ? getAllJargon() : searchJargon(query)),
     [query]
   );
 
-  // Group by first letter for alphabet nav
   const grouped = useMemo(() => groupByLetter(entries), [entries]);
-
   const totalCount = useMemo(() => getAllJargon().length, []);
 
   const handleOpen = useCallback((entry: [string, JargonTerm]) => {
@@ -112,152 +107,132 @@ export default function GlossaryPage() {
   }, []);
 
   return (
-    <main id="main-content" className="relative min-h-screen bg-[#020a02]">
-      {/* ------------------------------------------------------------------ */}
-      {/* Background glow */}
-      {/* ------------------------------------------------------------------ */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 overflow-hidden"
-      >
-        <div className="absolute -top-48 left-1/2 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-green-500/[0.04] blur-[120px]" />
-        
-        {/* Peeking eyes */}
-        <div className="absolute top-28 left-1/4 hidden md:block opacity-20 hover:opacity-100 transition-opacity">
-          <FrankenEye className="rotate-[-10deg] scale-75" />
-        </div>
-        <div className="absolute top-44 right-1/4 hidden md:block opacity-10 hover:opacity-100 transition-opacity">
-          <FrankenEye className="rotate-[15deg] scale-90" />
-        </div>
-      </div>
-
-      {/* ------------------------------------------------------------------ */}
-      {/* Header */}
-      {/* ------------------------------------------------------------------ */}
-      <header className="relative mx-auto max-w-7xl px-4 pb-8 pt-28 sm:px-6 md:pt-36 lg:px-8">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="h-px w-6 bg-gradient-to-r from-green-500/80 to-transparent" />
-          <p className="text-xs font-bold uppercase tracking-widest text-green-400/90">
-            Reference
-          </p>
+    <main id="main-content" className="relative min-h-screen bg-black overflow-x-hidden">
+      {/* ── CINEMATIC HEADER ─────────────────────────────────── */}
+      <header className="relative pt-44 pb-20 overflow-hidden border-b border-white/5 text-left">
+        <div className="absolute inset-0 z-0">
+           <div className="absolute top-[-5%] right-[-5%] w-[600px] h-[600px] bg-green-500/5 rounded-full blur-[80px]" />
+           <div className="absolute bottom-0 right-[5%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[60px]" />
         </div>
 
-        <div className="flex items-start gap-5 md:items-center">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-green-900/60 bg-gradient-to-br from-green-950/80 to-emerald-900/50 text-green-400 shadow-lg shadow-green-900/10 backdrop-blur-sm">
-            <BookOpen className="h-5 w-5" />
-          </div>
-          <h1
-            className="font-bold tracking-tighter text-white"
-            style={{ fontSize: "clamp(1.875rem, 5vw, 3.75rem)" }}
+        <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-start"
           >
-            Glossary
-          </h1>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+              <Binary className="h-3 w-3" />
+              Machine Lexicon
+            </div>
+            
+            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
+              The <br /><span className="text-animate-green">Glossary.</span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed text-left">
+              {totalCount}+ technical terms, demystified. 
+              The language of the FrankenTUI kernel.
+            </p>
+          </motion.div>
         </div>
 
-        <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-400/90 md:ml-1 md:text-xl md:leading-relaxed">
-          {totalCount}+ terminal UI terms, demystified. Search by name,
-          keyword, or concept.
-        </p>
+        {/* Floating Peeking Eye */}
+        <div className="absolute top-48 right-[10%] hidden lg:block opacity-40 hover:opacity-100 transition-opacity">
+          <FrankenEye className="scale-150 rotate-12 shadow-2xl" />
+        </div>
       </header>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Search + count */}
-      {/* ------------------------------------------------------------------ */}
-      <div className="sticky top-0 z-30 border-b border-white/5 bg-[#020a02]/80 backdrop-blur-xl">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <div className="relative flex-1">
-            <Search
-              className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/30"
-              aria-hidden
-            />
+      {/* ── SEARCH BAR (High-End Interaction) ────────────────── */}
+      <div className="sticky top-[88px] z-30 py-6 glass-modern border-x-0 border-t-0 shadow-2xl">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="relative group">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-500 group-focus-within:text-green-400 transition-colors" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search terms..."
-              aria-label="Search glossary terms"
-              className={cn(
-                "h-11 w-full rounded-xl border border-white/10 bg-white/[0.03] pl-10 pr-4 text-sm text-white placeholder-white/30 outline-none",
-                "transition-all duration-200",
-                "focus:border-green-500/40 focus:ring-2 focus:ring-green-500/20 focus:bg-white/[0.05]"
-              )}
+              placeholder="Search the machine lexicon..."
+              className="w-full h-16 pl-16 pr-8 bg-white/[0.03] border border-white/5 rounded-2xl text-xl font-medium text-white placeholder-slate-600 outline-none focus:border-green-500/30 focus:bg-white/[0.05] transition-all shadow-inner"
             />
+            {query && (
+              <button 
+                type="button"
+                onClick={() => setQuery("")}
+                aria-label="Clear search"
+                className="absolute right-24 top-1/2 -translate-y-1/2 p-2 text-slate-500 hover:text-white"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+            <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-600">{entries.length} Terms Found</span>
+            </div>
           </div>
-          <span className="shrink-0 font-mono text-xs tabular-nums text-white/30">
-            {entries.length}
-            {entries.length !== totalCount && ` / ${totalCount}`}
-            {entries.length === 1 ? " term" : " terms"}
-          </span>
         </div>
       </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Letter groups + term grid */}
-      {/* ------------------------------------------------------------------ */}
-      <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+      {/* ── ALPHABETICAL GRID ────────────────────────────────── */}
+      <div className="relative mx-auto max-w-7xl px-6 lg:px-8 py-24 text-left">
         {entries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 text-center">
-            <Search className="mb-4 h-10 w-10 text-white/10" aria-hidden />
-            <p className="text-lg font-medium text-white/30">
-              No terms match &ldquo;{query}&rdquo;
-            </p>
-            <p className="mt-1 text-sm text-white/20">
-              Try a different search or browse all terms.
-            </p>
+          <div className="flex flex-col items-center justify-center py-40 text-center opacity-40">
+            <Binary className="h-16 w-16 mb-8 text-green-500 animate-pulse" />
+            <p className="text-2xl font-black text-white uppercase tracking-widest">No Matches Found</p>
           </div>
         ) : (
-          <div className="space-y-14">
+          <div className="space-y-32">
             {[...grouped.entries()].map(([letter, items]) => (
-              <section key={letter} aria-label={`Terms starting with ${letter}`}>
-                {/* Letter header */}
-                <div className="mb-5 flex items-center gap-3">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-green-500/20 bg-green-500/5 font-mono text-sm font-bold text-green-400">
-                    {letter}
-                  </span>
-                  <div className="h-px flex-1 bg-gradient-to-r from-green-500/10 to-transparent" />
-                  <span className="font-mono text-xs text-white/20">
-                    {items.length}
-                  </span>
+              <motion.section 
+                key={letter}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1] }}
+                className="grid lg:grid-cols-12 gap-12"
+              >
+                {/* Letter Header (Sidebar Style) */}
+                <div className="lg:col-span-3">
+                  <div className="sticky top-48">
+                    <div className="flex items-center gap-4">
+                      <span className="text-7xl font-black text-white/10 leading-none select-none tracking-tighter">{letter}</span>
+                      <div className="h-px flex-1 bg-gradient-to-r from-green-500/20 to-transparent" />
+                    </div>
+                    <p className="mt-2 text-[10px] font-black text-green-500 uppercase tracking-[0.4em]">{items.length} Definitions</p>
+                  </div>
                 </div>
 
-                {/* Card grid */}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Term Grid */}
+                <div className="lg:col-span-9 grid gap-4 md:grid-cols-2">
                   {items.map(([key, term]) => (
                     <button
                       key={key}
+                      type="button"
                       onClick={() => handleOpen([key, term])}
-                      className="group relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020a02]"
-                      aria-label={`View details for ${term.term}`}
+                      className="group text-left focus:outline-none"
                     >
-                      <FrankenContainer withStitches={false} className="h-full bg-white/[0.02] p-5 transition-all group-hover:border-green-500/20 group-hover:bg-green-500/[0.04] group-hover:shadow-lg group-hover:shadow-green-900/5">
-                        <div className="flex flex-col h-full items-start gap-2">
-                          <h3 className="font-mono text-sm font-bold text-green-400 transition-colors group-hover:text-green-300">
+                      <FrankenContainer withStitches={false} className="h-full glass-modern p-8 md:p-10 transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-green-500/30 group-hover:-translate-y-1 shadow-lg hover:shadow-green-500/5">
+                        <div className="flex flex-col h-full items-start">
+                          <h3 className="text-2xl font-black text-white mb-4 group-hover:text-green-400 transition-colors tracking-tight">
                             {term.term}
                           </h3>
-                          <p className="line-clamp-2 text-sm leading-relaxed text-white/50 transition-colors group-hover:text-white/60">
+                          <p className="text-base font-medium leading-relaxed text-slate-400 group-hover:text-slate-300 transition-colors line-clamp-3 mb-8 flex-1">
                             {term.short}
                           </p>
-                          {/* Subtle expand hint */}
-                          <span
-                            aria-hidden
-                            className="mt-auto pt-1 font-mono text-[10px] uppercase tracking-widest text-white/15 transition-colors group-hover:text-green-500/40"
-                          >
-                            tap to expand
-                          </span>
+                          <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-green-500 transition-colors">
+                            <span>Inspect Spec</span>
+                            <ArrowRight className="h-3 w-3 group-hover:translate-x-1 transition-transform" />
+                          </div>
                         </div>
                       </FrankenContainer>
                     </button>
                   ))}
                 </div>
-              </section>
+              </motion.section>
             ))}
           </div>
         )}
       </div>
 
-      {/* ------------------------------------------------------------------ */}
-      {/* Detail BottomSheet */}
-      {/* ------------------------------------------------------------------ */}
       <BottomSheet
         isOpen={selectedEntry !== null}
         onClose={handleClose}

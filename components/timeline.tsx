@@ -1,79 +1,74 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { ChangelogEntry } from "@/lib/content";
-import { cn } from "@/lib/utils";
-import { FrankenBolt } from "./franken-elements";
+import { FrankenContainer } from "./franken-elements";
 
 export default function Timeline({ items }: { items: ChangelogEntry[] }) {
-  const prefersReducedMotion = useReducedMotion();
-
   return (
     <div className="relative">
-      <div className="absolute left-6 top-4 bottom-4 hidden w-px bg-gradient-to-b from-green-500/50 via-white/5 to-transparent md:block" />
+      {/* Cinematic Glowing Line */}
+      <div className="absolute left-0 md:left-8 top-0 bottom-0 w-px bg-gradient-to-b from-green-500/50 via-green-500/10 to-transparent" />
 
-      <ol className="space-y-8 pl-2 md:space-y-12 md:pl-0">
+      <div className="space-y-12 md:space-y-24">
         {items.map((item, index) => {
-          const isFirst = index === 0;
-
           return (
-            <motion.li
+            <motion.div
               key={item.period}
-              className="group relative md:pl-20"
-              initial={prefersReducedMotion ? {} : { opacity: 0, x: -20 }}
-              whileInView={prefersReducedMotion ? {} : { opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: (index % 4) * 0.1 }}
+              className="relative pl-8 md:pl-24 group"
             >
-              <div className={cn(
-                "hidden md:flex absolute left-[8.5px] top-1 h-8 w-8 items-center justify-center rounded-xl border border-white/10 bg-[#020a02]/50 shadow-lg backdrop-blur-md z-10 transition-all duration-500",
-                "group-hover:border-green-500/30 group-hover:shadow-[0_0_20px_-5px_rgba(34,197,94,0.3)]"
-              )}>
-                {isFirst ? (
-                  <div className="h-2 w-2 rounded-full bg-green-400 shadow-[0_0_8px_rgba(34,197,94,0.8)]" />
-                ) : (
-                  <div className="h-1.5 w-1.5 rounded-full bg-slate-700 transition-colors group-hover:bg-green-500/50" />
-                )}
+              {/* Kinetic Node */}
+              <div className="absolute left-[-4.5px] md:left-[27.5px] top-2 flex h-2.5 w-2.5 items-center justify-center">
+                <div className="absolute h-5 w-5 rounded-full bg-green-500/20 animate-ping" />
+                <div className="relative h-2.5 w-2.5 rounded-full bg-green-500 border border-black shadow-[0_0_15px_#22c55e]" />
               </div>
 
-              <div className={cn(
-                "relative rounded-2xl border border-white/5 bg-black/20 p-6 md:p-8 transition-transform duration-300 motion-reduce:transition-none motion-safe:group-hover:-translate-y-1",
-                isFirst && "border-green-500/20 bg-gradient-to-br from-green-950/30 to-emerald-950/20 shadow-[0_0_30px_-10px_rgba(34,197,94,0.15)]"
-              )}>
-                {/* Visual flair - Bolts in the corners for a "stitched together" look */}
-                <FrankenBolt className="absolute -left-1.5 -top-1.5 z-20 scale-75 opacity-40 transition-opacity group-hover:opacity-100" />
-                <FrankenBolt className="absolute -right-1.5 -top-1.5 z-20 scale-75 opacity-40 transition-opacity group-hover:opacity-100" />
-                <FrankenBolt className="absolute -left-1.5 -bottom-1.5 z-20 scale-75 opacity-40 transition-opacity group-hover:opacity-100" />
-                <FrankenBolt className="absolute -right-1.5 -bottom-1.5 z-20 scale-75 opacity-40 transition-opacity group-hover:opacity-100" />
-
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-1">
-                    <h3 className={cn(
-                      "text-lg font-bold tracking-tight transition-colors",
-                      isFirst ? "text-white" : "text-slate-200 group-hover:text-white"
-                    )}>
-                      {item.title}
-                    </h3>
-                  </div>
-
-                  <span className="inline-flex items-center rounded-full border border-white/5 bg-white/5 px-2.5 py-1 text-xs font-bold uppercase tracking-widest text-slate-400 transition-colors group-hover:border-white/10 group-hover:text-slate-300">
+              <div className="grid lg:grid-cols-12 gap-8 items-start">
+                {/* Time Label (Desktop Sidebar Style) */}
+                <div className="lg:col-span-3 pt-1">
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-green-500/60 group-hover:text-green-400 transition-colors">
                     {item.period}
                   </span>
                 </div>
 
-                <ul className="mt-4 space-y-2">
-                  {item.items.map((text, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm leading-relaxed text-slate-400 group-hover:text-slate-300/90">
-                      <span className="mt-2 h-1 w-1 shrink-0 rounded-full bg-green-500/50" />
-                      {text}
-                    </li>
-                  ))}
-                </ul>
+                {/* Content Block */}
+                <div className="lg:col-span-9">
+                  <FrankenContainer withStitches={false} className="glass-modern p-8 md:p-12 transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-green-500/20 group-hover:shadow-[0_0_40px_rgba(34,197,94,0.1)]">
+                    <h3 className="text-2xl md:text-3xl font-black text-white mb-8 group-hover:text-green-400 transition-colors tracking-tight">
+                      {item.title}
+                    </h3>
+                    
+                    <ul className="space-y-5">
+                      {item.items.map((text, i) => (
+                        <li key={i} className="flex items-start gap-4 group/item">
+                          <div className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-slate-700 group-hover/item:bg-green-500 transition-colors shadow-[0_0_5px_rgba(34,197,94,0)] group-hover/item:shadow-[0_0_8px_#22c55e]" />
+                          <p className="text-base md:text-lg font-medium leading-relaxed text-slate-400 group-hover/item:text-slate-200 transition-colors">
+                            {text}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* Action Detail Detail */}
+                    <div className="mt-10 pt-8 border-t border-white/5 flex items-center justify-between opacity-40 group-hover:opacity-100 transition-opacity">
+                       <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">System Log v0.1</span>
+                       <div className="flex gap-1.5">
+                          <div className="h-1 w-3 rounded-full bg-green-500 animate-pulse" />
+                          <div className="h-1 w-1 rounded-full bg-green-500/50" />
+                          <div className="h-1 w-1 rounded-full bg-green-500/20" />
+                       </div>
+                    </div>
+                  </FrankenContainer>
+                </div>
               </div>
-            </motion.li>
+            </motion.div>
           );
         })}
-      </ol>
+      </div>
     </div>
   );
 }

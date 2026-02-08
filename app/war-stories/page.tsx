@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { warStories, optimizations } from "@/lib/content";
+import { ArrowRight, Skull } from "lucide-react";
+import { warStories, warStoriesExtended, optimizations, performanceSLAs } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
 import WarStoryCard from "@/components/war-story-card";
 import OptimizationCard from "@/components/optimization-card";
@@ -16,30 +16,27 @@ export default function WarStoriesPage() {
   return (
     <main id="main-content" className="relative min-h-screen bg-black">
       {/* ── Page header ──────────────────────────────────────── */}
-      <header className="relative overflow-hidden border-b border-white/5">
+      <header className="relative pt-44 pb-20 overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 bg-gradient-to-b from-red-950/20 via-black to-black" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-red-900/10 via-transparent to-transparent" />
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-36 sm:px-6 md:pb-24 md:pt-44 lg:px-8">
-          <div className="mb-6 flex items-center gap-3">
-            <div className="h-px w-6 bg-gradient-to-r from-red-500/80 to-transparent" />
-            <p className="text-xs font-bold uppercase tracking-widest text-red-400/90">
+        <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="flex flex-col items-start text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-red-500/20 bg-red-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-red-500 mb-8">
+              <Skull className="h-3 w-3" />
               Battle Reports
+            </div>
+            
+            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
+              War <br /><span className="text-animate-green">Stories.</span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+              Building a TUI kernel in 5 days meant fighting 
+              synchronized output deadlocks, battling character 
+              collisions, and optimizing allocations into oblivion.
             </p>
           </div>
-
-          <h1
-            className="font-bold tracking-tighter text-white"
-            style={{ fontSize: "clamp(2.25rem, 6vw, 4.5rem)" }}
-          >
-            War Stories
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-400/90 md:text-xl md:leading-relaxed">
-            Building a TUI kernel in 5 days wasn&apos;t just about writing code.
-            It was about fighting infinite loops in WezTerm, battling character
-            collisions in low-level rendering, and optimizing O(N) allocations
-            into oblivion.
-          </p>
         </div>
       </header>
 
@@ -54,6 +51,51 @@ export default function WarStoriesPage() {
           {warStories.map((story) => (
             <WarStoryCard key={story.title} story={story} />
           ))}
+        </div>
+      </SectionShell>
+
+      {/* ── Extended War Stories ──────────────────────────────── */}
+      <SectionShell
+        id="deep-fixes"
+        icon="shield"
+        title="Deep Fixes"
+        kicker="The subtle, multi-layered bugs that required understanding terminal internals, Unicode edge cases, and performance profiling to resolve."
+      >
+        <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-2">
+          {warStoriesExtended.map((story) => (
+            <WarStoryCard key={story.title} story={story} />
+          ))}
+        </div>
+      </SectionShell>
+
+      {/* ── Performance SLAs ───────────────────────────────────── */}
+      <SectionShell
+        id="slas"
+        icon="barChart3"
+        title="Performance SLAs"
+        kicker="Hard performance targets enforced in CI. Violations are test failures, not warnings."
+      >
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-white/10">
+                <th className="pb-3 pr-6 font-bold text-white">Metric</th>
+                <th className="pb-3 pr-6 font-bold text-green-400">Target</th>
+                <th className="pb-3 pr-6 font-bold text-yellow-400">Hard Cap</th>
+                <th className="pb-3 font-bold text-slate-400">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {performanceSLAs.map((sla) => (
+                <tr key={sla.metric} className="border-b border-white/5">
+                  <td className="py-3 pr-6 font-medium text-white">{sla.metric}</td>
+                  <td className="py-3 pr-6 font-mono text-xs text-green-400">{sla.target}</td>
+                  <td className="py-3 pr-6 font-mono text-xs text-yellow-400">{sla.hardCap}</td>
+                  <td className="py-3 text-xs text-slate-500">{sla.notes}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </SectionShell>
 

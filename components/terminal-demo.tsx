@@ -146,7 +146,7 @@ export default function TerminalDemo() {
     };
   }, []);
 
-  // Keep advanceLine in sync via effect (not during render)
+  // Install the line-advancer once. It uses per-line delays as "time before this line starts".
   useEffect(() => {
     advanceLineRef.current = (lineIdx: number) => {
       if (lineIdx >= LINES.length) {
@@ -156,31 +156,37 @@ export default function TerminalDemo() {
 
       const line = LINES[lineIdx];
 
-      // Show this line (starts with 0 visible chars)
-      setVisibleLineIndex(lineIdx);
-      setCurrentLineChars(0);
+      // Wait before starting this line (keeps the cursor on the prior line)
+      timerRef.current = setTimeout(() => {
+        // Show this line (starts with 0 visible chars)
+        setVisibleLineIndex(lineIdx);
+        setCurrentLineChars(0);
 
-      if (!line.typed || line.text.length === 0) {
-        // Instant reveal -- show full line, then schedule next
-        setCurrentLineChars(line.text.length);
-        timerRef.current = setTimeout(() => advanceLineRef.current(lineIdx + 1), line.delay);
-      } else {
+        if (!line.typed || line.text.length === 0) {
+          // Instant reveal -- show full line, then advance immediately
+          setCurrentLineChars(line.text.length);
+          advanceLineRef.current(lineIdx + 1);
+          return;
+        }
+
         // Type character by character
         let charIdx = 0;
         const type = () => {
-          charIdx += line.speed;
+          charIdx = Math.min(charIdx + line.speed, line.text.length);
+          setCurrentLineChars(charIdx);
+
           if (charIdx >= line.text.length) {
-            setCurrentLineChars(line.text.length);
-            timerRef.current = setTimeout(() => advanceLineRef.current(lineIdx + 1), line.delay);
-          } else {
-            setCurrentLineChars(charIdx);
-            timerRef.current = setTimeout(type, TYPING_INTERVAL);
+            advanceLineRef.current(lineIdx + 1);
+            return;
           }
+
+          timerRef.current = setTimeout(type, TYPING_INTERVAL);
         };
+
         timerRef.current = setTimeout(type, TYPING_INTERVAL);
-      }
+      }, line.delay);
     };
-  });
+  }, []);
 
   useEffect(() => {
     if (!isIntersecting || hasStarted.current) return;
@@ -196,8 +202,8 @@ export default function TerminalDemo() {
       return () => cancelAnimationFrame(raf);
     }
 
-    // Kick off the sequence after a small initial delay
-    timerRef.current = setTimeout(() => advanceLineRef.current(0), 300);
+    // Kick off the sequence (line delays are handled per-line)
+    advanceLineRef.current(0);
   }, [isIntersecting, prefersReducedMotion]);
 
   /* ---------------------------------------------------------------- */

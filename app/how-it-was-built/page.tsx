@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
-import { changelog, tweets } from "@/lib/content";
+import { ArrowRight, Clock } from "lucide-react";
+import { changelog, tweets, buildLogLines } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
 import Timeline from "@/components/timeline";
 import TweetWall from "@/components/tweet-wall";
 import FrankenEye from "@/components/franken-eye";
+import { FrankenContainer } from "@/components/franken-elements";
 
 export const metadata: Metadata = {
   title: "Built in 5 Days",
@@ -18,64 +19,60 @@ const keyStats = [
     value: "100",
     unit: "hours",
     label: "of development",
-    detail: "5 days of focused, continuous building",
+    detail: "≈100.1h from sprint kickoff (2026-01-31) to publish (2026-02-05)",
   },
   {
     value: "12",
     unit: "crates",
     label: "in the workspace",
-    detail: "Composable, focused modules with clear boundaries",
+    detail: "Split into focused crates for strict layering and clean boundaries",
   },
   {
     value: "20+",
     unit: "algorithms",
     label: "implemented",
-    detail: "Bayesian, statistical, and mathematical — not heuristics",
+    detail: "BOCPD, conformal, VOI, CUSUM, fairness guards, and more",
   },
   {
     value: "v0.1.1",
     unit: "",
     label: "published to crates.io",
-    detail: "From zero to a real Rust crate in under a week",
+    detail: "Published 2026-02-05 (after the 100-hour sprint)",
   },
 ];
 
 export default function HowItWasBuiltPage() {
   return (
-    <main id="main-content" className="relative min-h-screen bg-black">
-      {/* ── Page header ──────────────────────────────────────── */}
-      <header className="relative overflow-hidden border-b border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-b from-green-950/30 via-black to-black" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-900/20 via-transparent to-transparent" />
+    <main id="main-content" className="relative min-h-screen bg-black overflow-x-hidden">
+      {/* ── CINEMATIC HEADER ─────────────────────────────────── */}
+      <header className="relative pt-44 pb-20 overflow-hidden border-b border-white/5">
+        <div className="absolute inset-0 z-0">
+           <div className="absolute top-[-5%] right-[-5%] w-[600px] h-[600px] bg-green-500/5 rounded-full blur-[80px]" />
+           <div className="absolute bottom-0 left-[5%] w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[60px]" />
+        </div>
 
-        <div className="relative mx-auto max-w-7xl px-4 pb-16 pt-36 sm:px-6 md:pb-24 md:pt-44 lg:px-8">
-          {/* Peeking eyes */}
-          <div className="absolute top-28 right-16 hidden md:block opacity-35 hover:opacity-100 transition-opacity">
-            <FrankenEye className="rotate-[10deg] scale-90" />
-          </div>
-
-          <div className="mb-6 flex items-center gap-3">
-            <div className="h-px w-6 bg-gradient-to-r from-green-500/80 to-transparent" />
-            <p className="text-xs font-bold uppercase tracking-widest text-green-400/90">
-              The Build Story
+        <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="flex flex-col items-start text-left">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500 mb-8">
+              <Clock className="h-3 w-3" />
+              100-Hour Sprint
+            </div>
+            
+            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
+              Built in <br /><span className="text-animate-green">5 Days.</span>
+            </h1>
+            
+            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl leading-relaxed text-left">
+              From zero lines of code to a published Rust crate. 
+              The granular story of how FrankenTUI was stitched 
+              together in a single intense engineering cycle.
             </p>
           </div>
+        </div>
 
-          <h1
-            className="font-bold tracking-tighter text-white"
-            style={{ fontSize: "clamp(2.25rem, 6vw, 4.5rem)" }}
-          >
-            Built in 5 Days
-          </h1>
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-400/90 md:text-xl md:leading-relaxed">
-            From zero lines of code to a published Rust crate in 100 hours.
-            This is the full story of how FrankenTUI went from architectural
-            plan to{" "}
-            <code className="rounded bg-green-950/50 px-1.5 py-0.5 font-mono text-sm text-green-400/90">
-              crates.io v0.1.1
-            </code>{" "}
-            in a single intense sprint.
-          </p>
+        {/* Floating Peeking Eye */}
+        <div className="absolute top-48 right-[12%] hidden lg:block opacity-35 hover:opacity-100 transition-opacity">
+          <FrankenEye className="scale-[1.8] rotate-[-10deg]" />
         </div>
       </header>
 
@@ -122,9 +119,50 @@ export default function HowItWasBuiltPage() {
         id="timeline"
         icon="clock"
         title="Full Timeline"
-        kicker="Every phase of the build, from the first architectural sketch to the published crate. Twenty milestones across five relentless days, in five-hour increments."
+        kicker="Selected milestones timestamped from the real commit history (2026-01-31 → 2026-02-05)."
       >
         <Timeline items={changelog} />
+      </SectionShell>
+
+      {/* ── Sprint Git Log (Selected) ───────────────────────────── */}
+      <SectionShell
+        id="session-log"
+        icon="activity"
+        title="Sprint Git Log"
+        kicker="Selected, timestamped commit messages from the sprint (local tz)."
+      >
+        <FrankenContainer className="bg-black/60 p-0 overflow-hidden">
+          <div className="flex items-center gap-3 border-b border-white/5 bg-white/5 px-4 py-3">
+            <div className="flex gap-1.5">
+              <div className="h-3 w-3 rounded-full bg-red-500/60" />
+              <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
+              <div className="h-3 w-3 rounded-full bg-green-500/60" />
+            </div>
+            <span className="text-xs font-mono text-slate-500">git log --oneline (selected)</span>
+          </div>
+          <div className="p-6 font-mono text-[13px] leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
+            <div className="space-y-1">
+              {buildLogLines.map((line, i) => {
+                const isPublishLine =
+                  /\bpublish\b/i.test(line) ||
+                  /\bcrates\.io\b/i.test(line) ||
+                  /\bchangelog\b/i.test(line);
+                return (
+                  <p
+                    key={i}
+                    className={
+                      isPublishLine
+                        ? "text-green-400 font-bold"
+                        : "text-slate-400 hover:text-slate-200 transition-colors"
+                    }
+                  >
+                    {line}
+                  </p>
+                );
+              })}
+            </div>
+          </div>
+        </FrankenContainer>
       </SectionShell>
 
       {/* ── What People Said ──────────────────────────────────── */}

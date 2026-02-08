@@ -2,265 +2,191 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, Github } from "lucide-react";
 import { useState, useEffect } from "react";
 import { navItems, siteConfig } from "@/lib/content";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import { cn } from "@/lib/utils";
+import { FrankenBolt } from "./franken-elements";
 
 export default function SiteHeader() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const prefersReducedMotion = useReducedMotion();
-  const resolvedPath = pathname ?? "";
-
-  const isActive = (href: string) => {
-    if (href === "/") return resolvedPath === "/";
-    return resolvedPath.startsWith(href);
-  };
-
-  useEffect(() => {
-    let ticking = false;
-    let rafId: number | null = null;
-    let lastScrolled = false;
-
-    const update = () => {
-      const next = window.scrollY > 20;
-      if (next !== lastScrolled) {
-        lastScrolled = next;
-        setScrolled(next);
-      }
-      ticking = false;
-    };
-
-    const onScroll = () => {
-      if (!ticking) {
-        rafId = window.requestAnimationFrame(update);
-        ticking = true;
-      }
-    };
-
-    update();
-
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", onScroll);
-      if (rafId !== null) {
-        window.cancelAnimationFrame(rafId);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const closeOnDesktop = () => {
-      if (window.matchMedia("(min-width: 768px)").matches) {
-        setOpen(false);
-      }
-    };
-
-    closeOnDesktop();
-    window.addEventListener("resize", closeOnDesktop);
-
-    return () => {
-      window.removeEventListener("resize", closeOnDesktop);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const timeoutId = window.setTimeout(() => {
-      setOpen(false);
-    }, 0);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [resolvedPath, open]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
 
   useBodyScrollLock(open);
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
+
   return (
     <>
+      {/* ── DESKTOP FLOATING NAVBAR ──────────────────────────────────── */}
       <header
         className={cn(
-          "fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300",
-          scrolled
-            ? "border-green-950/50 bg-[#020a02]/80 backdrop-blur-xl py-3"
-            : "border-transparent bg-transparent py-5"
+          "fixed top-6 left-1/2 -translate-x-1/2 z-50 hidden md:flex items-center transition-all duration-500 ease-[cubic-bezier(0.19,1,0.22,1)]",
+          scrolled 
+            ? "w-[90%] lg:w-[1000px] py-2 px-6 glass-modern rounded-full" 
+            : "w-[95%] lg:w-[1200px] py-4 px-8 bg-transparent"
         )}
-        style={{ paddingRight: "var(--scrollbar-width, 0px)" }}
-        role="banner"
       >
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between w-full">
+          {/* Logo with "Life" Indicator */}
           <Link
             href="/"
-            className="group flex items-center gap-3"
-            onClick={() => setOpen(false)}
+            className="group flex items-center gap-4 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-green-500 via-emerald-400 to-lime-400 shadow-lg shadow-green-500/20 transition-transform group-hover:scale-105">
-              <span className="text-lg font-black text-white">F</span>
+            <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-green-600 via-green-400 to-lime-400 shadow-[0_0_20px_rgba(34,197,94,0.3)] transition-transform group-hover:scale-110 active:scale-95">
+              <FrankenBolt className="absolute -left-1 -top-1 z-20 scale-50" />
+              <FrankenBolt className="absolute -right-1 -bottom-1 z-20 scale-50" />
+              <span className="text-xl font-black text-black select-none">F</span>
             </div>
-            <span className="text-lg font-bold tracking-tight text-slate-100">
-              {siteConfig.name}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-sm font-black tracking-tight text-white uppercase leading-none">
+                {siteConfig.name}
+              </span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </div>
+                <span className="text-[9px] font-bold text-green-500 uppercase tracking-widest">System Alive</span>
+              </div>
+            </div>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav
-            className="hidden items-center gap-4 md:flex lg:gap-8"
-            aria-label="Main navigation"
-          >
+          {/* Centered Navigation */}
+          <nav className="absolute left-1/2 -translate-x-1/2 flex items-center gap-1">
             {navItems.map((item) => {
-              const active = isActive(item.href);
+              const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
               return (
                 <Link
                   key={item.href}
                   href={item.href}
+                  onMouseEnter={() => setHoveredItem(item.href)}
+                  onMouseLeave={() => setHoveredItem(null)}
+                  aria-current={active ? "page" : undefined}
                   className={cn(
-                    "relative rounded-full px-3 py-1.5 text-sm font-medium transition-all whitespace-nowrap",
-                    active ? "text-white" : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                    "relative px-4 py-2 text-sm font-bold transition-all duration-300 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black",
+                    active ? "text-green-400" : "text-slate-400 hover:text-white"
                   )}
                 >
-                  {active && (
+                  {hoveredItem === item.href && (
                     <motion.div
-                      layoutId={prefersReducedMotion ? undefined : "nav-pill"}
-                      className="absolute inset-0 rounded-full bg-white/[0.07] ring-1 ring-white/10"
-                      transition={prefersReducedMotion ? { duration: 0 } : { type: "spring", stiffness: 300, damping: 30 }}
+                      layoutId="nav-hover"
+                      className="absolute inset-0 bg-green-500/10 rounded-full"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  {active && !hoveredItem && (
+                    <motion.div
+                      layoutId="nav-active"
+                      className="absolute inset-0 border border-green-500/20 bg-green-500/5 rounded-full"
                     />
                   )}
                   <span className="relative z-10">{item.label}</span>
                 </Link>
               );
             })}
+          </nav>
 
+          {/* Primary CTA */}
+          <div className="flex items-center gap-4">
             <a
               href={siteConfig.github}
               target="_blank"
               rel="noopener noreferrer"
-              className="ml-2 lg:ml-4 inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 lg:px-5 py-2 text-sm font-semibold text-white backdrop-blur-md transition-all hover:bg-white/10 hover:scale-105 active:scale-95"
+              className="group flex items-center gap-2 px-5 py-2.5 rounded-full bg-white text-black text-sm font-black hover:bg-green-400 transition-all hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               <Github className="h-4 w-4" />
-              GitHub
+              <span>GITHUB</span>
             </a>
-          </nav>
-
-          {/* Mobile Menu Toggle */}
-          <div className="flex items-center gap-4 md:hidden">
-            <button
-              type="button"
-              className="relative z-50 inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition-all active:scale-95"
-              onClick={() => setOpen((v) => !v)}
-              aria-label={open ? "Close navigation menu" : "Open navigation menu"}
-              aria-expanded={open}
-            >
-              <span className="relative h-5 w-5">
-                <X
-                  className={cn(
-                    "absolute inset-0 h-5 w-5 transition-opacity duration-200",
-                    open ? "opacity-100" : "opacity-0"
-                  )}
-                />
-                <Menu
-                  className={cn(
-                    "absolute inset-0 h-5 w-5 transition-opacity duration-200",
-                    open ? "opacity-0" : "opacity-100"
-                  )}
-                />
-              </span>
-            </button>
           </div>
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* ── MOBILE ADAPTIVE HEADER ───────────────────────────────────── */}
+      <header className="fixed top-0 left-0 right-0 z-[60] md:hidden px-4 py-4 flex items-center justify-between glass-modern border-b-0 m-2 rounded-2xl">
+        <Link
+          href="/"
+          className="flex items-center gap-3 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        >
+          <div className="h-8 w-8 rounded-lg bg-green-500 flex items-center justify-center font-black text-black">F</div>
+          <span className="text-xs font-black tracking-widest text-white uppercase">{siteConfig.name}</span>
+        </Link>
+        
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={open}
+          aria-controls="mobile-nav"
+          className="h-10 w-10 flex items-center justify-center rounded-xl bg-green-500/10 text-green-500 border border-green-500/20 active:scale-90 transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+        >
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </header>
+
+      {/* Mobile Menu (Bottom-Sheet Style) */}
       <AnimatePresence>
         {open && (
-          <motion.div
-            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0 }}
-            transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: "easeOut" }}
-            className="fixed inset-0 z-40 flex flex-col bg-[#020a02]/98 backdrop-blur-lg md:hidden overflow-y-auto will-change-[opacity]"
-            style={{ transform: "translateZ(0)" }}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Mobile navigation"
-          >
-            <nav className="relative flex flex-1 flex-col justify-center px-8">
-              <motion.div
-                className="flex flex-col gap-8"
-                initial="hidden"
-                animate="visible"
-                variants={prefersReducedMotion ? undefined : {
-                  hidden: { opacity: 1 },
-                  visible: {
-                    opacity: 1,
-                    transition: { staggerChildren: 0.06, delayChildren: 0.1 },
-                  },
-                }}
-              >
-                {navItems.map((item) => {
-                  const active = isActive(item.href);
-                  return (
-                    <motion.div
-                      key={item.href}
-                      variants={prefersReducedMotion ? undefined : {
-                        hidden: { opacity: 0, x: -20 },
-                        visible: { opacity: 1, x: 0, transition: { duration: 0.3, ease: [0.33, 1, 0.68, 1] } },
-                      }}
-                    >
-                      <Link
-                        href={item.href}
-                        className={cn(
-                          "text-4xl font-bold tracking-tight transition-colors",
-                          active ? "text-white" : "text-slate-500 active:text-slate-300"
-                        )}
-                        onClick={() => setOpen(false)}
-                      >
-                        {item.label}
-                      </Link>
-                    </motion.div>
-                  );
-                })}
-              </motion.div>
-
-              <motion.div
-                className="mt-16"
-                initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.3, ease: [0.33, 1, 0.68, 1], delay: 0.1 + navItems.length * 0.06 }}
-              >
-                <a
-                  href={siteConfig.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-green-500 py-4 text-lg font-bold text-white shadow-lg shadow-green-500/20 transition-transform active:scale-95"
-                  onClick={() => setOpen(false)}
-                >
-                  <Github className="h-5 w-5" />
-                  View on GitHub
-                </a>
-              </motion.div>
-            </nav>
-          </motion.div>
+          <>
+	            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[70] md:hidden"
+            />
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+	              id="mobile-nav"
+	              className="fixed bottom-0 left-0 right-0 z-[80] bg-[#051205] border-t border-green-500/20 rounded-t-[32px] p-8 pb-12 md:hidden"
+	            >
+              <div className="w-12 h-1.5 bg-green-500/20 rounded-full mx-auto mb-8" />
+              <nav className="flex flex-col gap-4">
+                {navItems.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 active:bg-green-500/10 active:border-green-500/30 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                  >
+                    <span className="text-xl font-bold text-white">{item.label}</span>
+                    <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
+                  </Link>
+                ))}
+	                <a
+	                  href={siteConfig.github}
+	                  target="_blank"
+	                  rel="noopener noreferrer"
+	                  className="mt-4 flex items-center justify-center gap-3 p-5 rounded-2xl bg-green-500 text-black font-black text-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+	                >
+	                  <Github /> STAR ON GITHUB
+	                </a>
+              </nav>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

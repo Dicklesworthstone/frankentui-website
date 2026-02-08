@@ -1,7 +1,7 @@
 // Site configuration
 export const siteConfig = {
   name: "FrankenTUI",
-  title: "FrankenTUI — Terminal UI Kernel for Rust",
+  title: "FrankenTUI — The Monster Terminal UI Kernel for Rust",
   description: "Stitched together from the finest algorithms and brought to life with deterministic math. Minimal, high-performance terminal UI kernel focused on correctness and clean architecture.",
   url: "https://frankentui.com",
   github: "https://github.com/Dicklesworthstone/frankentui",
@@ -18,6 +18,7 @@ export const navItems = [
   { href: "/showcase", label: "Showcase" },
   { href: "/architecture", label: "Architecture" },
   { href: "/war-stories", label: "War Stories" },
+  { href: "/beads", label: "Project Graph" },
   { href: "/how-it-was-built", label: "Built in 5 Days" },
   { href: "/glossary", label: "Glossary" },
   { href: "/getting-started", label: "Get Started" },
@@ -120,7 +121,10 @@ export const screenshots: Screenshot[] = [
   { src: "/screenshots/widget_gallery_inputs_and_controls.webp", alt: "Widget gallery inputs and controls", title: "Widget Gallery" },
 ];
 
-// Video data - hosted externally (too large for deploy)
+// Video data
+// Note: This repo tracks the WebM sources in `public/videos/`. MP4 fallbacks are
+// intentionally not committed (see .gitignore). If you need MP4 for Safari-only
+// environments, host MP4s externally and add them as additional sources here.
 export interface Video {
   title: string;
   description: string;
@@ -135,7 +139,6 @@ export const videos: Video[] = [
     poster: "/screenshots/dashboard_fullscreen_overview.webp",
     sources: [
       { src: "/videos/frankentui-ghostty-resize.webm", type: "video/webm" },
-      { src: "/videos/frankentui-ghostty-resize.mp4", type: "video/mp4" },
     ],
   },
   {
@@ -144,7 +147,6 @@ export const videos: Video[] = [
     poster: "/screenshots/visual_effects_clifford_attractor.webp",
     sources: [
       { src: "/videos/frankentui-rio-crt.webm", type: "video/webm" },
-      { src: "/videos/frankentui-rio-crt.mp4", type: "video/mp4" },
     ],
   },
 ];
@@ -184,12 +186,12 @@ export interface WarStory {
 
 export const warStories: WarStory[] = [
   {
-    title: "The Gap Storm",
-    subtitle: "Infinite Loop in WezTerm",
-    description: "A critical bug in `wezterm_automata` (wa) where `detect_alt_screen_changes` was stateless, causing repeated Gap events on every poll if an escape sequence remained in the buffer.",
-    technicalDetails: "The parser would read a partial sequence, fail to decode it, but not advance the cursor. This caused a hot loop where the same bytes were read, failed, and triggered a 'Gap' event infinitely. Fixed by ensuring state continuity across polls.",
-    impact: "Prevented 100% CPU usage in WezTerm environments.",
-    icon: "zap",
+    title: "Terminal Sync Freeze Safety",
+    subtitle: "Crash During Render Frozen Terminal",
+    description: "If an application panicked mid-render while the terminal was in DEC 2026 synchronized output mode, the terminal would remain frozen — requiring a manual `reset` command.",
+    technicalDetails: "TerminalSession::cleanup (the RAII Drop impl) did not emit SYNC_END. The panic hook had this safety, but the destructor did not. Fixed by adding stdout.write_all(SYNC_END) to cleanup, guaranteeing unfreeze on every exit path.",
+    impact: "Terminal never left frozen regardless of crash timing.",
+    icon: "lock",
   },
   {
     title: "The SOH Collision",
@@ -256,185 +258,114 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
-    period: "Day 1 — Hour 0",
-    title: "The Vision & The Void",
+    period: "Day 1 — 2026-01-31 14:21",
+    title: "Architecture Plan Locked",
     items: [
-      "Architectural blueprint established: layered kernel approach",
-      "Zero-dependency core philosophy defined",
-      "Initial bead graph for 100-hour sprint finalized",
+      "Initial commit: FrankenTUI plan documents.",
+      "Upgraded plan to a hybrid architecture (V5.0 → V6.1).",
+      "Expanded the bead graph to cover core components, dependencies, and acceptance tests.",
     ],
   },
   {
-    period: "Day 1 — Hour 5",
-    title: "The First Breath",
+    period: "Day 1 — 2026-01-31 17:48",
+    title: "Reference Library Sync",
     items: [
-      "Terminal session lifecycle & raw mode initialization",
-      "GraphemePool foundation for memory-efficient text",
-      "One-writer discipline enforced at the crate level",
+      "Added a reference library sync script + build infrastructure.",
+      "Fixed idempotency and Makefile bugs in the sync tooling.",
+      "Seeded beads for syntax highlighting, forms/pickers, and other showcase surfaces.",
     ],
   },
   {
-    period: "Day 1 — Hour 10",
-    title: "Buffer & Cell",
+    period: "Day 1 — 2026-01-31 23:23",
+    title: "Workspace Born",
     items: [
-      "Cell type optimization: 16 bytes, SIMD-ready",
-      "Virtual buffer grid with row/column addressing",
-      "Initial style system: SGR attributes and color profiles",
+      "Initialized the Rust workspace with the `ftui` crate structure.",
+      "Added 15 comprehensive feature beads with 46 subtasks.",
+      "Added a comprehensive test bead graph for 15 new feature areas.",
     ],
   },
   {
-    period: "Day 1 — Hour 15",
-    title: "The Render Loop",
+    period: "Day 2 — 2026-02-01 02:10",
+    title: "Terminal Session + Core Data Types",
     items: [
-      "BufferDiff algorithm: contiguous run optimization",
-      "Presenter orchestration: bracketing frame updates",
-      "First successful render of a styled 'Hello World'",
+      "Added terminal session lifecycle, color downgrade, style system, and a TerminalModel.",
+      "Implemented the Buffer API and supporting infrastructure.",
+      "Implemented GraphemePool with reference counting; reinforced the one-writer rule.",
     ],
   },
   {
-    period: "Day 2 — Hour 20",
-    title: "Layout Engine",
+    period: "Day 2 — 2026-02-01 12:57",
+    title: "Render Kernel Online",
     items: [
-      "Flex layout solver implemented with percentage weights",
-      "Constraint-based measurement protocol (Flutter-style)",
-      "Rect arithmetic and coordinate systems validated",
+      "Implemented BufferDiff and Presenter (state-tracked ANSI emission).",
+      "Hardened inline mode safety and added comprehensive inline mode tests.",
+      "Added geometry primitives and the Flex layout solver; fixed build issues across the workspace.",
     ],
   },
   {
-    period: "Day 2 — Hour 25",
-    title: "The Runtime Layer",
+    period: "Day 2 — 2026-02-01 22:03",
+    title: "Showcase Expansion + Correctness Blitz",
     items: [
-      "Elm-architecture Program loop (Model/Update/View)",
-      "Command (Cmd) system for async side-effects",
-      "Initial subscription system for event streams",
+      "Major expansion: demo showcase, PTY improvements, and documentation.",
+      "Broad correctness sweep: saturating arithmetic across widgets/drawing + overflow fixes.",
+      "Added ftui-render coverage for wide glyph handling and diff engine edge cases.",
     ],
   },
   {
-    period: "Day 2 — Hour 30",
-    title: "Widget Foundations",
+    period: "Day 3 — 2026-02-02 23:25",
+    title: "Benchmarks + Validation",
     items: [
-      "Panel, Paragraph, and StatusLine widgets",
-      "Box-model: padding, margins, and borders",
-      "Cursor management and focus-tracking logic",
+      "Added DoubleBuffer swap benchmarks and repaired E2E scripts.",
+      "Introduced an async deadline controller (survival analysis) for budget enforcement.",
+      "Expanded action-timeline and visual-fx tests; synced multi-agent workspace changes.",
     ],
   },
   {
-    period: "Day 2 — Hour 35",
-    title: "Interactive Components",
+    period: "Day 4 — 2026-02-03 21:36",
+    title: "Evidence Telemetry + Policy Controls",
     items: [
-      "TextInput with horizontal scrolling and selection",
-      "Hit-testing and mouse event routing",
-      "Button and Toggle primitive implementations",
+      "Added evidence structs and optimized diff buffer reuse in the runtime.",
+      "Added env-var controls for Bayesian diff, BOCPD, and conformal in the harness.",
+      "Optimized ANSI emission and extracted diff helpers; updated BOCPD evidence field docs.",
     ],
   },
   {
-    period: "Day 3 — Hour 40",
-    title: "Advanced Data Structures",
+    period: "Day 5 — 2026-02-04 16:35",
+    title: "Crates.io Publish Prep",
     items: [
-      "Fenwick Tree for O(log n) virtualization",
-      "VirtualizedList with millions of items support",
-      "Rope-backed TextArea for large file editing",
+      "Crates.io publish prep + crate docs (bd-3lul4).",
+      "Stabilized tests (flaky fixes, isolation, snapshot baselines).",
+      "Kept the project graph and issue tracker synced as publish tasks closed out.",
     ],
   },
   {
-    period: "Day 3 — Hour 45",
-    title: "Unicode Mastery",
+    period: "Day 5 — 2026-02-05 01:25",
+    title: "Publish: v0.1.1",
     items: [
-      "Unicode BiDi algorithm integration for RTL support",
-      "Emoji ZWJ sequence handling and wide-char atomicity",
-      "East Asian Width tables and surrogate pair safety",
+      "Published v0.1.1 crates (bd-17unx publish 0.1.1 crates).",
+      "Updated the changelog for the 0.1.1 publish.",
+      "Captured and shipped the initial public announcement artifacts.",
     ],
   },
-  {
-    period: "Day 3 — Hour 50",
-    title: "High-Performance Text",
-    items: [
-      "Syntax highlighting engine with syntect integration",
-      "Width caching and text measurement memoization",
-      "Soft-wrap and hyphenation logic for fluid layout",
-    ],
-  },
-  {
-    period: "Day 3 — Hour 55",
-    title: "The Intelligence Layer",
-    items: [
-      "Bayesian Online Change-Point Detection (BOCPD)",
-      "Adaptive resize coalescing based on regime detection",
-      "Input fairness module using Jain's Index",
-    ],
-  },
-  {
-    period: "Day 4 — Hour 60",
-    title: "Bayesian Rendering",
-    items: [
-      "Beta-distribution based strategy selection",
-      "Dirty-row tracking and evidence ledgers",
-      "Minimal I/O strategy for slow connections",
-    ],
-  },
-  {
-    period: "Day 4 — Hour 65",
-    title: "Statistical Monitoring",
-    items: [
-      "E-process monitoring for anytime-valid budget tests",
-      "Wealth-based wealth tracking for render loops",
-      "Conformal prediction for anomaly detection in I/O",
-    ],
-  },
-  {
-    period: "Day 4 — Hour 70",
-    title: "Visual Effects Kernel",
-    items: [
-      "Deterministic math effects: metaballs and plasma",
-      "Clifford Attractor and reaction-diffusion PDE",
-      "Budget-aware effect degradation for low-end terms",
-    ],
-  },
-  {
-    period: "Day 4 — Hour 75",
-    title: "Workspace Expansion",
-    items: [
-      "Split into 12 focused crates for modularity",
-      "Internal API hardening and visibility cleanup",
-      "Public facade (ftui crate) and prelude design",
-    ],
-  },
-  {
-    period: "Day 5 — Hour 80",
-    title: "Correctness Blitz",
-    items: [
-      "Saturating arithmetic conversion for all geometry",
-      "Extensive property-testing suite expansion",
-      "Headless TerminalModel integration tests",
-    ],
-  },
-  {
-    period: "Day 5 — Hour 85",
-    title: "The Demo Showcase",
-    items: [
-      "Comprehensive demo app with 20+ scenarios",
-      "JSONL diagnostic logging and time-travel replay",
-      "Theme Studio for live UI design and export",
-    ],
-  },
-  {
-    period: "Day 5 — Hour 90",
-    title: "Documentation & Polish",
-    items: [
-      "Formal proof sketches for sync and diff completeness",
-      "Architecture spec and jargon file finalized",
-      "Crates.io metadata and README branding",
-    ],
-  },
-  {
-    period: "Day 5 — Hour 95",
-    title: "The Final Ascent",
-    items: [
-      "Final bug sweep and optimization pass",
-      "Version 0.1.0 tagged and published to crates.io",
-      "Release announcement and open source launch",
-    ],
-  },
+];
+
+// Selected, timestamped commit messages from the original sprint.
+// Times are from git commit metadata (local tz) in /data/projects/frankentui.
+export const buildLogLines: string[] = [
+  "[2026-01-31 14:21] 7a23b45a  Initial commit: FrankenTUI plan documents",
+  "[2026-01-31 15:54] 40b720d4  Upgrade plan to V6.1: practice-proven hybrid architecture",
+  "[2026-01-31 22:27] 6c9158cf  Add 15 comprehensive feature beads with 46 subtasks",
+  "[2026-01-31 23:23] aadc5679  feat: initialize Rust workspace with ftui crate structure",
+  "[2026-02-01 02:10] ced1e5e7  feat: Add terminal session, color downgrade, style system, and terminal model",
+  "[2026-02-01 02:15] 0da0ba05  feat: Implement Buffer API and supporting infrastructure",
+  "[2026-02-01 12:52] 9abb1bf9  feat(ftui-render): Implement BufferDiff with row-major scan",
+  "[2026-02-01 12:57] aa58e858  feat: Implement Presenter with state-tracked ANSI emission",
+  "[2026-02-01 13:07] 0baccfdd  feat(layout): Add Flex layout solver and terminal_writer fixes",
+  "[2026-02-01 22:03] 0d03d898  feat: major expansion with demo showcase, PTY improvements, and documentation",
+  "[2026-02-03 21:36] 02427dbf  feat(runtime): add evidence structs and optimize diff buffer reuse",
+  "[2026-02-04 16:35] 2020c901  docs: crates.io publish prep + crate docs (bd-3lul4)",
+  "[2026-02-05 01:25] b8f0d6d3  bd-17unx publish 0.1.1 crates",
+  "[2026-02-05 02:34] 5383ae71  Update changelog for 0.1.1 publish",
 ];
 
 // Tweet data for the tweet wall
@@ -496,8 +427,7 @@ export const tweets: Tweet[] = [
     handle: "@jeffemanuel",
     content: "FrankenTUI demo running in Ghostty with real-time resize. Watch the BOCPD coalescer adapt between steady and burst regimes.",
     date: "2026-02-04",
-    type: "embed",
-    tweetUrl: "https://x.com/jeffemanuel/status/example1",
+    type: "quote",
     hasVideo: true,
   },
   {
@@ -519,8 +449,7 @@ export const tweets: Tweet[] = [
     handle: "@jeffemanuel",
     content: "Rio terminal CRT effect demo of FrankenTUI's demo showcase. Every effect is a concrete dynamical system or PDE with explicit time-stepping.",
     date: "2026-02-04",
-    type: "embed",
-    tweetUrl: "https://x.com/jeffemanuel/status/example2",
+    type: "quote",
     hasVideo: true,
   },
   {
@@ -788,36 +717,24 @@ export interface FaqItem {
 
 export const faq: FaqItem[] = [
   {
-    question: "What is the minimum supported Rust version (MSRV)?",
-    answer: "FrankenTUI targets the latest stable Rust release. We track stable closely and test on each new release within days. There is no MSRV policy — we use new language features as soon as they stabilize.",
+    question: "Why the name FrankenTUI?",
+    answer: "Because it's stitched together from the best parts of modern software engineering (the Elm architecture, flexible layout solvers) but animated by a completely new heart: a deterministic, math-heavy rendering kernel that brings interfaces to life without the flicker or state-corruption of 'natural' TUI frameworks.",
   },
   {
-    question: "Does FrankenTUI support no_std?",
-    answer: "The core rendering crates (ftui-render, ftui-style, ftui-text, ftui-layout) are designed with minimal allocator dependencies, but the runtime and I/O layers require std. Full no_std support is a future goal for embedded terminal UIs.",
+    question: "Is it really built in 5 days?",
+    answer: "Yes. 100 hours of focused engineering. Every algorithm was selected for its correctness and performance under pressure. The result is an 'alien artifact' quality codebase that moves fast without breaking things.",
   },
   {
-    question: "How does FrankenTUI compare to Ratatui?",
-    answer: "Ratatui is a mature, widely-adopted library with a large ecosystem. FrankenTUI takes a different approach: it enforces correctness invariants at the kernel level (one-writer rule, RAII cleanup, deterministic rendering) that Ratatui leaves to the application. FrankenTUI also includes statistical algorithms (Bayesian diff, BOCPD resize) that have no equivalent in Ratatui. Choose Ratatui for ecosystem breadth; choose FrankenTUI for architectural correctness and novel algorithms.",
+    question: "Does it support my terminal?",
+    answer: "If your terminal supports ANSI escape sequences, FrankenTUI will animate it. It detects capabilities at startup and downgrades gracefully: from true color to mono, from hyperlinks to plain text, and from synchronized output to safe-buffered writes.",
   },
   {
-    question: "Can I use FrankenTUI with tokio/async-std?",
-    answer: "Yes. The ftui-runtime crate provides an async-compatible event loop. You can spawn background tasks with Cmd::perform() and receive their results as messages, exactly like Elm's Cmd pattern. The runtime handles the async executor integration so your Model stays synchronous and testable.",
+    question: "How does it compare to Ratatui?",
+    answer: "Ratatui is the established giant, but it's a 'view-only' library that leaves architecture to the user. FrankenTUI is a complete kernel. It provides the runtime, the event loop, and the invariants (like the One-Writer Rule) that prevent bugs before they are even stitched into your code.",
   },
   {
-    question: "Does inline mode work inside tmux?",
-    answer: "Yes, with caveats. FrankenTUI auto-detects tmux via the TMUX environment variable and wraps escape sequences in DCS passthrough envelopes. Some advanced features (OSC 8 hyperlinks, DEC 2026 sync) require tmux 3.3+ with allow-passthrough enabled. Inline mode scrollback preservation works correctly in all tmux versions.",
-  },
-  {
-    question: "How do I run tests for my FrankenTUI app?",
-    answer: "FrankenTUI provides a TerminalModel that simulates a real terminal in memory. Write your test, create a TerminalModel, render your app's view into it, and assert on individual cells. For full integration tests, use PtyCapture to run your app in a real pseudo-terminal. Snapshot tests are also supported for regression detection.",
-  },
-  {
-    question: "What terminals are supported?",
-    answer: "FrankenTUI works in any terminal that supports basic ANSI escape sequences: iTerm2, Alacritty, Kitty, WezTerm, Ghostty, Windows Terminal, and GNOME Terminal. Advanced features like true color, hyperlinks, and synchronized output are detected at runtime via TerminalCapabilities and gracefully degrade in older terminals.",
-  },
-  {
-    question: "Is FrankenTUI production-ready?",
-    answer: "FrankenTUI is at v0.1.x — the API surface is stabilizing but may have breaking changes before 1.0. The rendering kernel is thoroughly tested with property tests, snapshot tests, and PTY integration tests. It is suitable for personal tools and internal applications. For mission-critical production use, wait for the 1.0 release.",
+    question: "What is the 'One-Writer Rule'?",
+    answer: "It's the surgical discipline that ensures only one component ever writes to the terminal. By funneling all output through a single serialized gate, we eliminate cursor corruption and race conditions, ensuring the terminal display remains pristine even under heavy stress.",
   },
 ];
 
@@ -1053,3 +970,400 @@ export const pipelineDiagram = `┌───────────────
 │ TerminalWriter                                        │
 │   inline (scrollback)  |  alt-screen (classic)        │
 └──────────────────────────────────────────────────────┘`;
+
+// ── Additional War Stories (from FIXES_SUMMARY) ─────────────────────
+
+export const warStoriesExtended: WarStory[] = [
+  {
+    title: "The Inline Ghosting Trilogy",
+    subtitle: "Three bugs, one symptom: ghost UI",
+    description: "Inline mode kept leaving 'ghost' frames on screen. Fix #63 removed an unconditional clear that blanked unchanged rows. Fix #68 changed Buffer::new to initialize dirty_rows=true so fresh buffers trigger full diffs. Fix #70 invalidated prev_buffer after log writes so the renderer knew the screen had moved.",
+    technicalDetails: "These three bugs interacted: #63 caused flicker by clearing too aggressively, #68 caused ghosting by not clearing enough, and #70 caused stale rendering when logs scrolled the screen. Each fix was correct individually but the full picture required all three working in concert.",
+    impact: "Eliminated all ghosting and flicker in inline mode across terminals.",
+    icon: "ghost",
+  },
+  {
+    title: "Zero-Width Char Desync",
+    subtitle: "Combining marks broke the cursor",
+    description: "Standalone combining marks (zero-width characters) caused the Presenter's cursor position to desynchronize from the terminal's actual cursor. Characters after a zero-width mark rendered at the wrong position.",
+    technicalDetails: "emit_cell wrote bytes for zero-width chars but CellContent::width() returned 0, so the internal cursor_x didn't advance while the terminal cursor did. Fixed by replacing zero-width content with U+FFFD (replacement character, width 1) to maintain grid alignment.",
+    impact: "Correct rendering of Unicode combining marks and edge-case graphemes.",
+    icon: "cursor",
+  },
+  {
+    title: "The Infinite Wrap Loop",
+    subtitle: "CJK characters wider than viewport",
+    description: "When a single CJK character (width 2) was wider than the available wrap width (1 column), the word-wrap algorithm entered an infinite loop — no progress was ever made.",
+    technicalDetails: "Both wrap_line_words and wrap_line_chars had the same vulnerability: they checked if the next grapheme fit, found it didn't, but had no fallback to force progress. Fixed by adding a forced-progress path that consumes the character even when it overflows.",
+    impact: "Prevented hangs on narrow terminals and edge-case CJK input.",
+    icon: "infinity",
+  },
+  {
+    title: "Input Parser DoS Protection",
+    subtitle: "Malformed escape sequences swallowed input",
+    description: "The CSI/OSC ignore states used for DoS protection were too sticky — they continued ignoring bytes until a valid terminator appeared. A malformed sequence like `ESC [ ... 1GB of zeros` would swallow all subsequent valid input.",
+    technicalDetails: "Updated process_csi_ignore, process_osc_content, and process_osc_ignore to abort on invalid control characters (bytes < 0x20). Now if a malicious sequence hits a control char like newline, the parser resets to ground state immediately.",
+    impact: "Terminal remains responsive even when processing corrupted or adversarial input.",
+    icon: "shield",
+  },
+  {
+    title: "Terminal Sync Freeze Safety",
+    subtitle: "Crash during render froze the terminal",
+    description: "If an application panicked mid-render while the terminal was in DEC 2026 synchronized output mode, the terminal would remain frozen — requiring a manual `reset` command.",
+    technicalDetails: "TerminalSession::cleanup (the RAII Drop impl) did not emit SYNC_END. The panic hook had this safety, but the destructor did not. Fixed by adding stdout.write_all(SYNC_END) to cleanup, guaranteeing unfreeze on every exit path.",
+    impact: "Terminal never left frozen regardless of crash timing.",
+    icon: "lock",
+  },
+  {
+    title: "Shakespeare Search: 100K Allocations",
+    subtitle: "O(N) allocs per keystroke",
+    description: "The Shakespeare text search allocated a new String (via to_ascii_lowercase) for every line in a 100K+ line document on every keystroke, causing severe input lag during search.",
+    technicalDetails: "Replaced with line_contains_ignore_case, an allocation-free helper that performs case-insensitive substring checks by comparing char-by-char. The query is lowercased once; each line is scanned without allocation. Same fix applied to Code Explorer and LogViewer.",
+    impact: "Search went from multi-second lag to instant (<5ms) on large documents.",
+    icon: "search",
+  },
+  {
+    title: "Presenter Cost Model Overflow",
+    subtitle: "Wrong cursor moves on 4K displays",
+    description: "The digit_count function capped at 3 for any input >= 100, causing incorrect cost estimation for terminals >= 1000 columns wide. This led to suboptimal cursor movement strategies on large displays.",
+    technicalDetails: "Extended digit_count to handle 4 and 5 digit numbers (up to u16::MAX = 65535). Without this, the presenter would choose 'move cursor to column' over 'relative move' even when the relative move was cheaper on wide terminals.",
+    impact: "Optimal ANSI byte output on 4K and ultrawide displays.",
+    icon: "monitor",
+  },
+  {
+    title: "Ratio Constraint Identity Crisis",
+    subtitle: "Ratio behaved like flex-grow",
+    description: "Constraint::Ratio(n, d) was implemented as a flexible weight (like CSS flex-grow) instead of a fixed fractional allocation. This made it impossible to create fixed proportional layouts like a 1/4 width sidebar.",
+    technicalDetails: "Moved Ratio handling from the flexible allocation pass to the fixed allocation pass of the layout solver. It now allocates available_size * n / d, aligning behavior with Percentage and standard grid expectations.",
+    impact: "Predictable proportional layouts that match developer intent.",
+    icon: "layout",
+  },
+  {
+    title: "TimeTravel Eviction Corruption",
+    subtitle: "Delta frames without a base",
+    description: "When the TimeTravel recorder reached capacity and evicted the oldest frame, the new oldest frame could be a delta-encoded snapshot with no base frame to reconstruct against.",
+    technicalDetails: "Updated record() to perform eviction before computing the new snapshot, and to force a Full snapshot if the history is empty after eviction. This guarantees get(0) always returns a self-contained reconstructable frame.",
+    impact: "Time-travel debugging works correctly even at buffer capacity.",
+    icon: "clock",
+  },
+  {
+    title: "SGR Delta Cost Miscalculation",
+    subtitle: "Reset-to-default cost overestimated 4x",
+    description: "The presenter estimated resetting a color to default (transparent) at 19 bytes (full RGB sequence cost), but the actual sequence is only 5 bytes. This caused unnecessary full style resets instead of cheaper delta updates.",
+    technicalDetails: "Updated delta_est to check if the new color is transparent (alpha=0) and use 5 bytes for transparent transitions, 19 for opaque. This ensures the SGR delta engine correctly identifies when a delta update is cheaper than a full reset.",
+    impact: "Up to 40% reduction in ANSI output bytes for typical workloads.",
+    icon: "minimize",
+  },
+];
+
+// ── Architecture Decision Records ───────────────────────────────────
+
+export interface ADR {
+  id: string;
+  title: string;
+  status: "accepted" | "proposed";
+  context: string;
+  decision: string;
+  consequence: string;
+}
+
+export const adrs: ADR[] = [
+  {
+    id: "ADR-001",
+    title: "Inline Mode Strategy",
+    status: "accepted",
+    context: "Inline mode is where most TUI frameworks fail: logs interleave with UI, cursors drift, and scrollback gets destroyed. Three strategies were evaluated: Scroll-Region Anchoring (DECSTBM), Overlay Redraw, and Hybrid.",
+    decision: "Adopt Hybrid strategy: overlay redraw is always available as the correctness baseline, scroll-region is an internal optimization only where proven safe (no multiplexer, sync output detected).",
+    consequence: "Correctness guaranteed across all terminals via overlay baseline. Optimized path for modern terminals. No terminal quirks exposed in public API.",
+  },
+  {
+    id: "ADR-002",
+    title: "Presenter Emission Strategy",
+    status: "accepted",
+    context: "The Presenter transforms a Frame into ANSI escape sequences. Getting SGR state tracking wrong causes leaked styles, corrupted hyperlinks, and broken cursor positions.",
+    decision: "v1 uses Reset+Apply: every style change emits SGR 0 then re-applies all attributes. Incremental diff emission deferred until terminal model tests provide comprehensive coverage.",
+    consequence: "Trivially correct — no dangling attribute bugs possible. Higher byte output accepted for correctness. Clear optimization path for future releases.",
+  },
+  {
+    id: "ADR-003",
+    title: "Terminal Backend Selection",
+    status: "accepted",
+    context: "The backend choice is foundational and extremely hard to change later. Crossterm, termwiz, termion, and custom termios were evaluated.",
+    decision: "Crossterm is the v1 terminal backend. It provides cross-platform support (Linux, macOS, Windows), active maintenance, and familiar API. Abstracted behind our own types to preserve migration freedom.",
+    consequence: "Cross-platform support out of the box. Crossterm opinions may need workarounds. Can vendor-fork as last resort if critical bugs found.",
+  },
+  {
+    id: "ADR-005",
+    title: "One-Writer Rule Enforcement",
+    status: "proposed",
+    context: "Terminals are a shared mutable resource. Concurrent writers cause undefined cursor position, partial escape sequence corruption, and unpredictable interleaving of UI and logs.",
+    decision: "Enforce one-writer rule through ownership + routing: TerminalWriter is the single gate for all output. Supported patterns: LogSink (in-process), PTY Capture (subprocess), Stdio Capture (best-effort, feature-gated).",
+    consequence: "Applications must use ftui output APIs. Libraries that write directly to stdout can still break guarantees (documented as unsupported).",
+  },
+  {
+    id: "ADR-006",
+    title: "Untrusted Output Policy",
+    status: "proposed",
+    context: "Agent harness UIs display tool output, LLM streams, and logs. Untrusted output can smuggle ANSI control sequences that manipulate terminal state, deceive users with fake prompts, or persist changes after the app exits.",
+    decision: "Sanitize by default: all text through log paths or user-provided content is stripped of ESC, CSI, OSC, DCS, APC sequences. Only TAB, LF, CR preserved. Raw passthrough is explicitly opt-in via Text::raw().",
+    consequence: "User content is safe by default. Some legitimate ANSI in logs is stripped unless opted in.",
+  },
+  {
+    id: "ADR-007",
+    title: "SDK Modularization",
+    status: "accepted",
+    context: "FrankenTUI should be usable beyond a single terminal host while keeping the core deterministic and dependency-light. A universal C ABI was considered but rejected.",
+    decision: "Adopt an embedded, host-agnostic core for layout, text, and render. Host-specific bindings (WASM, C, Zig, JVM) as first-class crates. No mandatory universal C-ABI hub.",
+    consequence: "More crates but lower coupling. Host bindings move independently without destabilizing core. Bindings created only when a host target is real.",
+  },
+];
+
+// ── Terminal Compatibility Matrix ───────────────────────────────────
+
+export interface TerminalCompat {
+  terminal: string;
+  trueColor: boolean;
+  syncOutput: boolean;
+  osc8Links: boolean;
+  kittyKeyboard: boolean;
+  kittyGraphics: boolean;
+  sixel: boolean;
+  focusEvents: boolean;
+  bracketedPaste: boolean;
+}
+
+export const terminalCompatibility: TerminalCompat[] = [
+  { terminal: "Kitty", trueColor: true, syncOutput: true, osc8Links: true, kittyKeyboard: true, kittyGraphics: true, sixel: false, focusEvents: true, bracketedPaste: true },
+  { terminal: "WezTerm", trueColor: true, syncOutput: true, osc8Links: true, kittyKeyboard: true, kittyGraphics: true, sixel: true, focusEvents: true, bracketedPaste: true },
+  { terminal: "Alacritty", trueColor: true, syncOutput: true, osc8Links: true, kittyKeyboard: false, kittyGraphics: false, sixel: false, focusEvents: true, bracketedPaste: true },
+  { terminal: "Ghostty", trueColor: true, syncOutput: true, osc8Links: true, kittyKeyboard: true, kittyGraphics: true, sixel: false, focusEvents: true, bracketedPaste: true },
+  { terminal: "iTerm2", trueColor: true, syncOutput: false, osc8Links: true, kittyKeyboard: false, kittyGraphics: false, sixel: true, focusEvents: true, bracketedPaste: true },
+  { terminal: "GNOME Terminal", trueColor: true, syncOutput: false, osc8Links: true, kittyKeyboard: false, kittyGraphics: false, sixel: false, focusEvents: true, bracketedPaste: true },
+  { terminal: "Windows Terminal", trueColor: true, syncOutput: false, osc8Links: false, kittyKeyboard: false, kittyGraphics: false, sixel: false, focusEvents: true, bracketedPaste: true },
+];
+
+export interface MuxCompat {
+  name: string;
+  envVar: string;
+  notes: string;
+  syncOutput: string;
+  osc8: string;
+}
+
+export const muxCompatibility: MuxCompat[] = [
+  { name: "tmux", envVar: "TMUX", notes: "Passthrough required for OSC and sync output", syncOutput: "Disabled by default", osc8: "tmux 3.3+ with allow-passthrough" },
+  { name: "screen", envVar: "STY", notes: "Limited modern feature support", syncOutput: "Unreliable", osc8: "Unreliable" },
+  { name: "zellij", envVar: "ZELLIJ", notes: "Better passthrough than tmux/screen", syncOutput: "Conservative", osc8: "Generally works" },
+];
+
+// ── Visual Effects Data ─────────────────────────────────────────────
+
+export interface VisualEffect {
+  name: string;
+  category: string;
+  description: string;
+  featureFlag: string;
+}
+
+export const visualEffects: VisualEffect[] = [
+  { name: "Metaballs", category: "Organic", description: "Merging blob simulation rendered as cell backgrounds with smooth falloff", featureFlag: "visual-fx-metaballs" },
+  { name: "Plasma", category: "Procedural", description: "Classic demo-scene plasma with configurable palettes (Aurora, Ember, Ocean)", featureFlag: "visual-fx-plasma" },
+  { name: "Clifford Attractor", category: "Mathematical", description: "Strange attractor visualization with parametric chaos", featureFlag: "visual-fx" },
+  { name: "Gray-Scott Reaction-Diffusion", category: "PDE", description: "Pattern generator producing organic textures via coupled partial differential equations", featureFlag: "visual-fx" },
+  { name: "Mandelbrot", category: "Fractal", description: "Complex-plane fractal with smooth coloring and zoom capability", featureFlag: "visual-fx" },
+  { name: "Spiral", category: "Geometric", description: "Parametric spiral with configurable tightness and exponential expansion", featureFlag: "visual-fx" },
+  { name: "Scrim (Vignette)", category: "Overlay", description: "Darkening overlay with uniform, vignette, or vertical-fade modes for text legibility", featureFlag: "visual-fx" },
+  { name: "Stacked FX", category: "Composition", description: "Layer multiple effects with per-layer opacity for rich backgrounds", featureFlag: "visual-fx" },
+];
+
+// ── Keybinding Reference ────────────────────────────────────────────
+
+export interface KeyBinding {
+  key: string;
+  priority: number;
+  condition: string;
+  action: string;
+}
+
+export const keybindingPolicy: KeyBinding[] = [
+  { key: "Esc", priority: 1, condition: "Modal open", action: "Dismiss modal" },
+  { key: "Ctrl+C", priority: 2, condition: "Modal open", action: "Dismiss modal" },
+  { key: "Ctrl+C", priority: 3, condition: "Input has text", action: "Clear input" },
+  { key: "Ctrl+C", priority: 4, condition: "Task running", action: "Cancel task" },
+  { key: "Ctrl+C", priority: 5, condition: "Idle (no input/task)", action: "Quit (configurable)" },
+  { key: "Esc", priority: 6, condition: "View overlay active", action: "Close overlay" },
+  { key: "Esc", priority: 7, condition: "Input has text", action: "Clear input" },
+  { key: "Esc", priority: 8, condition: "Task running", action: "Cancel task" },
+  { key: "Esc Esc", priority: 9, condition: "Always (within 250ms)", action: "Toggle tree view" },
+  { key: "Ctrl+D", priority: 10, condition: "Always", action: "Soft quit" },
+  { key: "Ctrl+Q", priority: 11, condition: "Always", action: "Hard quit" },
+];
+
+// ── State Machine Overview ──────────────────────────────────────────
+
+export interface StateMachine {
+  name: string;
+  states: string[];
+  description: string;
+  keyInvariant: string;
+}
+
+export const stateMachines: StateMachine[] = [
+  {
+    name: "Terminal State Machine",
+    states: ["Normal", "Raw", "AltScreen"],
+    description: "Models the terminal as a state machine consuming bytes and updating a display grid. Tracks cursor, style, grid, link state, cursor visibility, sync output, and scroll region.",
+    keyInvariant: "Mode cleanup: on exit, Raw/AltScreen/mouse/paste/focus modes are restored to safe defaults via RAII Drop.",
+  },
+  {
+    name: "Rendering Pipeline",
+    states: ["Idle", "Measuring", "Rendering", "Diffing", "Presenting", "Error"],
+    description: "The core render loop transitions through layout measurement, buffer rendering, diff computation, and ANSI presentation. Error state restores terminal to safe state.",
+    keyInvariant: "In Rendering, only the back buffer is modified. In Presenting, only ANSI output is produced. After Presenting, front buffer equals desired grid.",
+  },
+  {
+    name: "Escape Sequence Detector",
+    states: ["Idle", "AwaitingSecondEsc", "Emit(Esc)", "Emit(EscEsc)"],
+    description: "Detects single vs double-Esc keypress within a configurable timeout (default 250ms). Enables Esc Esc → toggle overlay without blocking single Esc events.",
+    keyInvariant: "Always returns to Idle. Other keys during AwaitingSecondEsc emit the pending Esc first, then process the new key.",
+  },
+  {
+    name: "Resize Coalescer",
+    states: ["Stable", "PendingResize", "Reflowing"],
+    description: "Coalesces rapid resize events using Bayesian change-point detection. Waits for the resize storm to settle before triggering a full relayout, preventing redundant render cycles.",
+    keyInvariant: "Atomic present: a frame corresponds to exactly one (width, height) pair. No mixed-size or partial-size output is ever emitted.",
+  },
+];
+
+// ── Visual Effects Code Example ─────────────────────────────────────
+
+export const visualFxExample = `use ftui_core::geometry::Rect;
+use ftui_extras::visual_fx::{
+    Backdrop, PlasmaFx, PlasmaPalette,
+    MetaballsFx, MetaballsParams,
+    Scrim, ThemeInputs, FxLayer, StackedFx,
+};
+use ftui_render::frame::Frame;
+use ftui_widgets::{paragraph::Paragraph, Widget};
+
+struct FxDemo {
+    backdrop: Backdrop,
+    frame_num: u64,
+}
+
+impl FxDemo {
+    pub fn new() -> Self {
+        let theme = ThemeInputs::default_dark();
+
+        // Stack multiple effects with per-layer opacity
+        let mut stack = StackedFx::new();
+        stack.push(FxLayer::new(
+            Box::new(PlasmaFx::new(PlasmaPalette::Aurora))
+        ));
+        stack.push(FxLayer::with_opacity(
+            Box::new(MetaballsFx::new(MetaballsParams::default())),
+            0.35,
+        ));
+
+        let backdrop = Backdrop::new(Box::new(stack), theme)
+            .with_effect_opacity(0.25)
+            .with_scrim(Scrim::vignette(0.3));
+
+        Self { backdrop, frame_num: 0 }
+    }
+}
+
+impl Widget for FxDemo {
+    fn render(&self, area: Rect, frame: &mut Frame) {
+        let text = Paragraph::new("FX render behind any widget")
+            .style(Style::white().bold());
+        self.backdrop.render_with(area, frame, &text);
+    }
+}`;
+
+// ── Keybinding Config Example ───────────────────────────────────────
+
+export const keybindingExample = `use ftui_runtime::KeybindingConfig;
+
+let config = KeybindingConfig {
+    // What happens when Ctrl+C is pressed with no input/task:
+    ctrl_c_idle_action: CtrlCIdleAction::Quit,
+
+    // Double-Esc detection window (ms)
+    esc_seq_timeout_ms: 250,
+
+    // Min wait before treating Esc as single (ms)
+    esc_debounce_ms: 50,
+
+    // Disable multi-key sequences (strict terminals)
+    disable_esc_sequences: false,
+};
+
+// Or configure via environment:
+// FTUI_CTRL_C_IDLE_ACTION=quit|noop|bell
+// FTUI_ESC_SEQ_TIMEOUT_MS=250
+// FTUI_ESC_DEBOUNCE_MS=50`;
+
+// ── Rendering Pipeline State Diagram ────────────────────────────────
+
+export const renderPipelineDiagram = `┌────────┐  render request  ┌───────────┐  layout done  ┌───────────┐
+│  Idle  │────────────────▶│ Measuring │──────────────▶│ Rendering │
+└────────┘                  └───────────┘               └───────────┘
+    ▲                                                        │
+    │  present complete                              draw complete
+    │                                                        │
+    │                                                        ▼
+┌────────────┐  diff computed  ┌─────────┐            ┌─────────┐
+│ Presenting │◀────────────────│ Diffing │◀───────────│ Diffing │
+└────────────┘                  └─────────┘            └─────────┘
+                                    │
+                              I/O error ──▶ Error ──▶ recover ──▶ Idle`;
+
+// ── Escape Sequence State Diagram ───────────────────────────────────
+
+export const escSeqDiagram = `┌──────────┐   Esc   ┌─────────────────────┐  timeout   ┌─────────────┐
+│   Idle   │────────▶│ AwaitingSecondEsc   │───────────▶│  Emit(Esc)  │
+└──────────┘         └─────────────────────┘            └─────────────┘
+     ▲                        │                               │
+     │                        │ Esc (within 250ms)            │
+     │                        ▼                               │
+     │               ┌───────────────────┐                    │
+     │               │   Emit(EscEsc)    │                    │
+     │               └───────────────────┘                    │
+     │                        │                               │
+     └────────────────────────┴───────────────────────────────┘`;
+
+// ── Glyph Policy Overrides ──────────────────────────────────────────
+
+export interface GlyphOverride {
+  envVar: string;
+  values: string;
+  description: string;
+}
+
+export const glyphOverrides: GlyphOverride[] = [
+  { envVar: "FTUI_GLYPH_MODE", values: "unicode | ascii", description: "Force overall glyph mode. ASCII mode forces line drawing/arrows/emoji off." },
+  { envVar: "FTUI_GLYPH_EMOJI", values: "1 | 0", description: "Enable/disable emoji (ignored in ASCII mode)." },
+  { envVar: "FTUI_NO_EMOJI", values: "1 | 0", description: "Legacy alias — 1 disables emoji." },
+  { envVar: "FTUI_GLYPH_LINE_DRAWING", values: "1 | 0", description: "Enable/disable Unicode box drawing glyphs." },
+  { envVar: "FTUI_GLYPH_ARROWS", values: "1 | 0", description: "Enable/disable Unicode arrows/symbols." },
+  { envVar: "FTUI_GLYPH_DOUBLE_WIDTH", values: "1 | 0", description: "Override double-width glyph support." },
+];
+
+// ── Resize Reflow SLA ───────────────────────────────────────────────
+
+export interface PerformanceSLA {
+  metric: string;
+  target: string;
+  hardCap: string;
+  notes: string;
+}
+
+export const performanceSLAs: PerformanceSLA[] = [
+  { metric: "Resize → first stable present", target: "≤ 120ms (p95)", hardCap: "≤ 250ms (p99)", notes: "Drop intermediate sizes if over budget" },
+  { metric: "Action resolution latency", target: "< 16ms", hardCap: "< 16ms", notes: "All keybinding actions complete within one frame" },
+  { metric: "Conformal prediction alpha", target: "0.05", hardCap: "—", notes: "Coverage: P(y_t ≤ U_t) ≥ 95% within each bucket" },
+  { metric: "Dirty-span overhead (dense)", target: "< 2%", hardCap: "< 5%", notes: "Overhead of dirty-span tracking vs full scan" },
+  { metric: "Dirty-span improvement (sparse)", target: "> 50%", hardCap: "—", notes: "Scan cost reduction for ≤ 5% edit density" },
+];
+
