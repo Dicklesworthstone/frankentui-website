@@ -143,6 +143,7 @@ export default function BeadsView() {
       console.error("Failed to load database:", err);
       setError(err.message || "Unknown system failure.");
       setLoadingMessage("CRITICAL_FAILURE: System corruption detected.");
+      setLoading(false);
     }
   }, []);
 
@@ -246,15 +247,24 @@ export default function BeadsView() {
   }, [db, activeTab, forceGraphLoaded]);
 
   useEffect(() => {
-    if (activeTab === "graph") {
-      const timer = setTimeout(renderGraph, 100);
-      return () => clearTimeout(timer);
+    // If script is already loaded (e.g. navigation back), onLoad might not fire
+    // @ts-ignore
+    if (window.initSqlJs && loading && !db) {
+      loadDatabase();
     }
-  }, [activeTab, renderGraph]);
+  }, [loading, db, loadDatabase]);
 
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] w-full bg-black/40 rounded-3xl border border-green-500/10 backdrop-blur-xl overflow-hidden relative">
+        <Script 
+          src="/beads-viewer/vendor/sql-wasm.js" 
+          onLoad={loadDatabase}
+        />
+        <Script 
+          src="/beads-viewer/vendor/force-graph.min.js" 
+          onLoad={() => setForceGraphLoaded(true)}
+        />
         <NeuralPulse />
         <motion.div 
           animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
@@ -277,6 +287,7 @@ export default function BeadsView() {
 
   return (
     <div className="flex flex-col gap-8 w-full min-h-[800px]">
+      {/* Scripts already handled in loading state, but included here for completeness if loading starts as false */}
       <Script 
         src="/beads-viewer/vendor/sql-wasm.js" 
         onLoad={loadDatabase}
