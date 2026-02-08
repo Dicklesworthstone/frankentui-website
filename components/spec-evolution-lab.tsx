@@ -18,6 +18,7 @@ import {
 
 import styles from "./spec-evolution-lab.module.css";
 import { FrankenBolt, FrankenStitch, NeuralPulse, FrankenContainer } from "./franken-elements";
+import FrankenGlitch from "./franken-glitch";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import {
@@ -486,8 +487,8 @@ function StackedBars({
   // Pure SVG stacked bars (small n, avoids pulling in heavy chart libs).
   const height = 340;
   const barW = 28;
-  const gap = 8;
-  const margin = { top: 18, right: 18, bottom: 56, left: 38 };
+  const gap = 10;
+  const margin = { top: 20, right: 20, bottom: 60, left: 40 };
   const innerH = height - margin.top - margin.bottom;
   const width = Math.max(720, margin.left + margin.right + xKeys.length * (barW + gap));
 
@@ -502,7 +503,7 @@ function StackedBars({
   const tickVals = new Array(yTicks + 1).fill(0).map((_, i) => (maxTotal * i) / yTicks);
 
   return (
-    <div className="overflow-x-auto custom-scrollbar pb-2">
+    <div className="overflow-x-auto custom-scrollbar pb-4">
       <svg
         width={width}
         height={height}
@@ -510,6 +511,20 @@ function StackedBars({
         role="img"
         aria-label="Stacked bar chart of revision buckets over time"
       >
+        <defs>
+          <filter id="barGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="2" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+          {/* Dynamic gradients for each bucket */}
+          {BUCKET_KEYS.map((b) => (
+            <linearGradient key={`grad-${b}`} id={`grad-${b}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={bucketColors[b]} stopOpacity="1" />
+              <stop offset="100%" stopColor={bucketColors[b]} stopOpacity="0.6" />
+            </linearGradient>
+          ))}
+        </defs>
+
         {/* grid + y axis */}
         {tickVals.map((v, i) => {
           const y = margin.top + innerH - (v / maxTotal) * innerH;
@@ -520,18 +535,19 @@ function StackedBars({
                 x2={width - margin.right}
                 y1={y}
                 y2={y}
-                stroke="rgba(255,255,255,0.06)"
+                stroke="rgba(255,255,255,0.04)"
+                strokeDasharray="2 4"
               />
               <text
-                x={margin.left - 10}
+                x={margin.left - 12}
                 y={y + 4}
                 textAnchor="end"
-                fontSize={10}
-                fontWeight="700"
+                fontSize={9}
+                fontWeight="800"
                 fontFamily="var(--font-mono)"
-                fill="rgba(148,163,184,0.6)"
+                fill="rgba(148,163,184,0.4)"
               >
-                {Math.round(v * 100) / 100}
+                {Math.round(v * 10) / 10}
               </text>
             </g>
           );
@@ -544,7 +560,7 @@ function StackedBars({
           return (
             <g
               key={k}
-              className="cursor-pointer group/bar"
+              className="cursor-pointer group/bar outline-none"
               onClick={() => onSelectKey(k)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") onSelectKey(k);
@@ -557,19 +573,22 @@ function StackedBars({
                 const v = seriesByBucket[b][idx] || 0;
                 const h = (v / maxTotal) * innerH;
                 y -= h;
-                if (h <= 0.25) return null;
-                const opacity = focusBucket !== null && b !== focusBucket ? 0.15 : 0.85;
+                if (h <= 0.5) return null;
+                const isFocused = focusBucket === null || b === focusBucket;
+                
                 return (
-                  <rect
+                  <motion.rect
                     key={b}
+                    initial={{ height: 0, y: margin.top + innerH }}
+                    animate={{ height: h, y: y }}
+                    transition={{ type: "spring", stiffness: 100, damping: 20, delay: idx * 0.01 + b * 0.02 }}
                     x={x}
-                    y={y}
                     width={barW}
-                    height={h}
-                    rx={4}
-                    fill={bucketColors[b]}
-                    opacity={opacity}
-                    className="transition-all duration-300 group-hover/bar:opacity-100"
+                    rx={2}
+                    fill={`url(#grad-${b})`}
+                    opacity={isFocused ? 0.8 : 0.1}
+                    style={{ filter: isFocused ? "url(#barGlow)" : "none" }}
+                    className="transition-opacity duration-500 group-hover/bar:opacity-100"
                   />
                 );
               })}
@@ -577,17 +596,27 @@ function StackedBars({
               {/* x label */}
               <text
                 x={x + barW / 2}
-                y={height - 18}
+                y={height - 20}
                 textAnchor="middle"
-                fontSize={10}
-                fontWeight="700"
+                fontSize={9}
+                fontWeight="900"
                 fontFamily="var(--font-mono)"
-                fill="rgba(148,163,184,0.6)"
-                className="group-hover/bar:fill-green-400 transition-colors"
-                transform={xKeys.length > 12 ? `rotate(25, ${x + barW / 2}, ${height - 18})` : undefined}
+                fill="rgba(148,163,184,0.5)"
+                className="group-hover/bar:fill-green-400 transition-colors tracking-tighter"
+                transform={xKeys.length > 12 ? `rotate(35, ${x + barW / 2}, ${height - 20})` : undefined}
               >
                 {k}
               </text>
+              
+              {/* Hover highlight overlay */}
+              <rect
+                x={x - 2}
+                y={margin.top}
+                width={barW + 4}
+                height={innerH}
+                fill="rgba(34,197,94,0.03)"
+                className="opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none rounded-t-lg"
+              />
             </g>
           );
         })}
@@ -899,7 +928,7 @@ export default function SpecEvolutionLab() {
   }
 
   const selectCommit = useCallback((idx: number) => {
-    setSelectedIndex(prev => clampInt(idx, 0, Math.max(0, commits.length - 1)));
+    setSelectedIndex(clampInt(idx, 0, Math.max(0, commits.length - 1)));
     setDistanceOut("");
   }, [commits.length]);
 
@@ -1022,68 +1051,85 @@ export default function SpecEvolutionLab() {
   }
 
   const metricLabel = formatMetricLabel(metric);
-  const filterNote =
-    bucketFilter === null ? "" : ` · Filter: ${bucketFilter}. ${bucketNames[bucketFilter] || `Bucket ${bucketFilter}`}`;
-
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-black text-slate-100 selection:bg-green-500/30 overflow-x-hidden"
+      className="min-h-screen bg-[#020408] text-slate-100 selection:bg-green-500/30 overflow-x-hidden relative"
     >
-      {/* Dynamic background layers */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[150px]" />
+      {/* Cinematic Background Infrastructure */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/5 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/5 rounded-full blur-[150px]" />
+        
+        {/* Global Scanline Overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.05)_50%)] bg-[length:100%_4px] opacity-20" />
+        
+        {/* Occasional VHS glitch static */}
+        <motion.div 
+          animate={{ opacity: [0, 0.03, 0, 0.05, 0] }}
+          transition={{ duration: 4, repeat: Infinity, times: [0, 0.1, 0.2, 0.3, 1] }}
+          className="absolute inset-0 bg-white/[0.02] mix-blend-overlay"
+        />
       </div>
 
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl relative">
-        <NeuralPulse className="opacity-30" />
-        <div className="mx-auto max-w-[1600px] px-4 py-4 md:px-8">
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-black/80 backdrop-blur-2xl relative overflow-hidden">
+        <NeuralPulse className="opacity-40" />
+        {/* Header Telemetry Strip */}
+        <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-green-500/40 to-transparent" />
+        
+        <div className="mx-auto max-w-[1600px] px-4 py-5 md:px-8">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-4">
               <Link 
                 href="/how-it-was-built"
-                className="h-10 w-10 shrink-0 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90 group"
+                className="h-11 w-11 shrink-0 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90 group relative overflow-hidden"
                 title="Return to Build Log"
               >
-                <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+                <div className="absolute inset-0 bg-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5 z-10" />
               </Link>
-              <div className="w-px h-6 bg-white/10 hidden sm:block" />
+              <div className="w-px h-8 bg-white/10 hidden sm:block" />
             </div>
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-4">
-                <div className="relative h-10 w-10 shrink-0 rounded-xl border border-green-500/20 bg-green-500/5 grid place-items-center shadow-[0_0_20px_rgba(34,197,94,0.15)] group">
+              <div className="flex items-center gap-5">
+                <div className="relative h-12 w-12 shrink-0 rounded-xl border border-green-500/20 bg-green-500/5 grid place-items-center shadow-[0_0_30px_rgba(34,197,94,0.15)] group overflow-hidden">
                   <FrankenBolt className="absolute -left-1 -top-1 z-20 scale-50" />
                   <FrankenBolt className="absolute -right-1 -bottom-1 z-20 scale-50" />
-                  <span className="font-black text-xs text-green-400 group-hover:scale-110 transition-transform">LAB</span>
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-0 border border-green-500/10 rounded-full scale-150 border-dashed" 
+                  />
+                  <span className="font-black text-sm text-green-400 group-hover:scale-110 transition-transform z-10">EVO</span>
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-lg md:text-xl font-black tracking-tight truncate text-white uppercase tracking-[0.05em]">Spec Evolution Lab</h1>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
-                    <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-widest">
-                      Forensic Spec Reconstruction _ System_Active
-                    </p>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]" />
+                    <span className="text-[9px] font-black text-green-500/60 uppercase tracking-[0.3em]">System_Integrity_Green</span>
                   </div>
+                  <FrankenGlitch trigger="hover" intensity="low">
+                    <h1 className="text-xl md:text-2xl font-black tracking-tight truncate text-white uppercase tracking-[0.05em]">Spec Evolution Lab</h1>
+                  </FrankenGlitch>
                 </div>
               </div>
             </div>
 
-            <div className="hidden xl:flex items-center gap-3">
+            <div className="hidden xl:flex items-center gap-4">
               <div className="relative group">
-                <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500 group-focus-within:text-green-400 transition-colors" />
+                <div className="absolute -inset-0.5 bg-green-500/20 rounded-full blur opacity-0 group-focus-within:opacity-100 transition-opacity" />
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500 group-focus-within:text-green-400 transition-colors z-10" />
                 <input
                   id="specLabSearch"
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="SEARCH_FORENSIC_DATA..."
-                  className="w-[300px] rounded-full border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-[11px] font-bold tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:bg-white/10 transition-all"
+                  placeholder="SCRUB_ARCHIVE_DATA..."
+                  className="relative w-[320px] rounded-full border border-white/10 bg-black/40 pl-10 pr-4 py-2.5 text-[11px] font-bold tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:border-green-500/40 transition-all z-10"
                 />
               </div>
 
-              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/5">
+              <div className="flex items-center gap-2 bg-white/[0.03] p-1 rounded-full border border-white/5">
                 <select
                   value={bucketMode}
                   onChange={(e) => setBucketMode(e.target.value as BucketMode)}
@@ -1108,17 +1154,12 @@ export default function SpecEvolutionLab() {
 
               <button
                 type="button"
-                onClick={openLegend}
-                className="rounded-full border border-green-500/20 bg-green-500/10 px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-green-400 hover:bg-green-500/20 focus:outline-none focus:ring-2 focus:ring-green-400/60 transition-all active:scale-95"
-              >
-                LEGEND
-              </button>
-              <button
-                type="button"
                 onClick={() => downloadObjectAsJson(dataset, "frankentui_spec_evolution_dataset.json")}
-                className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:bg-white/10 hover:text-white transition-all active:scale-95"
+                className="group relative h-11 w-11 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-300 hover:text-white transition-all overflow-hidden"
+                title="Export JSON"
               >
-                EXPORT_JSON
+                <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                <Download className="h-4 w-4 relative z-10" />
               </button>
             </div>
 
@@ -1133,193 +1174,310 @@ export default function SpecEvolutionLab() {
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em]">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-slate-400">
-              <div className="h-1 w-1 rounded-full bg-green-500" />
-              <span>{commits.length} COMMITS</span>
-              <span className="text-slate-700">|</span>
-              <span className="text-slate-500 tracking-normal">SCOPE: {dataset.scope_paths.join(" + ")}</span>
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-slate-400">
-              <div className="h-1 w-1 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-              <span>COVERAGE: {reviewedCount}/{commits.length}</span>
-            </span>
+          <div className="mt-5 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em]">
+            <div className="inline-flex items-center gap-3 rounded-md bg-white/[0.02] border border-white/5 px-3 py-1.5 text-slate-500 shadow-inner">
+              <div className="flex items-center gap-1.5">
+                <div className="h-1 w-1 rounded-full bg-green-500" />
+                <span className="text-slate-300">{commits.length} NODES</span>
+              </div>
+              <div className="w-px h-2 bg-white/10" />
+              <span className="tracking-normal opacity-60">SCOPE: {dataset.scope_paths.join(" + ")}</span>
+            </div>
+            
+            <div className="inline-flex items-center gap-3 rounded-md bg-white/[0.02] border border-white/5 px-3 py-1.5 text-slate-500 shadow-inner">
+              <div className="flex items-center gap-1.5">
+                <div className="h-1 w-1 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+                <span className="text-slate-300">VALIDATED: {reviewedCount}/{commits.length}</span>
+              </div>
+            </div>
 
             {bucketFilter !== null ? (
-              <button
+              <motion.button
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
                 type="button"
                 title="Clear bucket filter"
                 onClick={() => setBucketFilter(null)}
-                className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-green-400 hover:bg-green-500/20 transition-all group"
+                className="inline-flex items-center gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-green-400 hover:bg-green-500/20 transition-all group"
               >
                 <div className="h-1 w-1 rounded-full shadow-[0_0_5px_currentColor]" style={{ background: bucketColors[bucketFilter], color: bucketColors[bucketFilter] }} />
                 <span>FILTER: {bucketNames[bucketFilter]}</span>
-                <span className="text-green-700 group-hover:text-green-400 transition-colors ml-1">×</span>
-              </button>
+                <X className="h-3 w-3 ml-1 opacity-60 group-hover:opacity-100" />
+              </motion.button>
             ) : null}
 
-            <span className="ml-auto hidden md:inline-flex items-center gap-3 text-slate-600">
-              <span className="flex items-center gap-1.5">
-                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[8px]">←→</kbd> SCRUB
-              </span>
-              <span className="flex items-center gap-1.5">
-                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[8px]">/</kbd> SEARCH
-              </span>
-              <span className="flex items-center gap-1.5">
-                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[8px]">?</kbd> HELP
-              </span>
+            <span className="ml-auto hidden md:inline-flex items-center gap-4 text-slate-600">
+              <div className="flex items-center gap-4 px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/5">
+                <span className="flex items-center gap-1.5">
+                  <kbd className="rounded bg-black/40 px-1.5 py-0.5 text-[8px] border border-white/10">←→</kbd> SCRUB
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <kbd className="rounded bg-black/40 px-1.5 py-0.5 text-[8px] border border-white/10">/</kbd> SEARCH
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <kbd className="rounded bg-black/40 px-1.5 py-0.5 text-[8px] border border-white/10">?</kbd> HELP
+                </span>
+              </div>
             </span>
           </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-[1600px] px-4 py-8 md:px-8 relative z-10">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_1fr]">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[400px_1fr]">
           {/* Sidebar */}
           <aside className="hidden lg:block">
             <div className="sticky top-[180px]">
-              <FrankenContainer withBolts={true} withStitches={false} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden flex flex-col">
-                <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-white/5 px-6 py-4">
-                  <div>
-                    <h2 className="text-sm font-black tracking-widest text-white uppercase">Archive_Nodes</h2>
-                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5 tracking-wider">Historical Snapshots</p>
+              <FrankenContainer withBolts={true} withStitches={false} className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl overflow-hidden flex flex-col h-[calc(100vh-240px)]">
+                <div className="flex flex-col border-b border-white/5 bg-white/[0.02] px-6 py-5 gap-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xs font-black tracking-[0.3em] text-white uppercase italic">Archive_Nodes</h2>
+                      <p className="text-[9px] font-bold text-slate-500 uppercase mt-1 tracking-wider">Forensic Stream</p>
+                    </div>
+                    <div className="h-8 w-8 rounded-full border border-white/10 flex items-center justify-center text-slate-600">
+                      <Terminal className="h-3.5 w-3.5" />
+                    </div>
                   </div>
+                  
                   <button
                     type="button"
                     onClick={() => setShowReviewedOnly((v) => !v)}
                     className={clsx(
-                      "rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
-                      showReviewedOnly ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                      "w-full rounded-md border py-2.5 text-[9px] font-black uppercase tracking-[0.2em] transition-all relative overflow-hidden",
+                      showReviewedOnly 
+                        ? "border-green-500/30 bg-green-500/10 text-green-400" 
+                        : "border-white/10 bg-black/40 text-slate-500 hover:border-white/20 hover:text-slate-300"
                     )}
                   >
-                    {showReviewedOnly ? "ONLY_REVIEWED" : "SHOW_ALL"}
+                    {showReviewedOnly ? "Validated_Only_Mode" : "View_All_Revisions"}
+                    {showReviewedOnly && <motion.div layoutId="active-mode" className="absolute inset-0 bg-green-500/5" />}
                   </button>
                 </div>
-                <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar divide-y divide-white/[0.03]">
                   {filteredCommits.map((c) => {
+                    const isActive = c.idx === selectedIndex;
                     const weights = perCommitBucketWeights(c, softMode);
                     const bucketKeys = Object.keys(weights)
                       .map((x) => parseInt(x, 10))
                       .filter((b) => Number.isFinite(b) && b >= 0 && b <= 10) as BucketKey[];
-                    const showBuckets = (c.reviewed ? bucketKeys.filter((b) => b !== 0) : bucketKeys).slice(0, 4);
-                    const isActive = c.idx === selectedIndex;
+                    const showBuckets = (c.reviewed ? bucketKeys.filter((b) => b !== 0) : bucketKeys).slice(0, 3);
+                    
                     return (
-                      <button
+                      <motion.button
                         key={c.sha}
                         type="button"
                         onClick={() => selectCommit(c.idx)}
+                        whileHover={{ x: 4 }}
                         className={clsx(
-                          "w-full text-left px-6 py-4 border-b border-white/5 transition-all relative group",
-                          isActive ? "bg-green-500/[0.03]" : "hover:bg-white/[0.02]"
+                          "w-full text-left px-6 py-5 transition-all relative group",
+                          isActive ? "bg-green-500/[0.04]" : "hover:bg-white/[0.01]"
                         )}
                       >
-                        {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500 shadow-[0_0_10px_#22c55e]" />}
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-3">
-                              <span className={clsx("font-mono text-[10px] font-bold", isActive ? "text-green-400" : "text-slate-600")}>{c.short}</span>
-                              <span className="font-mono text-[10px] text-slate-600">{c.dateShort.split(' ')[0]}</span>
-                            </div>
-                            <div className={clsx("mt-1.5 text-[13px] font-bold truncate transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{c.subject || "Untitled Archive Node"}</div>
+                        {isActive && (
+                          <>
+                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500 shadow-[0_0_15px_#22c55e]" />
+                            <motion.div layoutId="node-glow" className="absolute inset-0 bg-gradient-to-r from-green-500/[0.05] to-transparent pointer-events-none" />
+                          </>
+                        )}
+                        
+                        <div className="flex items-center justify-between mb-2">
+                          <span className={clsx(
+                            "font-mono text-[9px] font-black px-1.5 py-0.5 rounded border transition-colors",
+                            isActive ? "text-green-400 border-green-500/30 bg-green-500/10" : "text-slate-600 border-white/5 bg-white/5"
+                          )}>
+                            {c.short}
+                          </span>
+                          <span className="font-mono text-[9px] text-slate-700 font-bold">{c.dateShort.split(' ')[0]}</span>
+                        </div>
+
+                        <div className={clsx(
+                          "text-[13px] font-bold leading-snug transition-colors line-clamp-2",
+                          isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300"
+                        )}>
+                          {c.subject || "Untitled Archive Node"}
+                        </div>
+
+                        <div className="mt-4 flex items-center gap-3">
+                          <div className="flex -space-x-1.5">
+                            {showBuckets.map((b) => (
+                              <div
+                                key={b}
+                                className="h-3 w-3 rounded-full border border-[#020408] shadow-sm"
+                                style={{ background: bucketColors[b] }}
+                                title={bucketNames[b]}
+                              />
+                            ))}
+                          </div>
+                          
+                          <div className="flex-1 h-[1px] bg-white/5" />
+                          
+                          <div className="flex items-center gap-2 text-[8px] font-black uppercase tracking-tighter text-slate-700">
+                            <span className="text-green-500/40">+{c.totals.added}</span>
+                            <span className="text-red-500/40">-{c.totals.deleted}</span>
                           </div>
                         </div>
-                        <div className="mt-3 flex flex-wrap gap-1.5 items-center">
-                          {showBuckets.length ? (
-                            showBuckets.map((b) => (
-                              <span
-                                key={b}
-                                className="inline-flex items-center gap-1 rounded-full bg-white/[0.03] border border-white/5 px-2 py-0.5 text-[9px] font-mono text-slate-500"
-                              >
-                                <span className="h-1 w-1 rounded-full shadow-[0_0_3px_currentColor]" style={{ background: bucketColors[b], color: bucketColors[b] }} />
-                                {b}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-[9px] text-slate-700 font-bold uppercase tracking-tighter">NULL_BUCKET</span>
-                          )}
-                          {c.reviewed && (
-                            <span className="ml-auto text-[8px] font-black text-green-500/60 uppercase tracking-widest">_VALIDATED</span>
-                          )}
-                        </div>
-                      </button>
+                      </motion.button>
                     );
                   })}
+                </div>
+                
+                <div className="p-4 bg-black/40 border-t border-white/5">
+                  <div className="flex items-center justify-between px-2">
+                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Stream_Buffer_Capacity</span>
+                    <span className="text-[8px] font-mono text-green-500/60">100%</span>
+                  </div>
+                  <div className="mt-2 h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full w-full bg-green-500/20" />
+                  </div>
                 </div>
               </FrankenContainer>
             </div>
           </aside>
 
           {/* Main content */}
-          <section className="space-y-8">
+          <section className="space-y-10">
             {/* Chart card */}
-            <FrankenContainer withBolts={false} withPulse={true} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl p-0 overflow-hidden">
-              <div className="flex flex-col gap-4 border-b border-white/5 bg-white/5 px-6 py-5 md:flex-row md:items-center md:justify-between">
+            <FrankenContainer withBolts={false} withPulse={true} className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden relative group/chart">
+              {/* Internal decorative elements */}
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(34,197,94,0.05),transparent)] pointer-events-none" />
+              
+              <div className="flex flex-col gap-4 border-b border-white/5 bg-white/[0.03] px-8 py-6 md:flex-row md:items-center md:justify-between relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
                 <div>
-                  <h2 className="text-lg font-black tracking-tight text-white uppercase tracking-wider flex items-center gap-3">
-                    <div className="h-2 w-2 rounded-full bg-green-500 animate-ping" />
-                    Revision_Taxonomy_Temporal_Flow
-                  </h2>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                    Temporal change-group distribution analysis
+                  <div className="flex items-center gap-3 mb-1">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
+                    <h2 className="text-base font-black tracking-[0.2em] text-white uppercase italic">
+                      Revision_Temporal_Flow
+                    </h2>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-5">
+                    Forensic distribution analysis across temporal buckets
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSoftMode((v) => !v)}
-                    className={clsx(
-                      "rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg",
-                      softMode ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-white/10 bg-white/5 text-slate-400"
-                    )}
-                  >
-                    {softMode ? "SOFT_WEIGHTS" : "HARD_LABELS"}
-                  </button>
+                
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center bg-black/40 p-1 rounded-md border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setSoftMode((v) => !v)}
+                      className={clsx(
+                        "rounded px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                        softMode ? "bg-green-500/20 text-green-400" : "text-slate-500 hover:text-slate-300"
+                      )}
+                    >
+                      {softMode ? "Soft_Weights" : "Hard_Labels"}
+                    </button>
+                  </div>
                   <button
                     type="button"
                     onClick={() => {
                       setBucketFilter(null);
                       setShowReviewedOnly(false);
                     }}
-                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-lg"
+                    className="rounded-md border border-white/10 bg-white/5 px-4 py-2 text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-md active:scale-95"
                   >
-                    RESET
+                    RESET_PROBE
                   </button>
                 </div>
               </div>
 
-              <div className="p-8">
-                <StackedBars
-                  xKeys={chartModel.xKeys}
-                  seriesByBucket={chartModel.seriesByBucket}
-                  focusBucket={bucketFilter}
-                  onSelectKey={(k) => {
-                    const idx = chartModel.firstCommitByKey.get(k);
-                    if (typeof idx === "number") selectCommit(idx);
-                  }}
-                />
-                <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-t border-white/5 pt-6">
-                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] leading-relaxed">
-                    Mode: <span className="text-slate-300">{softMode ? "Soft" : "Hard"}</span> 
-                    <span className="mx-2 opacity-30">|</span> Metric: <span className="text-slate-300">{metricLabel}</span> 
-                    <span className="mx-2 opacity-30">|</span> Bucket: <span className="text-slate-300">{bucketMode}</span>
-                    {filterNote && <><span className="mx-2 opacity-30">|</span> <span className="text-green-400">{filterNote}</span></>}
+              <div className="p-10">
+                <div className="relative">
+                  {/* Chart Grid Decoration */}
+                  <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+                  
+                  <StackedBars
+                    xKeys={chartModel.xKeys}
+                    seriesByBucket={chartModel.seriesByBucket}
+                    focusBucket={bucketFilter}
+                    onSelectKey={(k) => {
+                      const idx = chartModel.firstCommitByKey.get(k);
+                      if (typeof idx === "number") selectCommit(idx);
+                    }}
+                  />
+                </div>
+
+                <div className="mt-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between border-t border-white/5 pt-8">
+                  <div className="grid grid-cols-2 md:flex md:items-center gap-x-8 gap-y-4">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Analysis_Mode</span>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{softMode ? "Probabilistic" : "Deterministic"}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Telemetry_Metric</span>
+                      <span className="text-[10px] font-bold text-green-500 uppercase tracking-wider">{metricLabel}</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Bucket_Resolution</span>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">{bucketMode}</span>
+                    </div>
                   </div>
+                  
                   <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={openLegend}
-                      className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-white/10 hover:text-white transition-all shadow-md"
+                      className="md:hidden rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-300 transition-all"
                     >
-                      TAXONOMY_LEGEND
+                      TAXONOMY
                     </button>
                     <button
                       type="button"
                       onClick={openCommits}
-                      className="lg:hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-all"
+                      className="lg:hidden rounded-full border border-green-500/20 bg-green-500/10 px-5 py-2.5 text-[9px] font-black uppercase tracking-[0.2em] text-green-400 transition-all"
                     >
-                      COMMITS
+                      NODES
                     </button>
                   </div>
+                </div>
+
+                {/* Forensic Legend Bar — Desktop */}
+                <div className="hidden md:flex flex-wrap items-center gap-x-2 gap-y-2 mt-6 pt-6 border-t border-white/5">
+                  <div className="flex items-center gap-2 mr-4">
+                    <div className="h-1 w-1 rounded-full bg-green-500 animate-pulse" />
+                    <FrankenGlitch trigger="always" intensity="low">
+                      <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-500">
+                        Taxonomy_Ledger:
+                      </span>
+                    </FrankenGlitch>
+                  </div>
+                  
+                  {BUCKET_KEYS.map((b) => {
+                    const active = bucketFilter === b;
+                    return (
+                      <motion.button
+                        key={b}
+                        type="button"
+                        whileHover={{ scale: 1.05, y: -1 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => toggleBucketFilter(b)}
+                        title={dataset.bucket_defs?.[String(b)] || bucketNames[b]}
+                        className={clsx(
+                          "group relative inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest transition-all duration-300",
+                          active
+                            ? "bg-green-500/10 text-green-400 border border-green-500/40 shadow-[0_0_15px_rgba(34,197,94,0.15)]"
+                            : "text-slate-500 hover:text-slate-300 border border-white/5 hover:border-white/10 bg-white/[0.02] hover:bg-white/5"
+                        )}
+                      >
+                        {/* Power-on indicator */}
+                        <div
+                          className={clsx(
+                            "h-1.5 w-1.5 rounded-full shrink-0 transition-all duration-500",
+                            active ? "shadow-[0_0_8px_currentColor]" : "opacity-40 grayscale group-hover:grayscale-0 group-hover:opacity-100"
+                          )}
+                          style={{ background: bucketColors[b], color: bucketColors[b] }}
+                        />
+                        {bucketNames[b]}
+                        
+                        {/* Subtle scanline on active chip */}
+                        {active && (
+                          <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_2px] opacity-20 rounded-[inherit]" />
+                        )}
+                      </motion.button>
+                    );
+                  })}
                 </div>
               </div>
             </FrankenContainer>
@@ -1569,118 +1727,158 @@ export default function SpecEvolutionLab() {
             </FrankenContainer>
 
             {/* Inspector */}
-            <FrankenContainer withBolts={true} withPulse={true} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl p-0 overflow-hidden flex flex-col">
-              <div className="flex flex-col gap-4 border-b border-white/5 bg-white/5 px-6 py-5 md:flex-row md:items-center md:justify-between">
+            <FrankenContainer withBolts={true} withPulse={true} className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden flex flex-col min-h-[600px] group/inspector">
+              <div className="flex flex-col gap-4 border-b border-white/5 bg-white/[0.03] px-8 py-6 md:flex-row md:items-center md:justify-between relative">
+                <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
                 <div>
-                  <h2 className="text-lg font-black tracking-tight text-white uppercase tracking-widest">Commit_Forensics_Inspector</h2>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Deep Archive Data Extraction</p>
+                  <div className="flex items-center gap-3 mb-1">
+                    <Terminal className="h-4 w-4 text-green-500/60" />
+                    <h2 className="text-base font-black tracking-[0.2em] text-white uppercase italic">Forensics_Inspector</h2>
+                  </div>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-7">Deep Archive Data Extraction & Analysis</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <select
-                    value={fileChoice}
-                    onChange={(e) => setFileChoice(e.target.value)}
-                    className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/40 hover:text-white transition-all cursor-pointer"
-                  >
-                    <option value="__ALL__">ALL_SPEC_FILES</option>
-                    {selectedCommit.files.map((f) => (
-                      <option key={f.path} value={f.path}>{f.path.toUpperCase()}</option>
-                    ))}
-                  </select>
-                  <div className="flex items-center bg-black/40 p-1 rounded-full border border-white/10">
+                
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="relative">
+                    <select
+                      value={fileChoice}
+                      onChange={(e) => setFileChoice(e.target.value)}
+                      className="appearance-none rounded-md border border-white/10 bg-black/60 pl-4 pr-10 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 focus:outline-none focus:border-green-500/40 hover:text-white transition-all cursor-pointer shadow-inner min-w-[180px]"
+                    >
+                      <option value="__ALL__">All_Corpus_Files</option>
+                      {selectedCommit.files.map((f) => (
+                        <option key={f.path} value={f.path}>{f.path.toUpperCase()}</option>
+                      ))}
+                    </select>
+                    <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-600">
+                      <Filter className="h-3 w-3" />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center bg-black/40 p-1 rounded-md border border-white/10 shadow-inner">
                     <button
                       type="button"
                       onClick={() => setDiffFormat("unified")}
                       className={clsx(
-                        "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                        "rounded px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
                         diffFormat === "unified" ? "bg-green-500/20 text-green-400" : "text-slate-500 hover:text-slate-300"
                       )}
                     >
-                      UNIFIED
+                      Unified
                     </button>
                     <button
                       type="button"
                       onClick={() => setDiffFormat("sideBySide")}
                       className={clsx(
-                        "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                        "rounded px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
                         diffFormat === "sideBySide" ? "bg-green-500/20 text-green-400" : "text-slate-500 hover:text-slate-300"
                       )}
                     >
-                      SIDE_BY_SIDE
+                      Split
                     </button>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-3 flex flex-wrap gap-2 border-b border-white/5 bg-white/[0.02]">
+              {/* Forensic Tab Bar */}
+              <div className="px-8 py-4 flex flex-wrap gap-3 border-b border-white/5 bg-white/[0.01]">
                 {(
                   [
-                    ["diff", "DIFF_VIEW"],
-                    ["snapshot", "MD_SNAPSHOT"],
-                    ["raw", "RAW_ARCHIVE"],
-                    ["ledger", "EVIDENCE_LEDGER"],
-                    ["files", "CHANGED_FILES"],
+                    ["diff", "Diff_Stream", "terminal"],
+                    ["snapshot", "MD_Snapshot", "file-text"],
+                    ["raw", "Raw_Archive", "database"],
+                    ["ledger", "Evidence_Ledger", "shield-check"],
+                    ["files", "Changed_Nodes", "layers"],
                   ] as const
-                ).map(([k, label]) => (
-                  <button
-                    key={k}
-                    type="button"
-                    onClick={() => setActiveTab(k)}
-                    className={clsx(
-                      "rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
-                      activeTab === k
-                        ? "border-green-500/30 bg-green-500/10 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.15)]"
-                        : "border-white/5 bg-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
+                ).map(([k, label]) => {
+                  const isActive = activeTab === k;
+                  return (
+                    <button
+                      key={k}
+                      type="button"
+                      onClick={() => setActiveTab(k)}
+                      className={clsx(
+                        "group relative flex items-center gap-2.5 px-5 py-2.5 rounded-md text-[10px] font-black uppercase tracking-[0.15em] transition-all duration-500 overflow-hidden",
+                        isActive
+                          ? "text-green-400 shadow-[0_0_20px_rgba(34,197,94,0.1)]"
+                          : "text-slate-500 hover:text-slate-300"
+                      )}
+                    >
+                      {/* Chip Background */}
+                      <div className={clsx(
+                        "absolute inset-0 transition-all duration-500",
+                        isActive ? "bg-green-500/[0.08] opacity-100" : "bg-white/[0.02] opacity-0 group-hover:opacity-100"
+                      )} />
+                      <div className={clsx(
+                        "absolute inset-x-0 top-0 h-[1px] transition-all duration-500",
+                        isActive ? "bg-green-500/40" : "bg-transparent group-hover:bg-white/10"
+                      )} />
+                      
+                      <span className="relative z-10">{label}</span>
+                      {isActive && <motion.div layoutId="tab-underline" className="absolute bottom-0 left-0 right-0 h-[2px] bg-green-500 shadow-[0_0_10px_#22c55e]" />}
+                    </button>
+                  );
+                })}
               </div>
 
-              <div className="p-6 md:p-8">
+              <div className="p-8 md:p-10 relative flex-1">
+                {/* Content Scanline Effect */}
+                <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.02)_50%)] bg-[length:100%_8px] opacity-20 z-10" />
+                
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab + selectedCommit.sha}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
+                    initial={{ opacity: 0, scale: 0.99, filter: "blur(4px)" }}
+                    animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+                    exit={{ opacity: 0, scale: 1.01, filter: "blur(4px)" }}
+                    transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                    className="relative z-0"
                   >
 	                    {activeTab === "diff" ? (
-	                      <div className="space-y-6">
-	                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-	                          <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] flex items-center gap-3">
-	                            <Terminal className="h-3 w-3" />
-	                            {compareBaseCommit && diffSource === "corpusAB"
-	                              ? "CORPUS_DIFF_A→B"
-	                              : `${patchFiles.length} NODES_IN_PATCH`}
+	                      <div className="space-y-8">
+	                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-white/[0.02] border border-white/5 p-4 rounded-lg">
+	                          <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                  {compareBaseCommit && diffSource === "corpusAB"
+                                    ? "Source_Corpus_Diff_A→B"
+                                    : "Patch_Sequence_Stream"}
+                                </span>
+                              </div>
+                              <div className="w-px h-3 bg-white/10" />
+                              <span className="text-[10px] font-mono text-slate-600 font-bold">
+                                {compareBaseCommit && diffSource === "corpusAB"
+                                  ? `[BASE: ${compareBaseCommit.short}]`
+                                  : `[NODES: ${patchFiles.length}]`}
+                              </span>
 	                          </div>
-	                          <div className="flex flex-wrap items-center gap-2">
+	                          <div className="flex flex-wrap items-center gap-3">
 	                            {compareBaseCommit ? (
-	                              <div className="flex items-center bg-black/40 p-1 rounded-full border border-white/10">
+	                              <div className="flex items-center bg-black/60 p-1 rounded border border-white/10 shadow-inner">
 	                                <button
 	                                  type="button"
 	                                  onClick={() => setDiffSource("commitPatch")}
 	                                  className={clsx(
-	                                    "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+	                                    "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all rounded",
 	                                    diffSource === "commitPatch"
 	                                      ? "bg-green-500/20 text-green-400"
 	                                      : "text-slate-500 hover:text-slate-300"
 	                                  )}
 	                                >
-	                                  PATCH_B
+	                                  Patch_B
 	                                </button>
 	                                <button
 	                                  type="button"
 	                                  onClick={() => setDiffSource("corpusAB")}
 	                                  className={clsx(
-	                                    "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+	                                    "px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all rounded",
 	                                    diffSource === "corpusAB"
 	                                      ? "bg-rose-500/20 text-rose-200"
 	                                      : "text-slate-500 hover:text-slate-300"
 	                                  )}
 	                                >
-	                                  CORPUS_A_B
+	                                  Corpus_A_B
 	                                </button>
 	                              </div>
 	                            ) : null}
@@ -1688,10 +1886,10 @@ export default function SpecEvolutionLab() {
 	                            <button
 	                              type="button"
 	                              onClick={() => downloadObjectAsJson(selectedCommit, `${selectedCommit.short}.json`)}
-	                              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-md flex items-center gap-2"
+	                              className="rounded border border-white/10 bg-white/5 px-4 py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2"
 	                            >
-	                              <Download className="h-3.5 w-3.5" />
-	                              EXTRACT_JSON
+	                              <Download className="h-3 w-3" />
+	                              Extract
 	                            </button>
 	                          </div>
 	                        </div>

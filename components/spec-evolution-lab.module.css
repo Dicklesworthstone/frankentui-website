@@ -120,7 +120,7 @@
     border: none;
     padding: 8px 0;
     display: grid;
-    grid-template-columns: minmax(8.5rem, 0.95fr) 1.05fr;
+    grid-template-columns: minmax(10rem, 0.95fr) 1.05fr;
     gap: 0.75rem;
     align-items: start;
     word-break: break-word;
