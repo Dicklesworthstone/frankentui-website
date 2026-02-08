@@ -129,7 +129,7 @@ export default function HomePage() {
                   loop
                   playsInline
                   poster="/screenshots/visual_effects_clifford_attractor.webp"
-                  className="absolute inset-0 block w-full h-full object-cover scale-[1.08]"
+                  className="absolute inset-0 block w-full h-full object-cover"
                  >
                   <source src="/videos/frankentui-rio-crt.webm" type="video/webm" />
                   <source src="/videos/frankentui-rio-crt.mp4" type="video/mp4" />
