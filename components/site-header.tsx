@@ -121,9 +121,19 @@ export default function SiteHeader() {
       {/* ── MOBILE BOTTOM NAV ───────────────────────────────── */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-[90%] pointer-events-none">
         <nav className="glass-modern h-16 rounded-2xl border border-white/10 flex items-center justify-around px-2 pointer-events-auto shadow-2xl">
-          {navItems.map((item) => {
+          {navItems.slice(0, 5).map((item) => {
             const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
             const Icon = getIcon(item.label);
+            const shortLabel: Record<string, string> = {
+              "Home": "Home",
+              "Showcase": "Show",
+              "Architecture": "Arch.",
+              "War Stories": "Wars",
+              "Project Graph": "Graph",
+              "Built in 5 Days": "Build",
+              "Glossary": "Gloss.",
+              "Get Started": "Start",
+            };
             return (
               <Link
                 key={item.href}
@@ -134,7 +144,7 @@ export default function SiteHeader() {
                 )}
               >
                 <Icon className="h-5 w-5 mb-1" />
-                <span className="text-[7px] font-black uppercase tracking-tighter">{item.label.split(' ')[0]}</span>
+                <span className="text-[7px] font-black uppercase tracking-tighter">{shortLabel[item.label] ?? item.label.split(' ')[0]}</span>
               </Link>
             );
           })}
