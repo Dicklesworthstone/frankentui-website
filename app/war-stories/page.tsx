@@ -81,12 +81,7 @@ export default function WarStoriesPage() {
         kicker="Hard performance targets enforced in CI. Violations are test failures, not warnings."
         forceReveal={true}
       >
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.98 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          className="overflow-x-auto glass-modern rounded-3xl p-1 border-white/5 shadow-2xl"
-        >
+        <div className="overflow-x-auto glass-modern rounded-3xl p-1 border-white/5 shadow-2xl">
           <table className="w-full text-left text-sm border-collapse min-w-[600px]">
             <thead>
               <tr className="border-b border-white/10 bg-white/5">
@@ -107,7 +102,7 @@ export default function WarStoriesPage() {
               ))}
             </tbody>
           </table>
-        </motion.div>
+        </div>
       </SectionShell>
 
       {/* ── EFFICIENCY GAINS ────────────────────────────────────── */}
@@ -119,28 +114,17 @@ export default function WarStoriesPage() {
         forceReveal={true}
       >
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {optimizations.map((opt, i) => (
-            <motion.div
-              key={opt.name}
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-            >
+          {optimizations.map((opt) => (
+            <div key={opt.name}>
               <OptimizationCard opt={opt} />
-            </motion.div>
+            </div>
           ))}
         </div>
       </SectionShell>
 
       {/* ── CTA SECTION ──────────────────────────────────────── */}
       <section className="relative mx-auto max-w-7xl px-6 pb-40">
-        <motion.div 
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="relative overflow-hidden rounded-[3rem] border border-red-900/40 bg-gradient-to-br from-red-950/20 via-black to-black p-12 md:p-24 text-center"
-        >
+        <div className="relative overflow-hidden rounded-[3rem] border border-red-900/40 bg-gradient-to-br from-red-950/20 via-black to-black p-12 md:p-24 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(239,68,68,0.05),transparent_70%)]" />
 
           <div className="relative z-10 max-w-2xl mx-auto space-y-8">
@@ -169,7 +153,7 @@ export default function WarStoriesPage() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
       </section>
     </main>
   );
