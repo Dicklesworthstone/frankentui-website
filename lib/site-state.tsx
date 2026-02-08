@@ -89,12 +89,14 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   }, [playSfx]);
 
   const toggleAudio = useCallback(() => {
-    const newState = !audioEnabledRef.current;
-    audioEnabledRef.current = newState;
-    setIsAudioEnabled(newState);
-    if (newState) {
-      setTimeout(() => playSfx("hum"), 100);
-    }
+    setIsAudioEnabled(prev => {
+      const newState = !prev;
+      audioEnabledRef.current = newState;
+      if (newState) {
+        setTimeout(() => playSfx("hum"), 100);
+      }
+      return newState;
+    });
   }, [playSfx]);
 
   // Handle keyboard shortcuts
