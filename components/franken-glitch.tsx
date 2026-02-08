@@ -80,6 +80,8 @@ export default function FrankenGlitch({
       className={cn("relative inline-block will-change-transform", className)}
       onMouseEnter={() => trigger === "hover" && setIsHovered(true)}
       onMouseLeave={() => trigger === "hover" && setIsHovered(false)}
+      onTouchStart={() => trigger === "hover" && setIsHovered(true)}
+      onTouchEnd={() => trigger === "hover" && setIsHovered(false)}
       style={{ transform: "translateZ(0)" }}
     >
       <motion.div

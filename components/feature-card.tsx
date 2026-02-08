@@ -24,21 +24,27 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
 
   const background = useMotionTemplate`radial-gradient(600px circle at ${mouseX}px ${mouseY}px, rgba(34, 197, 94, 0.1), transparent 80%)`;
 
-  const handleMouseMove = useCallback(({
-    currentTarget,
-    clientX,
-    clientY,
-  }: React.MouseEvent) => {
+  const updateMousePos = useCallback((clientX: number, clientY: number, currentTarget: HTMLElement) => {
     const { left, top } = currentTarget.getBoundingClientRect();
     mouseX.set(clientX - left);
     mouseY.set(clientY - top);
   }, [mouseX, mouseY]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
+    updateMousePos(e.clientX, e.clientY, e.currentTarget);
+  }, [updateMousePos]);
+
+  const handleTouchMove = useCallback((e: React.TouchEvent<HTMLElement>) => {
+    updateMousePos(e.touches[0].clientX, e.touches[0].clientY, e.currentTarget);
+  }, [updateMousePos]);
 
   const Icon = iconMap[feature.icon] || Sparkles;
 
   return (
     <article
       onMouseMove={handleMouseMove}
+      onTouchMove={handleTouchMove}
+      onTouchStart={handleTouchMove}
       className="group relative h-full rounded-[2rem] transition-all duration-500 hover:-translate-y-2 overflow-hidden kinetic-card"
     >
       <FrankenContainer withPulse={true} className="h-full border-none bg-white/[0.02] group-hover:bg-white/[0.04] transition-all duration-500 p-8 md:p-10 group-hover:border-green-500/20">
