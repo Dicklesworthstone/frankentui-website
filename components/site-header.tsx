@@ -120,7 +120,7 @@ export default function SiteHeader() {
       {/* ── MOBILE BOTTOM NAV ───────────────────────────────── */}
       <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 md:hidden w-[90%] pointer-events-none">
         <nav className="glass-modern h-16 rounded-2xl border border-white/10 flex items-center justify-around px-2 pointer-events-auto shadow-2xl">
-          {navItems.slice(0, 4).map((item) => {
+          {navItems.slice(0, 6).map((item) => {
             const active = pathname === item.href || (item.href !== "/" && pathname?.startsWith(item.href));
             const Icon = getIcon(item.label);
             return (

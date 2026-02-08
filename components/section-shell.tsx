@@ -78,7 +78,7 @@ export default function SectionShell({
 }: Props) {
   const Icon = icon ? sectionIcons[icon] : undefined;
   const HeadingTag = `h${headingLevel}` as const;
-  const { ref, isIntersecting } = useIntersectionObserver({ threshold: 0.1 });
+  const { ref, isIntersecting } = useIntersectionObserver({ threshold: 0.05 });
   const prefersReducedMotion = useReducedMotion();
 
   const headingId = id ? `${id}-heading` : undefined;
@@ -92,7 +92,7 @@ export default function SectionShell({
       id={id}
       aria-labelledby={headingId}
       className={cn(
-        "relative mx-auto max-w-7xl px-6 py-24 md:py-40 lg:py-56",
+        "relative mx-auto max-w-7xl px-6 py-16 md:py-32 lg:py-48",
         className
       )}
     >

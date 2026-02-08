@@ -17,7 +17,7 @@ export default function Timeline({ items }: { items: ChangelogEntry[] }) {
               key={item.period}
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
+              viewport={{ once: true, margin: "-20px" }}
               transition={{ duration: 0.8, ease: [0.19, 1, 0.22, 1], delay: (index % 4) * 0.1 }}
               className="relative pl-8 md:pl-24 group"
             >

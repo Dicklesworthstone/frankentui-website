@@ -68,7 +68,7 @@ function DecisionCard({
   description: string;
 }) {
   return (
-    <FrankenContainer withStitches={false} className="group glass-modern h-full p-8 md:p-10 transition-all hover:bg-white/[0.03]">
+    <FrankenContainer withStitches={false} className="group glass-modern h-full p-6 md:p-10 transition-all hover:bg-white/[0.03]">
       <div className="flex flex-col h-full">
         <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/5 border border-green-500/20 text-green-400 mb-8 group-hover:scale-110 transition-transform">
           <Icon className="h-6 w-6" />
@@ -93,7 +93,7 @@ export default function ArchitecturePage() {
   return (
     <main id="main-content" className="relative min-h-screen bg-black overflow-x-hidden">
       {/* ── HIGH-END HEADER ───────────────────────────────── */}
-      <header className="relative pt-44 pb-20 overflow-hidden border-b border-white/5">
+      <header className="relative pt-32 pb-16 md:pt-44 md:pb-20 overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 z-0">
            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-green-500/5 rounded-full blur-[80px]" />
            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-emerald-500/5 rounded-full blur-[60px]" />
@@ -162,7 +162,7 @@ export default function ArchitecturePage() {
                 viewport={{ once: true }}
                 className="relative group"
               >
-                <FrankenContainer withBolts={false} withPulse={true} className="glass-modern p-8 text-center h-full flex flex-col items-center hover:bg-green-500/5 hover:border-green-500/30 transition-all overflow-hidden border-green-500/10">
+                <FrankenContainer withBolts={false} withPulse={true} className="glass-modern p-6 md:p-8 text-center h-full flex flex-col items-center hover:bg-green-500/5 hover:border-green-500/30 transition-all overflow-hidden border-green-500/10">
                   <motion.div 
                     whileHover={{ rotate: [0, -10, 10, 0], transition: { duration: 0.4 } }}
                     className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-green-400 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(34,197,94,0.1)]"
