@@ -272,25 +272,28 @@ export default function BeadsView() {
         .nodeCanvasObject((node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
           const size = (5 - node.priority) * 1.5 + 3;
           
+          ctx.save();
+          // Glow effect
+          ctx.shadowColor = STATUS_COLORS[node.status] || THEME.green;
+          ctx.shadowBlur = 15 / globalScale;
+          
           ctx.beginPath(); 
           ctx.arc(node.x, node.y, size, 0, 2 * Math.PI, false); 
           ctx.fillStyle = STATUS_COLORS[node.status] || THEME.green;
           ctx.fill();
           
-          // Glow effect
-          ctx.shadowColor = STATUS_COLORS[node.status] || THEME.green;
-          ctx.shadowBlur = 10 / globalScale;
-          
+          ctx.shadowBlur = 0;
+
           if (globalScale > 1.2) {
             const label = node.id;
             const fontSize = 10 / globalScale;
             ctx.font = `${fontSize}px JetBrains Mono`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillStyle = "rgba(255,255,255,0.7)";
-            ctx.shadowBlur = 0;
-            ctx.fillText(label, node.x, node.y + size + (4 / globalScale));
+            ctx.fillStyle = "rgba(255,255,255,0.8)";
+            ctx.fillText(label, node.x, node.y + size + (5 / globalScale));
           }
+          ctx.restore();
         })
         .onNodeClick((node: any) => {
           try {
@@ -347,7 +350,6 @@ export default function BeadsView() {
 
   return (
     <div className="flex flex-col gap-12 w-full min-h-[800px] relative">
-      {/* Scripts rendered once at top level to avoid hydration mismatch */}
       <Script src="/beads-viewer/vendor/sql-wasm.js" onLoad={() => setSqlLoaded(true)} />
       <Script src="/beads-viewer/vendor/d3.v7.min.js" onLoad={() => setD3Loaded(true)} />
       <Script src="/beads-viewer/vendor/force-graph.min.js" onLoad={() => setForceGraphLoaded(true)} />
@@ -396,15 +398,15 @@ export default function BeadsView() {
 
           {/* --- 2. MAIN VISTA --- */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 items-stretch text-left">
-            <div className="xl:col-span-2 min-h-[650px] relative rounded-[2.5rem] border border-green-500/10 overflow-hidden bg-[#010501] shadow-2xl">
+            <div className="xl:col-span-2 min-h-[400px] md:min-h-[650px] relative rounded-[2.5rem] border border-green-500/10 overflow-hidden bg-[#010501] shadow-2xl">
               <NeuralPulse className="opacity-20" />
-              <div ref={containerRef} className="w-full h-full min-h-[650px]" />
+              <div ref={containerRef} className="w-full h-full min-h-[400px] md:min-h-[650px]" />
               <BeadHUD />
               <div className="absolute top-8 right-8 flex flex-col gap-3 pointer-events-auto">
                 <button onClick={() => graphRef.current?.zoom(graphRef.current.zoom() * 1.5, 400)} className="h-12 w-12 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-slate-400 flex items-center justify-center hover:bg-green-500 hover:text-black hover:border-green-400 transition-all shadow-2xl group"><Maximize2 className="h-5 w-5 group-hover:scale-110 transition-transform" /></button>
                 <button onClick={() => graphRef.current?.zoomToFit(600, 80)} className="h-12 w-12 rounded-2xl bg-black/60 backdrop-blur-xl border border-white/10 text-slate-400 flex items-center justify-center hover:bg-green-500 hover:text-black hover:border-green-400 transition-all shadow-2xl group"><Network className="h-5 w-5 group-hover:rotate-180 transition-transform duration-700" /></button>
               </div>
-              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-8 px-8 py-4 rounded-full bg-black/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+              <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-8 px-8 py-4 rounded-full bg-black/80 backdrop-blur-2xl border border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)] scale-75 md:scale-100">
                 {Object.entries(STATUS_COLORS).map(([status, color]) => (
                   <div key={status} className="flex items-center gap-3 text-white">
                     <div className="h-2 w-2 rounded-full shadow-[0_0_10px_currentColor] animate-pulse" style={{ backgroundColor: color, color }} />
@@ -415,7 +417,7 @@ export default function BeadsView() {
             </div>
 
             <div className="space-y-6 flex flex-col h-full">
-              <div className="flex items-center gap-3 text-slate-500 px-2">
+              <div className="flex items-center gap-3 text-slate-500 px-2 text-left">
                 <Clock className="h-5 w-5" />
                 <h3 className="text-lg font-black text-white uppercase tracking-widest">Neural_Activity</h3>
               </div>
@@ -464,7 +466,7 @@ export default function BeadsView() {
                       </div>
                     </div>
                     <div className="flex items-center gap-8 relative z-10 sm:text-right">
-                      <div className="flex flex-col sm:items-end">
+                      <div className="flex flex-col sm:items-end text-left sm:text-right">
                         <span className="text-[8px] font-black text-slate-700 uppercase tracking-[0.3em] mb-1">Assigned_To</span>
                         <div className="flex items-center gap-2 text-xs font-bold text-slate-400"><User className="h-3.5 w-3.5 text-slate-600" />{issue.assignee || "UNASSIGNED"}</div>
                       </div>
