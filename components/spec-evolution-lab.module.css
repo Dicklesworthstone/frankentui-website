@@ -1,0 +1,197 @@
+.mdProse {
+  color: rgba(226, 232, 240, 0.92);
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.mdProse h1,
+.mdProse h2,
+.mdProse h3 {
+  letter-spacing: -0.02em;
+  color: rgba(248, 250, 252, 0.98);
+}
+
+.mdProse h1 {
+  font-size: 22px;
+  margin: 1.2em 0 0.6em;
+  font-weight: 900;
+}
+
+.mdProse h2 {
+  font-size: 18px;
+  margin: 1.1em 0 0.5em;
+  font-weight: 900;
+}
+
+.mdProse h3 {
+  font-size: 16px;
+  margin: 1em 0 0.45em;
+  font-weight: 900;
+}
+
+.mdProse p {
+  margin: 0.65em 0;
+}
+
+.mdProse code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 0.12rem 0.35rem;
+  border-radius: 0.45rem;
+  background: rgba(34, 197, 94, 0.08);
+  border: 1px solid rgba(34, 197, 94, 0.15);
+}
+
+.mdProse pre {
+  background: rgba(2, 6, 9, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 14px;
+  overflow: auto;
+}
+
+.mdProse a {
+  color: #4ade80;
+  text-decoration: none;
+}
+
+.mdProse a:hover {
+  text-decoration: underline;
+}
+
+.mdProse hr {
+  border-color: rgba(255, 255, 255, 0.1);
+  margin: 1.2em 0;
+}
+
+.mdProse table {
+  width: 100%;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.mdProse th,
+.mdProse td {
+  border-color: rgba(255, 255, 255, 0.08);
+  padding: 10px 12px;
+  vertical-align: top;
+}
+
+.mdProse th {
+  background: rgba(255, 255, 255, 0.04);
+  text-align: left;
+  font-weight: 800;
+}
+
+/* Mobile-first responsive tables: convert to stacked key/value rows (no horizontal scroll). */
+@media (max-width: 640px) {
+  .mdProse table.responsiveTable {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .mdProse table.responsiveTable thead {
+    display: none;
+  }
+
+  .mdProse table.responsiveTable tbody,
+  .mdProse table.responsiveTable tr,
+  .mdProse table.responsiveTable td,
+  .mdProse table.responsiveTable th {
+    display: block;
+    width: 100%;
+  }
+
+  .mdProse table.responsiveTable tr {
+    margin: 10px 0;
+    padding: 12px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .mdProse table.responsiveTable td,
+  .mdProse table.responsiveTable th {
+    border: none;
+    padding: 8px 0;
+    display: grid;
+    grid-template-columns: minmax(8.5rem, 0.95fr) 1.05fr;
+    gap: 0.75rem;
+    align-items: start;
+    word-break: break-word;
+  }
+
+  .mdProse table.responsiveTable td::before,
+  .mdProse table.responsiveTable th::before {
+    content: attr(data-label);
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: rgba(148, 163, 184, 0.92);
+  }
+
+  .mdProse table.responsiveTable td[data-label=""]::before,
+  .mdProse table.responsiveTable th[data-label=""]::before {
+    content: "";
+  }
+}
+
+/* Minimal highlight.js theme (scoped; avoids pulling a full CSS theme). */
+.mdProse :global(.hljs) {
+  color: rgba(226, 232, 240, 0.92);
+  background: transparent;
+}
+
+.mdProse :global(.hljs-comment),
+.mdProse :global(.hljs-quote) {
+  color: rgba(148, 163, 184, 0.68);
+  font-style: italic;
+}
+
+.mdProse :global(.hljs-keyword),
+.mdProse :global(.hljs-selector-tag),
+.mdProse :global(.hljs-literal) {
+  color: #7dd3fc;
+}
+
+.mdProse :global(.hljs-string),
+.mdProse :global(.hljs-regexp) {
+  color: #34d399;
+}
+
+.mdProse :global(.hljs-number),
+.mdProse :global(.hljs-symbol),
+.mdProse :global(.hljs-bullet) {
+  color: #fbbf24;
+}
+
+.mdProse :global(.hljs-title),
+.mdProse :global(.hljs-section),
+.mdProse :global(.hljs-function) {
+  color: #a78bfa;
+}
+
+.mdProse :global(.hljs-attr),
+.mdProse :global(.hljs-attribute),
+.mdProse :global(.hljs-name),
+.mdProse :global(.hljs-type),
+.mdProse :global(.hljs-class) {
+  color: #f472b6;
+}
+
+.mdProse :global(.hljs-meta),
+.mdProse :global(.hljs-tag) {
+  color: rgba(94, 234, 212, 0.95);
+}
+
+.mdProse :global(.hljs-emphasis) {
+  font-style: italic;
+}
+
+.mdProse :global(.hljs-strong) {
+  font-weight: 800;
+}

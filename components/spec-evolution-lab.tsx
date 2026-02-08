@@ -1,25 +1,40 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import {
   ArrowLeft,
   ArrowRight,
+  ChevronLeft,
   Download,
   Filter,
   HelpCircle,
   Info,
   Link2,
   Search,
+  Terminal,
+  X,
 } from "lucide-react";
 
 import styles from "./spec-evolution-lab.module.css";
+import { FrankenBolt, FrankenStitch, NeuralPulse, FrankenContainer } from "./franken-elements";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import {
+  buildCorpusText,
+  computeEditDistanceLines,
+  computeFileChangeSummary,
+  computeTextStats,
+  myersDiffTextLines,
+  type DiffOp,
+} from "@/lib/spec-evolution-compare";
 
 type BucketKey = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
 type BucketMode = "day" | "hour" | "15m" | "5m";
 type MetricKey = "groups" | "lines" | "patchBytes";
 type TabKey = "diff" | "snapshot" | "raw" | "ledger" | "files";
 type DiffFormat = "unified" | "sideBySide";
+type DiffSource = "commitPatch" | "corpusAB";
 
 type NumStat = { path: string; added: number; deleted: number };
 type Author = { name: string; email: string };
@@ -208,57 +223,6 @@ function buildSnapshotMarkdown(c: CommitView, fileChoice: string) {
   return parts.join("\n");
 }
 
-function computeEditDistanceLines(prevText: string, nextText: string, maxCost: number): number {
-  // Levenshtein distance on lines (token = line). Uses hashing for faster comparisons.
-  const a = prevText.split(/\n/);
-  const b = nextText.split(/\n/);
-
-  const k = typeof maxCost === "number" ? maxCost : Number.POSITIVE_INFINITY;
-  if (Math.abs(a.length - b.length) > k) return k + 1;
-
-  function fnv1a(str: string) {
-    let h = 2166136261;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 16777619);
-    }
-    return h >>> 0;
-  }
-
-  const ah = new Uint32Array(a.length);
-  const bh = new Uint32Array(b.length);
-  for (let i = 0; i < a.length; i++) ah[i] = fnv1a(a[i]);
-  for (let j = 0; j < b.length; j++) bh[j] = fnv1a(b[j]);
-
-  const m = b.length;
-  let prev = new Uint32Array(m + 1);
-  let curr = new Uint32Array(m + 1);
-  for (let j = 0; j <= m; j++) prev[j] = j;
-
-  for (let i = 1; i <= a.length; i++) {
-    curr[0] = i;
-    let minRow = curr[0];
-    const ai = ah[i - 1];
-    for (let j = 1; j <= m; j++) {
-      const cost = ai === bh[j - 1] ? 0 : 1;
-      const del = prev[j] + 1;
-      const ins = curr[j - 1] + 1;
-      const sub = prev[j - 1] + cost;
-      let v = del < ins ? del : ins;
-      if (sub < v) v = sub;
-      curr[j] = v;
-      if (v < minRow) minRow = v;
-    }
-
-    if (minRow > k) return k + 1;
-    const tmp = prev;
-    prev = curr;
-    curr = tmp;
-  }
-
-  return prev[m];
-}
-
 type PatchLineKind = "meta" | "hunk" | "context" | "add" | "del";
 type PatchLine = { kind: PatchLineKind; text: string };
 type PatchHunk = { header: string; lines: PatchLine[] };
@@ -375,6 +339,32 @@ function hunkToSideBySideRows(hunk: PatchHunk): SideRow[] {
   return rows;
 }
 
+function corpusOpsToSideBySideRows(ops: DiffOp[]): SideRow[] {
+  let leftLine = 1;
+  let rightLine = 1;
+  return ops.map((op) => {
+    if (op.kind === "equal") {
+      const text = op.text;
+      return {
+        left: { kind: "context", lineNo: leftLine++, text },
+        right: { kind: "context", lineNo: rightLine++, text },
+      };
+    }
+    if (op.kind === "del") {
+      const text = op.text;
+      return {
+        left: { kind: "del", lineNo: leftLine++, text },
+        right: { kind: "empty" },
+      };
+    }
+    // add
+    return {
+      left: { kind: "empty" },
+      right: { kind: "add", lineNo: rightLine++, text: op.text },
+    };
+  });
+}
+
 function enhanceMarkdownTables(root: HTMLElement | null) {
   if (!root) return;
   const tables = root.querySelectorAll("table");
@@ -432,13 +422,13 @@ function BucketChip({
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-1 text-[11px] font-semibold text-slate-200 hover:bg-white/10"
+      className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[11px] font-bold text-slate-200 hover:bg-white/10 transition-colors hover:border-green-500/30"
       title={name}
       onClick={onClick}
     >
-      <span className="h-2 w-2 rounded-full" style={{ background: bucketColors[bucket] }} />
+      <span className="h-2 w-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ background: bucketColors[bucket], color: bucketColors[bucket] }} />
       <span className="font-mono">{bucket}</span>
-      {showLabel ? <span className="hidden sm:inline text-slate-300">{name}</span> : null}
+      {showLabel ? <span className="hidden sm:inline text-slate-400 font-medium">{name}</span> : null}
     </button>
   );
 }
@@ -457,22 +447,27 @@ function DialogShell({
   return (
     <dialog
       ref={dialogRef}
-      className="w-[min(820px,92vw)] rounded-2xl border border-white/10 bg-[#050a0f] p-0 text-slate-100 shadow-2xl backdrop:bg-black/60"
+      className="w-[min(820px,92vw)] rounded-3xl border border-green-500/20 bg-[#020508] p-0 text-slate-100 shadow-[0_0_80px_-20px_rgba(34,197,94,0.3)] backdrop:bg-black/80 backdrop:backdrop-blur-sm overflow-hidden"
     >
-      <div className="flex items-start justify-between gap-3 border-b border-white/10 p-4">
-        <div className="min-w-0">
-          <h3 className="font-black tracking-tight">{title}</h3>
-          {subtitle ? <p className="mt-1 text-xs text-slate-400">{subtitle}</p> : null}
+      <div className="relative">
+        <FrankenBolt className="absolute -left-1.5 -top-1.5 z-20 scale-75" />
+        <FrankenBolt className="absolute -right-1.5 -top-1.5 z-20 scale-75" />
+        <div className="flex items-start justify-between gap-3 border-b border-white/5 bg-white/5 p-6">
+          <div className="min-w-0">
+            <h3 className="text-xl font-black tracking-tight text-white">{title}</h3>
+            {subtitle ? <p className="mt-1.5 text-xs font-medium text-slate-500 uppercase tracking-widest">{subtitle}</p> : null}
+          </div>
+          <button
+            type="button"
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-400 hover:bg-white/10 hover:text-white transition-all"
+            onClick={() => dialogRef.current?.close()}
+          >
+            Close
+          </button>
         </div>
-        <button
-          type="button"
-          className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"
-          onClick={() => dialogRef.current?.close()}
-        >
-          Close
-        </button>
+        <div className="p-6 max-h-[80vh] overflow-y-auto custom-scrollbar">{children}</div>
+        <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 opacity-20" />
       </div>
-      <div className="p-4">{children}</div>
     </dialog>
   );
 }
@@ -507,7 +502,7 @@ function StackedBars({
   const tickVals = new Array(yTicks + 1).fill(0).map((_, i) => (maxTotal * i) / yTicks);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto custom-scrollbar pb-2">
       <svg
         width={width}
         height={height}
@@ -532,8 +527,9 @@ function StackedBars({
                 y={y + 4}
                 textAnchor="end"
                 fontSize={10}
+                fontWeight="700"
                 fontFamily="var(--font-mono)"
-                fill="rgba(148,163,184,0.9)"
+                fill="rgba(148,163,184,0.6)"
               >
                 {Math.round(v * 100) / 100}
               </text>
@@ -548,7 +544,7 @@ function StackedBars({
           return (
             <g
               key={k}
-              className="cursor-pointer"
+              className="cursor-pointer group/bar"
               onClick={() => onSelectKey(k)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") onSelectKey(k);
@@ -562,7 +558,7 @@ function StackedBars({
                 const h = (v / maxTotal) * innerH;
                 y -= h;
                 if (h <= 0.25) return null;
-                const opacity = focusBucket !== null && b !== focusBucket ? 0.18 : 0.95;
+                const opacity = focusBucket !== null && b !== focusBucket ? 0.15 : 0.85;
                 return (
                   <rect
                     key={b}
@@ -570,9 +566,10 @@ function StackedBars({
                     y={y}
                     width={barW}
                     height={h}
-                    rx={3}
+                    rx={4}
                     fill={bucketColors[b]}
                     opacity={opacity}
+                    className="transition-all duration-300 group-hover/bar:opacity-100"
                   />
                 );
               })}
@@ -583,8 +580,10 @@ function StackedBars({
                 y={height - 18}
                 textAnchor="middle"
                 fontSize={10}
+                fontWeight="700"
                 fontFamily="var(--font-mono)"
-                fill="rgba(148,163,184,0.9)"
+                fill="rgba(148,163,184,0.6)"
+                className="group-hover/bar:fill-green-400 transition-colors"
                 transform={xKeys.length > 12 ? `rotate(25, ${x + barW / 2}, ${height - 18})` : undefined}
               >
                 {k}
@@ -599,6 +598,7 @@ function StackedBars({
 
 function MarkdownView({ markdown }: { markdown: string }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const hljsRef = useRef<{ highlightElement: (el: HTMLElement) => void } | null>(null);
   const [html, setHtml] = useState<string>("");
   const [err, setErr] = useState<string>("");
 
@@ -614,6 +614,8 @@ function MarkdownView({ markdown }: { markdown: string }) {
           import("dompurify"),
           import("highlight.js"),
         ]);
+
+        hljsRef.current = hljs;
 
         marked.setOptions({
           gfm: true,
@@ -634,7 +636,25 @@ function MarkdownView({ markdown }: { markdown: string }) {
   }, [markdown]);
 
   useEffect(() => {
-    enhanceMarkdownTables(rootRef.current);
+    const root = rootRef.current;
+    if (!root) return;
+
+    enhanceMarkdownTables(root);
+
+    const hljs = hljsRef.current;
+    if (!hljs) return;
+
+    // Best-effort syntax highlighting; never fail the render.
+    root.querySelectorAll("pre code").forEach((el) => {
+      const codeEl = el as HTMLElement;
+      if (codeEl.dataset.hljsDone === "1") return;
+      try {
+        hljs.highlightElement(codeEl);
+        codeEl.dataset.hljsDone = "1";
+      } catch {
+        // ignore
+      }
+    });
   }, [html]);
 
   if (err) {
@@ -649,10 +669,9 @@ function MarkdownView({ markdown }: { markdown: string }) {
     <div
       ref={rootRef}
       className={clsx(
-        "rounded-2xl border border-white/10 bg-black/30 p-4 overflow-auto max-h-[72vh]",
+        "rounded-2xl border border-white/5 bg-black/40 p-6 md:p-8 overflow-auto max-h-[72vh] custom-scrollbar selection:bg-green-500/30",
         styles.mdProse
       )}
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
@@ -665,8 +684,10 @@ export default function SpecEvolutionLab() {
 
   const [activeTab, setActiveTab] = useState<TabKey>("diff");
   const [diffFormat, setDiffFormat] = useState<DiffFormat>("unified");
+  const [diffSource, setDiffSource] = useState<DiffSource>("commitPatch");
 
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [compareBaseIndex, setCompareBaseIndex] = useState<number | null>(null);
   const [fileChoice, setFileChoice] = useState<string>("__ALL__");
 
   const [showReviewedOnly, setShowReviewedOnly] = useState<boolean>(false);
@@ -714,6 +735,8 @@ export default function SpecEvolutionLab() {
         setDataset(ds);
         setCommits(cv);
         setSelectedIndex(0);
+        setCompareBaseIndex(null);
+        setDiffSource("commitPatch");
         setFileChoice("__ALL__");
       } catch (e) {
         if (cancelled) return;
@@ -739,10 +762,15 @@ export default function SpecEvolutionLab() {
   }, [bucketFilter, commits, searchQuery, showReviewedOnly]);
 
   const selectedCommit = commits[selectedIndex];
+  const compareBaseCommit = compareBaseIndex !== null ? commits[compareBaseIndex] : null;
 
   useEffect(() => {
     setDistanceOut("");
-  }, [selectedIndex]);
+  }, [selectedIndex, compareBaseIndex]);
+
+  useEffect(() => {
+    if (compareBaseIndex === null && diffSource !== "commitPatch") setDiffSource("commitPatch");
+  }, [compareBaseIndex, diffSource]);
 
   const chartModel = useMemo(() => {
     const base = commits.filter((c) => (!showReviewedOnly ? true : c.reviewed));
@@ -797,6 +825,53 @@ export default function SpecEvolutionLab() {
     return buildSnapshotMarkdown(selectedCommit, fileChoice);
   }, [fileChoice, selectedCommit]);
 
+  const compareModel = useMemo(() => {
+    if (!compareBaseCommit) return null;
+
+    const fileSummary = computeFileChangeSummary(compareBaseCommit.files, selectedCommit.files);
+
+    const baseStats =
+      fileChoice === "__ALL__" && compareBaseCommit.snapshot
+        ? { lines: compareBaseCommit.snapshot.lines, bytes: compareBaseCommit.snapshot.bytes }
+        : computeTextStats(buildCorpusText(compareBaseCommit.files, fileChoice));
+
+    const targetStats =
+      fileChoice === "__ALL__" && selectedCommit.snapshot
+        ? { lines: selectedCommit.snapshot.lines, bytes: selectedCommit.snapshot.bytes }
+        : computeTextStats(buildCorpusText(selectedCommit.files, fileChoice));
+
+    return {
+      base: compareBaseCommit,
+      target: selectedCommit,
+      fileSummary,
+      baseStats,
+      targetStats,
+      deltaLines: targetStats.lines - baseStats.lines,
+      deltaBytes: targetStats.bytes - baseStats.bytes,
+    };
+  }, [compareBaseCommit, fileChoice, selectedCommit]);
+
+  const corpusDiff = useMemo(() => {
+    if (!compareBaseCommit) return null;
+    if (diffSource !== "corpusAB") return null;
+    if (fileChoice === "__ALL__") {
+      return { error: "Select a single file to compute a corpus diff (file dropdown)." } as const;
+    }
+
+    const aText = buildCorpusText(compareBaseCommit.files, fileChoice);
+    const bText = buildCorpusText(selectedCommit.files, fileChoice);
+
+    const aLines = aText ? aText.split(/\n/).length : 0;
+    const bLines = bText ? bText.split(/\n/).length : 0;
+    const MAX_LINES = 8000;
+    if (aLines + bLines > MAX_LINES) {
+      return { error: `Corpus diff too large (${aLines + bLines} lines). Pick a smaller file.` } as const;
+    }
+
+    const ops = myersDiffTextLines(aText, bText);
+    return { ops } as const;
+  }, [compareBaseCommit, diffSource, fileChoice, selectedCommit]);
+
   const bucketInfoDesc = useMemo(() => {
     if (!dataset || bucketInfo === null) return "";
     return dataset.bucket_defs?.[String(bucketInfo)] || "";
@@ -823,30 +898,53 @@ export default function SpecEvolutionLab() {
     setBucketFilter((prev) => (prev === b ? null : b));
   }
 
-  function selectCommit(idx: number) {
-    setSelectedIndex(clampInt(idx, 0, Math.max(0, commits.length - 1)));
+  const selectCommit = useCallback((idx: number) => {
+    setSelectedIndex(prev => clampInt(idx, 0, Math.max(0, commits.length - 1)));
     setDistanceOut("");
-  }
+  }, [commits.length]);
+
+  const navigateFiltered = useCallback((direction: 1 | -1) => {
+    if (filteredCommits.length === 0) return;
+    
+    setSelectedIndex(prev => {
+      const currentPos = filteredCommits.findIndex(c => c.idx === prev);
+      let nextPos: number;
+      if (currentPos === -1) {
+        nextPos = direction === 1 ? 0 : filteredCommits.length - 1;
+      } else {
+        nextPos = (currentPos + direction + filteredCommits.length) % filteredCommits.length;
+      }
+      return filteredCommits[nextPos].idx;
+    });
+    setDistanceOut("");
+  }, [filteredCommits]);
 
   function computeDistancePrevToCurrent() {
     if (!selectedCommit) return;
-    if (selectedIndex === 0) {
-      setDistanceOut("Edit distance: (no previous commit)");
+
+    const base =
+      compareBaseCommit ??
+      (selectedIndex > 0 ? commits[selectedIndex - 1] : null);
+    if (!base) {
+      setDistanceOut("Edit distance: (no previous commit / no baseline A)");
       return;
     }
 
-    const prev = commits[selectedIndex - 1];
-    const c = selectedCommit;
-    const prevMd = prev.files.map((f) => `## ${f.path}\n${f.content}`).join("\n");
-    const nextMd = c.files.map((f) => `## ${f.path}\n${f.content}`).join("\n");
+    const aText = buildCorpusText(base.files, fileChoice);
+    const bText = buildCorpusText(selectedCommit.files, fileChoice);
 
-    const ub = (c.totals.added + c.totals.deleted) * 4 + 200; // loose upper bound
+    const aLines = fileChoice === "__ALL__" && base.snapshot ? base.snapshot.lines : computeTextStats(aText).lines;
+    const bLines = fileChoice === "__ALL__" && selectedCommit.snapshot ? selectedCommit.snapshot.lines : computeTextStats(bText).lines;
+    const ub = Math.abs(bLines - aLines) * 4 + 200; // loose upper bound
+
     const t0 = performance.now();
-    const dist = computeEditDistanceLines(prevMd, nextMd, ub);
+    const dist = computeEditDistanceLines(aText, bText, ub);
     const t1 = performance.now();
     const label = dist > ub ? `>${ub} (early-exit)` : String(dist);
+
+    const modeLabel = compareBaseCommit ? "A→B" : "prev→current";
     setDistanceOut(
-      `Edit distance (lines, prev→current): ${label} · computed in ${(t1 - t0).toFixed(1)}ms · upper bound ${ub}`
+      `Edit distance (lines, ${modeLabel}): ${label} · computed in ${(t1 - t0).toFixed(1)}ms · upper bound ${ub}`
     );
   }
 
@@ -864,12 +962,12 @@ export default function SpecEvolutionLab() {
         return;
       }
       if (e.key === "ArrowLeft") {
-        selectCommit(selectedIndex - 1);
+        navigateFiltered(-1);
         e.preventDefault();
         return;
       }
       if (e.key === "ArrowRight") {
-        selectCommit(selectedIndex + 1);
+        navigateFiltered(1);
         e.preventDefault();
         return;
       }
@@ -881,26 +979,44 @@ export default function SpecEvolutionLab() {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [selectedIndex]);
+  }, [navigateFiltered]);
 
   if (loadError) {
     return (
-      <main id="main-content" className="mx-auto max-w-5xl px-6 py-14">
-        <h1 className="text-2xl font-black tracking-tight">Spec Evolution Lab</h1>
-        <p className="mt-2 text-slate-400">Failed to load dataset.</p>
-        <div className="mt-4 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-4 text-sm text-rose-200">
-          <span className="font-mono">{loadError}</span>
-        </div>
+      <main id="main-content" className="mx-auto max-w-5xl px-6 py-14 min-h-screen bg-black text-white">
+        <FrankenContainer className="p-8">
+          <h1 className="text-2xl font-black tracking-tight uppercase tracking-[0.2em] text-red-500">System Error</h1>
+          <p className="mt-4 text-slate-400 font-medium">Failed to load forensic dataset archive.</p>
+          <div className="mt-6 rounded-2xl border border-rose-500/20 bg-rose-500/5 p-6 text-sm text-rose-200 font-mono shadow-2xl">
+            {loadError}
+          </div>
+          <div className="mt-8">
+            <button 
+              onClick={() => window.location.reload()}
+              className="px-6 py-3 rounded-full bg-white/5 border border-white/10 text-white font-black text-xs tracking-widest hover:bg-white/10 transition-all"
+            >
+              RETRY_INITIALIZATION
+            </button>
+          </div>
+        </FrankenContainer>
       </main>
     );
   }
 
   if (!dataset || !commits.length || !selectedCommit) {
     return (
-      <main id="main-content" className="mx-auto max-w-5xl px-6 py-14">
-        <h1 className="text-2xl font-black tracking-tight">Spec Evolution Lab</h1>
-        <p className="mt-2 text-slate-400">Loading forensic dataset…</p>
-        <div className="mt-6 h-40 rounded-2xl border border-white/10 bg-white/5 animate-pulse" />
+      <main id="main-content" className="flex items-center justify-center min-h-screen bg-black text-white">
+        <div className="text-center">
+          <div className="relative h-20 w-20 mx-auto mb-8">
+            <div className="absolute inset-0 rounded-full border-2 border-green-500/20 animate-ping" />
+            <div className="absolute inset-2 rounded-full border-2 border-green-500/40 animate-pulse" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Terminal className="h-8 w-8 text-green-500" />
+            </div>
+          </div>
+          <h1 className="text-xl font-black tracking-[0.3em] text-white uppercase mb-2">Spec Lab</h1>
+          <p className="text-xs text-slate-500 font-bold tracking-widest uppercase">Loading Forensic Archive...</p>
+        </div>
       </main>
     );
   }
@@ -912,98 +1028,121 @@ export default function SpecEvolutionLab() {
   return (
     <main
       id="main-content"
-      className="min-h-screen bg-[radial-gradient(1200px_700px_at_20%_-10%,rgba(34,197,94,0.12),transparent_50%),radial-gradient(900px_600px_at_110%_20%,rgba(45,212,191,0.10),transparent_55%),linear-gradient(to_bottom,#020508,#070c11)] text-slate-100"
+      className="min-h-screen bg-black text-slate-100 selection:bg-green-500/30 overflow-x-hidden"
     >
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-black/40 backdrop-blur">
-        <div className="mx-auto max-w-[1480px] px-4 py-3 md:px-6">
-          <div className="flex items-center gap-3">
+      {/* Dynamic background layers */}
+      <div className="fixed inset-0 z-0 pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-green-500/10 rounded-full blur-[120px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[150px]" />
+      </div>
+
+      <header className="sticky top-0 z-50 border-b border-white/5 bg-black/60 backdrop-blur-xl relative">
+        <NeuralPulse className="opacity-30" />
+        <div className="mx-auto max-w-[1600px] px-4 py-4 md:px-8">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              <Link 
+                href="/how-it-was-built"
+                className="h-10 w-10 shrink-0 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/10 transition-all active:scale-90 group"
+                title="Return to Build Log"
+              >
+                <ChevronLeft className="h-5 w-5 transition-transform group-hover:-translate-x-0.5" />
+              </Link>
+              <div className="w-px h-6 bg-white/10 hidden sm:block" />
+            </div>
+
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-3">
-                <div className="h-9 w-9 rounded-xl border border-white/10 bg-white/5 grid place-items-center">
-                  <span className="font-mono text-xs text-green-400">ftui</span>
+              <div className="flex items-center gap-4">
+                <div className="relative h-10 w-10 shrink-0 rounded-xl border border-green-500/20 bg-green-500/5 grid place-items-center shadow-[0_0_20px_rgba(34,197,94,0.15)] group">
+                  <FrankenBolt className="absolute -left-1 -top-1 z-20 scale-50" />
+                  <FrankenBolt className="absolute -right-1 -bottom-1 z-20 scale-50" />
+                  <span className="font-black text-xs text-green-400 group-hover:scale-110 transition-transform">LAB</span>
                 </div>
                 <div className="min-w-0">
-                  <h1 className="text-base md:text-lg font-black tracking-tight truncate">Spec Evolution Lab</h1>
-                  <p className="text-[11px] md:text-xs text-slate-400 truncate">
-                    FrankenTUI specs from inception, reconstructed from git history + manual categorization
-                  </p>
+                  <h1 className="text-lg md:text-xl font-black tracking-tight truncate text-white uppercase tracking-[0.05em]">Spec Evolution Lab</h1>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+                    <p className="text-[10px] font-bold text-slate-500 truncate uppercase tracking-widest">
+                      Forensic Spec Reconstruction _ System_Active
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className="hidden lg:flex items-center gap-2">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <div className="hidden xl:flex items-center gap-3">
+              <div className="relative group">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500 group-focus-within:text-green-400 transition-colors" />
                 <input
                   id="specLabSearch"
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search commits…"
-                  className="w-[340px] rounded-full border border-white/10 bg-white/5 pl-9 pr-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400/60"
+                  placeholder="SEARCH_FORENSIC_DATA..."
+                  className="w-[300px] rounded-full border border-white/10 bg-white/5 pl-10 pr-4 py-2.5 text-[11px] font-bold tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/40 focus:bg-white/10 transition-all"
                 />
               </div>
 
-              <select
-                value={bucketMode}
-                onChange={(e) => setBucketMode(e.target.value as BucketMode)}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-400/60"
-              >
-                <option value="day">Bucket: Day</option>
-                <option value="hour">Bucket: Hour</option>
-                <option value="15m">Bucket: 15m</option>
-                <option value="5m">Bucket: 5m</option>
-              </select>
-
-              <select
-                value={metric}
-                onChange={(e) => setMetric(e.target.value as MetricKey)}
-                className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-400/60"
-              >
-                <option value="groups">Metric: Change-Groups</option>
-                <option value="lines">Metric: Lines (+/-)</option>
-                <option value="patchBytes">Metric: Patch Bytes</option>
-              </select>
+              <div className="flex items-center gap-2 bg-white/5 p-1 rounded-full border border-white/5">
+                <select
+                  value={bucketMode}
+                  onChange={(e) => setBucketMode(e.target.value as BucketMode)}
+                  className="rounded-full bg-transparent px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300 focus:outline-none hover:text-white transition-colors cursor-pointer"
+                >
+                  <option value="day">Day</option>
+                  <option value="hour">Hour</option>
+                  <option value="15m">15m</option>
+                  <option value="5m">5m</option>
+                </select>
+                <div className="w-px h-3 bg-white/10" />
+                <select
+                  value={metric}
+                  onChange={(e) => setMetric(e.target.value as MetricKey)}
+                  className="rounded-full bg-transparent px-4 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-300 focus:outline-none hover:text-white transition-colors cursor-pointer"
+                >
+                  <option value="groups">Groups</option>
+                  <option value="lines">Lines</option>
+                  <option value="patchBytes">Bytes</option>
+                </select>
+              </div>
 
               <button
                 type="button"
                 onClick={openLegend}
-                className="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-300 hover:bg-green-500/15 focus:outline-none focus:ring-2 focus:ring-green-400/60"
+                className="rounded-full border border-green-500/20 bg-green-500/10 px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-green-400 hover:bg-green-500/20 focus:outline-none focus:ring-2 focus:ring-green-400/60 transition-all active:scale-95"
               >
-                Legend
+                LEGEND
               </button>
               <button
                 type="button"
                 onClick={() => downloadObjectAsJson(dataset, "frankentui_spec_evolution_dataset.json")}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-green-400/60"
+                className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 hover:bg-white/10 hover:text-white transition-all active:scale-95"
               >
-                Download JSON
+                EXPORT_JSON
               </button>
             </div>
 
-            <div className="flex lg:hidden items-center gap-2">
+            <div className="flex xl:hidden items-center gap-2">
               <button
                 type="button"
                 onClick={openControls}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold"
+                className="rounded-full border border-green-500/20 bg-green-500/10 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-green-400"
               >
-                Controls
+                TOOLS
               </button>
             </div>
           </div>
 
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
-              <span className="font-mono">{commits.length} commits</span>
-              <span className="text-slate-600">·</span>
-              <span className="font-mono">scope: {dataset.scope_paths.join(" + ")}</span>
+          <div className="mt-4 flex flex-wrap items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em]">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-slate-400">
+              <div className="h-1 w-1 rounded-full bg-green-500" />
+              <span>{commits.length} COMMITS</span>
+              <span className="text-slate-700">|</span>
+              <span className="text-slate-500 tracking-normal">SCOPE: {dataset.scope_paths.join(" + ")}</span>
             </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <span className="font-mono">
-                review coverage: {reviewedCount}/{commits.length}
-              </span>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/5 bg-white/5 px-3 py-1.5 text-slate-400">
+              <div className="h-1 w-1 rounded-full bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+              <span>COVERAGE: {reviewedCount}/{commits.length}</span>
             </span>
 
             {bucketFilter !== null ? (
@@ -1011,130 +1150,129 @@ export default function SpecEvolutionLab() {
                 type="button"
                 title="Clear bucket filter"
                 onClick={() => setBucketFilter(null)}
-                className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-green-400/60"
+                className="inline-flex items-center gap-2 rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1.5 text-green-400 hover:bg-green-500/20 transition-all group"
               >
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: bucketColors[bucketFilter] }} />
-                <span className="font-mono">
-                  filter: {bucketFilter}. {bucketNames[bucketFilter]}
-                </span>
-                <span className="text-slate-500">×</span>
+                <div className="h-1 w-1 rounded-full shadow-[0_0_5px_currentColor]" style={{ background: bucketColors[bucketFilter], color: bucketColors[bucketFilter] }} />
+                <span>FILTER: {bucketNames[bucketFilter]}</span>
+                <span className="text-green-700 group-hover:text-green-400 transition-colors ml-1">×</span>
               </button>
             ) : null}
 
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1">
-              <span className="font-mono text-slate-500">Tip:</span>
-              <span>
-                Use <span className="font-mono text-slate-300">←/→</span> to scrub commits,{" "}
-                <span className="font-mono text-slate-300">/</span> to search, and{" "}
-                <span className="font-mono text-slate-300">?</span> for help.
+            <span className="ml-auto hidden md:inline-flex items-center gap-3 text-slate-600">
+              <span className="flex items-center gap-1.5">
+                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[8px]">←→</kbd> SCRUB
+              </span>
+              <span className="flex items-center gap-1.5">
+                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[8px]">/</kbd> SEARCH
+              </span>
+              <span className="flex items-center gap-1.5">
+                <kbd className="rounded bg-white/10 px-1 py-0.5 text-[8px]">?</kbd> HELP
               </span>
             </span>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1480px] px-4 py-6 md:px-6">
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
+      <div className="mx-auto max-w-[1600px] px-4 py-8 md:px-8 relative z-10">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[380px_1fr]">
           {/* Sidebar */}
           <aside className="hidden lg:block">
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.06),_0_20px_60px_rgba(0,0,0,0.55)]">
-              <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
-                <div>
-                  <h2 className="font-black tracking-tight">Commits</h2>
-                  <p className="text-xs text-slate-400">Filtered list; select to inspect.</p>
+            <div className="sticky top-[180px]">
+              <FrankenContainer withBolts={true} withStitches={false} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl overflow-hidden flex flex-col">
+                <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-white/5 px-6 py-4">
+                  <div>
+                    <h2 className="text-sm font-black tracking-widest text-white uppercase">Archive_Nodes</h2>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase mt-0.5 tracking-wider">Historical Snapshots</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowReviewedOnly((v) => !v)}
+                    className={clsx(
+                      "rounded-full border px-3 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                      showReviewedOnly ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-white/10 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-white"
+                    )}
+                  >
+                    {showReviewedOnly ? "ONLY_REVIEWED" : "SHOW_ALL"}
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowReviewedOnly((v) => !v)}
-                  className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200 hover:bg-white/10"
-                >
-                  {showReviewedOnly ? "Reviewed: Only" : "Reviewed: All"}
-                </button>
-              </div>
-              <div className="max-h-[72vh] overflow-auto">
-                {filteredCommits.map((c) => {
-                  const weights = perCommitBucketWeights(c, softMode);
-                  const bucketKeys = Object.keys(weights)
-                    .map((x) => parseInt(x, 10))
-                    .filter((b) => Number.isFinite(b) && b >= 0 && b <= 10) as BucketKey[];
-                  const showBuckets = (c.reviewed ? bucketKeys.filter((b) => b !== 0) : bucketKeys).slice(0, 4);
-                  const isActive = c.idx === selectedIndex;
-                  return (
-                    <button
-                      key={c.sha}
-                      type="button"
-                      onClick={() => selectCommit(c.idx)}
-                      className={clsx(
-                        "w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-green-400/60",
-                        isActive ? "bg-white/5" : ""
-                      )}
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[11px] text-slate-500">{c.short}</span>
-                            <span className="font-mono text-[11px] text-slate-500">{c.dateShort}</span>
+                <div className="max-h-[calc(100vh-280px)] overflow-y-auto custom-scrollbar">
+                  {filteredCommits.map((c) => {
+                    const weights = perCommitBucketWeights(c, softMode);
+                    const bucketKeys = Object.keys(weights)
+                      .map((x) => parseInt(x, 10))
+                      .filter((b) => Number.isFinite(b) && b >= 0 && b <= 10) as BucketKey[];
+                    const showBuckets = (c.reviewed ? bucketKeys.filter((b) => b !== 0) : bucketKeys).slice(0, 4);
+                    const isActive = c.idx === selectedIndex;
+                    return (
+                      <button
+                        key={c.sha}
+                        type="button"
+                        onClick={() => selectCommit(c.idx)}
+                        className={clsx(
+                          "w-full text-left px-6 py-4 border-b border-white/5 transition-all relative group",
+                          isActive ? "bg-green-500/[0.03]" : "hover:bg-white/[0.02]"
+                        )}
+                      >
+                        {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-green-500 shadow-[0_0_10px_#22c55e]" />}
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-3">
+                              <span className={clsx("font-mono text-[10px] font-bold", isActive ? "text-green-400" : "text-slate-600")}>{c.short}</span>
+                              <span className="font-mono text-[10px] text-slate-600">{c.dateShort.split(' ')[0]}</span>
+                            </div>
+                            <div className={clsx("mt-1.5 text-[13px] font-bold truncate transition-colors", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{c.subject || "Untitled Archive Node"}</div>
                           </div>
-                          <div className="mt-1 text-sm font-semibold text-slate-100 truncate">{c.subject || ""}</div>
                         </div>
-                        <div className="flex flex-col items-end gap-1">
-                          {c.reviewed ? (
-                            <span className="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-300">
-                              Reviewed
-                            </span>
+                        <div className="mt-3 flex flex-wrap gap-1.5 items-center">
+                          {showBuckets.length ? (
+                            showBuckets.map((b) => (
+                              <span
+                                key={b}
+                                className="inline-flex items-center gap-1 rounded-full bg-white/[0.03] border border-white/5 px-2 py-0.5 text-[9px] font-mono text-slate-500"
+                              >
+                                <span className="h-1 w-1 rounded-full shadow-[0_0_3px_currentColor]" style={{ background: bucketColors[b], color: bucketColors[b] }} />
+                                {b}
+                              </span>
+                            ))
                           ) : (
-                            <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
-                              Unreviewed
-                            </span>
+                            <span className="text-[9px] text-slate-700 font-bold uppercase tracking-tighter">NULL_BUCKET</span>
+                          )}
+                          {c.reviewed && (
+                            <span className="ml-auto text-[8px] font-black text-green-500/60 uppercase tracking-widest">_VALIDATED</span>
                           )}
                         </div>
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1.5 items-center">
-                        {showBuckets.length ? (
-                          showBuckets.map((b) => (
-                            <button
-                              key={b}
-                              type="button"
-                              title={bucketNames[b]}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openBucketInfo(b);
-                              }}
-                              className="inline-flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-mono text-slate-300 hover:bg-white/10"
-                            >
-                              <span className="h-1.5 w-1.5 rounded-full" style={{ background: bucketColors[b] }} />
-                              {b}
-                            </button>
-                          ))
-                        ) : (
-                          <span className="text-[10px] text-slate-500 font-mono">(no buckets yet)</span>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </FrankenContainer>
             </div>
           </aside>
 
           {/* Main content */}
-          <section className="space-y-6">
+          <section className="space-y-8">
             {/* Chart card */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.06),_0_20px_60px_rgba(0,0,0,0.55)]">
-              <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
+            <FrankenContainer withBolts={false} withPulse={true} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl p-0 overflow-hidden">
+              <div className="flex flex-col gap-4 border-b border-white/5 bg-white/5 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-lg font-black tracking-tight">Revision Taxonomy Over Time</h2>
-                  <p className="text-xs text-slate-400">
-                    Stacked bars grouped by time window; click a bar to jump to the first commit in that bucket.
+                  <h2 className="text-lg font-black tracking-tight text-white uppercase tracking-wider flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-ping" />
+                    Revision_Taxonomy_Temporal_Flow
+                  </h2>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
+                    Temporal change-group distribution analysis
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setSoftMode((v) => !v)}
-                    className="rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5 text-xs font-semibold text-green-300 hover:bg-green-500/15"
+                    className={clsx(
+                      "rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all shadow-lg",
+                      softMode ? "border-green-500/30 bg-green-500/10 text-green-400" : "border-white/10 bg-white/5 text-slate-400"
+                    )}
                   >
-                    {softMode ? "Soft assignment" : "Multi-label"}
+                    {softMode ? "SOFT_WEIGHTS" : "HARD_LABELS"}
                   </button>
                   <button
                     type="button"
@@ -1142,14 +1280,14 @@ export default function SpecEvolutionLab() {
                       setBucketFilter(null);
                       setShowReviewedOnly(false);
                     }}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-lg"
                   >
-                    Reset
+                    RESET
                   </button>
                 </div>
               </div>
 
-              <div className="p-4">
+              <div className="p-8">
                 <StackedBars
                   xKeys={chartModel.xKeys}
                   seriesByBucket={chartModel.seriesByBucket}
@@ -1159,177 +1297,328 @@ export default function SpecEvolutionLab() {
                     if (typeof idx === "number") selectCommit(idx);
                   }}
                 />
-                <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                  <div className="text-xs text-slate-400">
-                    Mode: {softMode ? "soft assignment" : "multi-label"} · Metric: {metricLabel} · Bucket: {bucketMode}
-                    {filterNote} · Unreviewed commits are bucket 0.
+                <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-t border-white/5 pt-6">
+                  <div className="text-[9px] font-bold text-slate-500 uppercase tracking-[0.2em] leading-relaxed">
+                    Mode: <span className="text-slate-300">{softMode ? "Soft" : "Hard"}</span> 
+                    <span className="mx-2 opacity-30">|</span> Metric: <span className="text-slate-300">{metricLabel}</span> 
+                    <span className="mx-2 opacity-30">|</span> Bucket: <span className="text-slate-300">{bucketMode}</span>
+                    {filterNote && <><span className="mx-2 opacity-30">|</span> <span className="text-green-400">{filterNote}</span></>}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
                       onClick={openLegend}
-                      className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                      className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-white/10 hover:text-white transition-all shadow-md"
                     >
-                      Legend
+                      TAXONOMY_LEGEND
                     </button>
                     <button
                       type="button"
                       onClick={openCommits}
-                      className="lg:hidden rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                      className="lg:hidden rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 transition-all"
                     >
-                      Commits
+                      COMMITS
                     </button>
                   </div>
                 </div>
               </div>
-            </div>
+            </FrankenContainer>
 
             {/* Timeline scrubber */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.06),_0_20px_60px_rgba(0,0,0,0.55)]">
-              <div className="flex flex-col gap-2 border-b border-white/10 px-4 py-3 md:flex-row md:items-center md:justify-between">
+            <FrankenContainer withBolts={true} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl p-0 overflow-hidden">
+              <div className="flex flex-col gap-3 border-b border-white/5 bg-white/5 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="font-black tracking-tight">Timeline Scrubber</h2>
-                  <p className="text-xs text-slate-400">Select a commit, then explore diff, snapshot, and ledger.</p>
+                  <h2 className="text-lg font-black tracking-tight text-white uppercase tracking-widest">Scrub_Node_Selector</h2>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Temporal Archive Traversal Interface</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <button
                     type="button"
-                    onClick={() => selectCommit(selectedIndex - 1)}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                    onClick={() => navigateFiltered(-1)}
+                    className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-all active:scale-90"
+                    title="Previous Node"
                   >
-                    <span className="inline-flex items-center gap-1">
-                      <ArrowLeft className="h-4 w-4" /> Prev
-                    </span>
+                    <ArrowLeft className="h-5 w-5" />
                   </button>
+                  <div className="px-4 py-2 rounded-xl bg-black/40 border border-white/5 font-mono text-xs font-bold text-green-400 shadow-inner">
+                    {selectedIndex + 1} <span className="text-slate-700 mx-1">/</span> {commits.length}
+                  </div>
                   <button
                     type="button"
-                    onClick={() => selectCommit(selectedIndex + 1)}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold text-slate-200 hover:bg-white/10"
+                    onClick={() => navigateFiltered(1)}
+                    className="rounded-xl border border-white/10 bg-white/5 p-2 text-slate-400 hover:bg-white/10 hover:text-white transition-all active:scale-90"
+                    title="Next Node"
                   >
-                    <span className="inline-flex items-center gap-1">
-                      Next <ArrowRight className="h-4 w-4" />
-                    </span>
+                    <ArrowRight className="h-5 w-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="p-4">
-                <div className="flex items-center justify-between gap-3 text-[11px] font-mono text-slate-500">
-                  <span>{commits[0]?.dateShort || ""}</span>
-                  <span>{commits[commits.length - 1]?.dateShort || ""}</span>
+              <div className="p-8">
+                <div className="flex items-center justify-between gap-3 text-[10px] font-black font-mono text-slate-600 uppercase tracking-widest mb-2">
+                  <span>EPOCH_START: {commits[0]?.dateShort.split(' ')[0] || ""}</span>
+                  <span>EPOCH_END: {commits[commits.length - 1]?.dateShort.split(' ')[0] || ""}</span>
                 </div>
-                <input
-                  type="range"
-                  min={0}
-                  max={Math.max(0, commits.length - 1)}
-                  value={selectedIndex}
-                  onChange={(e) => selectCommit(parseInt(e.target.value, 10))}
-                  className="mt-2 w-full"
-                />
-                <div className="mt-3">
-                  <div className="text-xs font-mono text-slate-500">{selectedCommit.short}</div>
-                  <div className="mt-1 text-base font-black tracking-tight">{selectedCommit.subject || ""}</div>
-                  <div className="mt-1 text-xs font-mono text-slate-500">
-                    {selectedCommit.date} · (+{selectedCommit.totals.added}/-{selectedCommit.totals.deleted})
+                <div className="relative h-12 flex items-center group">
+                  <div className="absolute inset-x-0 h-1 bg-white/5 rounded-full" />
+                  <div 
+                    className="absolute h-1 bg-green-500 rounded-full shadow-[0_0_15px_#22c55e]" 
+                    style={{ width: `${(selectedIndex / (commits.length - 1)) * 100}%` }}
+                  />
+                  {compareBaseIndex !== null && commits.length > 1 ? (
+                    <div
+                      className="absolute top-0 bottom-0 pointer-events-none"
+                      style={{ left: `calc(${(compareBaseIndex / (commits.length - 1)) * 100}% - 1px)` }}
+                      aria-hidden="true"
+                    >
+                      <div className="absolute top-1/2 -translate-y-1/2 h-7 w-[2px] rounded-full bg-rose-400/80 shadow-[0_0_12px_rgba(251,113,133,0.6)]" />
+                      <div className="absolute top-1/2 translate-y-[14px] -translate-x-3 text-[9px] font-black font-mono text-rose-300 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">
+                        A
+                      </div>
+                    </div>
+                  ) : null}
+                  <input
+                    type="range"
+                    min={0}
+                    max={Math.max(0, commits.length - 1)}
+                    value={selectedIndex}
+                    onChange={(e) => selectCommit(parseInt(e.target.value, 10))}
+                    className="absolute inset-x-0 w-full h-1 opacity-0 cursor-pointer z-10"
+                  />
+                  <motion.div 
+                    className="absolute h-4 w-4 bg-white rounded-full border-2 border-green-500 shadow-[0_0_15px_rgba(34,197,94,0.8)] pointer-events-none"
+                    style={{ left: `calc(${(selectedIndex / (commits.length - 1)) * 100}% - 8px)` }}
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                  />
+                </div>
+                
+                <div className="mt-8 grid md:grid-cols-[1fr_auto] gap-6 items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      {compareBaseCommit ? (
+                        <span
+                          data-testid="compare-a-badge"
+                          className="font-mono text-[11px] font-black text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20"
+                        >
+                          {compareBaseCommit.short}
+                        </span>
+                      ) : null}
+                      <span
+                        data-testid="compare-b-badge"
+                        className="font-mono text-[11px] font-black text-green-500 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20"
+                      >
+                        {selectedCommit.short}
+                      </span>
+                      <span className="font-mono text-[11px] font-bold text-slate-500 uppercase tracking-widest">{selectedCommit.date}</span>
+                    </div>
+                    <h3 className="text-2xl font-black tracking-tight text-white leading-tight">{selectedCommit.subject || "NO_SUBJECT_PROTOCOL"}</h3>
+                    <div className="flex items-center gap-4 pt-2">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <div className="h-1.5 w-1.5 rounded-full bg-green-500/40" />
+                        Added: <span className="text-green-400">+{selectedCommit.totals.added}</span>
+                      </span>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                        <div className="h-1.5 w-1.5 rounded-full bg-red-500/40" />
+                        Deleted: <span className="text-red-400">-{selectedCommit.totals.deleted}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 md:flex-col lg:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          navigator.clipboard.writeText(location.href);
+                        } catch { /* ignore */ }
+                      }}
+                      className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-white/10 hover:text-white transition-all shadow-lg flex items-center gap-2"
+                    >
+                      <Link2 className="h-3.5 w-3.5" />
+                      COPY_LINK
+                    </button>
+                    {compareBaseIndex === null ? (
+                      <button
+                        type="button"
+                        data-testid="compare-pin-a"
+                        onClick={() => {
+                          setCompareBaseIndex(selectedIndex);
+                          setDiffSource("commitPatch");
+                          setDistanceOut("");
+                        }}
+                        className="rounded-full border border-rose-500/20 bg-rose-500/10 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-rose-200 hover:bg-rose-500/20 transition-all shadow-lg flex items-center gap-2"
+                        title="Pin baseline A for compare mode"
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" />
+                        PIN_AS_A
+                      </button>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          data-testid="compare-swap"
+                          onClick={() => {
+                            if (compareBaseIndex === null) return;
+                            const aIdx = compareBaseIndex;
+                            setCompareBaseIndex(selectedIndex);
+                            selectCommit(aIdx);
+                            setDistanceOut("");
+                          }}
+                          className="rounded-full border border-amber-500/20 bg-amber-500/10 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-amber-200 hover:bg-amber-500/20 transition-all shadow-lg flex items-center gap-2"
+                          title="Swap A and B"
+                        >
+                          <ArrowLeft className="h-3.5 w-3.5" />
+                          SWAP_A_B
+                        </button>
+                        <button
+                          type="button"
+                          data-testid="compare-clear-a"
+                          onClick={() => {
+                            setCompareBaseIndex(null);
+                            setDiffSource("commitPatch");
+                            setDistanceOut("");
+                          }}
+                          className="rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-white/10 hover:text-white transition-all shadow-lg flex items-center gap-2"
+                          title="Exit compare mode"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                          CLEAR_A
+                        </button>
+                      </>
+                    )}
+                    <button
+                      type="button"
+                      onClick={computeDistancePrevToCurrent}
+                      className="rounded-full border border-green-500/20 bg-green-500/10 px-5 py-2.5 text-[10px] font-black uppercase tracking-widest text-green-400 hover:bg-green-500/20 transition-all shadow-lg flex items-center gap-2"
+                    >
+                      <Terminal className="h-3.5 w-3.5" />
+                      {compareBaseCommit ? "EDIT_DISTANCE_A_B" : "EDIT_DISTANCE"}
+                    </button>
                   </div>
                 </div>
+                
+                {compareModel ? (
+                  <div
+                    data-testid="compare-metrics"
+                    className="mt-8 rounded-2xl border border-rose-500/10 bg-gradient-to-br from-rose-500/[0.06] via-black/40 to-black/20 p-6 shadow-2xl"
+                  >
+                    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] flex items-center gap-3">
+                        <div className="h-2 w-2 rounded-full bg-rose-400/70 shadow-[0_0_10px_rgba(251,113,133,0.45)]" />
+                        COMPARE_MODE
+                        <span className="text-slate-700">A→B</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] font-black text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                          A {compareModel.base.short}
+                        </span>
+                        <span className="text-slate-700">→</span>
+                        <span className="font-mono text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">
+                          B {compareModel.target.short}
+                        </span>
+                      </div>
+                    </div>
 
-                <div className="mt-4 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      try {
-                        navigator.clipboard.writeText(location.href);
-                      } catch {
-                        // best-effort
-                      }
-                    }}
-                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <Link2 className="h-4 w-4" />
-                      Copy Link
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => helpDialogRef.current?.showModal()}
-                    className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10"
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      <HelpCircle className="h-4 w-4" />
-                      Help
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={computeDistancePrevToCurrent}
-                    className="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-300 hover:bg-green-500/15"
-                  >
-                    Compute Edit Distance
-                  </button>
-                </div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="rounded-xl border border-white/5 bg-black/30 p-4">
+                        <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Δ_LINES</div>
+                        <div className={clsx("mt-2 font-mono text-xl font-black", compareModel.deltaLines >= 0 ? "text-green-300" : "text-rose-300")}>
+                          {compareModel.deltaLines >= 0 ? "+" : ""}{compareModel.deltaLines}
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                          {compareModel.baseStats.lines} → {compareModel.targetStats.lines}
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-white/5 bg-black/30 p-4">
+                        <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Δ_BYTES</div>
+                        <div className={clsx("mt-2 font-mono text-xl font-black", compareModel.deltaBytes >= 0 ? "text-green-300" : "text-rose-300")}>
+                          {compareModel.deltaBytes >= 0 ? "+" : ""}{compareModel.deltaBytes}
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                          {compareModel.baseStats.bytes} → {compareModel.targetStats.bytes}
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-white/5 bg-black/30 p-4">
+                        <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">FILES</div>
+                        <div className="mt-2 font-mono text-[12px] font-black text-slate-300">
+                          <span className="text-green-300">+{compareModel.fileSummary.added.length}</span>{" "}
+                          <span className="text-rose-300">-{compareModel.fileSummary.removed.length}</span>{" "}
+                          <span className="text-amber-200">~{compareModel.fileSummary.modified.length}</span>
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                          {compareModel.fileSummary.unchanged.length} unchanged
+                        </div>
+                      </div>
+
+                      <div className="rounded-xl border border-white/5 bg-black/30 p-4">
+                        <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">SCOPE</div>
+                        <div className="mt-2 font-mono text-[11px] font-black text-slate-300 truncate">
+                          {fileChoice === "__ALL__" ? "CORPUS" : fileChoice}
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-600 font-bold uppercase tracking-widest">
+                          {fileChoice === "__ALL__" ? "all spec files" : "single file"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
               </div>
-            </div>
+            </FrankenContainer>
 
             {/* Inspector */}
-            <div className="rounded-2xl border border-white/10 bg-white/[0.03] shadow-[0_0_0_1px_rgba(255,255,255,0.06),_0_20px_60px_rgba(0,0,0,0.55)]">
-              <div className="flex flex-col gap-3 border-b border-white/10 px-4 py-4 md:flex-row md:items-center md:justify-between">
+            <FrankenContainer withBolts={true} withPulse={true} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl p-0 overflow-hidden flex flex-col">
+              <div className="flex flex-col gap-4 border-b border-white/5 bg-white/5 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="font-black tracking-tight">Commit Inspector</h2>
-                  <p className="text-xs text-slate-400">Diff, snapshot, evidence ledger, and file changes.</p>
+                  <h2 className="text-lg font-black tracking-tight text-white uppercase tracking-widest">Commit_Forensics_Inspector</h2>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">Deep Archive Data Extraction</p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-3">
                   <select
                     value={fileChoice}
                     onChange={(e) => setFileChoice(e.target.value)}
-                    className="rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-400/60"
-                    title="Select spec file for snapshot view"
+                    className="rounded-full border border-white/10 bg-black/40 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-300 focus:outline-none focus:ring-2 focus:ring-green-500/40 hover:text-white transition-all cursor-pointer"
                   >
-                    <option value="__ALL__">Snapshot: All spec files</option>
+                    <option value="__ALL__">ALL_SPEC_FILES</option>
                     {selectedCommit.files.map((f) => (
-                      <option key={f.path} value={f.path}>
-                        {f.path}
-                      </option>
+                      <option key={f.path} value={f.path}>{f.path.toUpperCase()}</option>
                     ))}
                   </select>
-                  <button
-                    type="button"
-                    onClick={() => setDiffFormat("unified")}
-                    className={clsx(
-                      "rounded-full border px-3 py-1.5 text-xs font-semibold",
-                      diffFormat === "unified"
-                        ? "border-green-500/20 bg-green-500/10 text-green-300"
-                        : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
-                    )}
-                    title="Unified diff"
-                  >
-                    Unified
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDiffFormat("sideBySide")}
-                    className={clsx(
-                      "rounded-full border px-3 py-1.5 text-xs font-semibold",
-                      diffFormat === "sideBySide"
-                        ? "border-green-500/20 bg-green-500/10 text-green-300"
-                        : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
-                    )}
-                    title="Side-by-side diff"
-                  >
-                    Side
-                  </button>
+                  <div className="flex items-center bg-black/40 p-1 rounded-full border border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setDiffFormat("unified")}
+                      className={clsx(
+                        "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                        diffFormat === "unified" ? "bg-green-500/20 text-green-400" : "text-slate-500 hover:text-slate-300"
+                      )}
+                    >
+                      UNIFIED
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDiffFormat("sideBySide")}
+                      className={clsx(
+                        "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+                        diffFormat === "sideBySide" ? "bg-green-500/20 text-green-400" : "text-slate-500 hover:text-slate-300"
+                      )}
+                    >
+                      SIDE_BY_SIDE
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="px-4 py-3 flex flex-wrap gap-2 border-b border-white/10">
+              <div className="px-6 py-3 flex flex-wrap gap-2 border-b border-white/5 bg-white/[0.02]">
                 {(
                   [
-                    ["diff", "Diff"],
-                    ["snapshot", "Snapshot (Markdown)"],
-                    ["raw", "Snapshot (Raw)"],
-                    ["ledger", "Ledger"],
-                    ["files", "Files"],
+                    ["diff", "DIFF_VIEW"],
+                    ["snapshot", "MD_SNAPSHOT"],
+                    ["raw", "RAW_ARCHIVE"],
+                    ["ledger", "EVIDENCE_LEDGER"],
+                    ["files", "CHANGED_FILES"],
                   ] as const
                 ).map(([k, label]) => (
                   <button
@@ -1337,10 +1626,10 @@ export default function SpecEvolutionLab() {
                     type="button"
                     onClick={() => setActiveTab(k)}
                     className={clsx(
-                      "rounded-full border px-3 py-1.5 text-xs font-semibold",
+                      "rounded-full border px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
                       activeTab === k
-                        ? "border-green-500/20 bg-green-500/10 text-green-300"
-                        : "border-white/10 bg-white/5 text-slate-200 hover:bg-white/10"
+                        ? "border-green-500/30 bg-green-500/10 text-green-400 shadow-[0_0_15px_rgba(34,197,94,0.15)]"
+                        : "border-white/5 bg-transparent text-slate-500 hover:bg-white/5 hover:text-slate-300"
                     )}
                   >
                     {label}
@@ -1348,218 +1637,454 @@ export default function SpecEvolutionLab() {
                 ))}
               </div>
 
-              <div className="p-4">
-                {activeTab === "diff" ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="text-xs font-mono text-slate-500">
-                        {patchFiles.length} file{patchFiles.length === 1 ? "" : "s"} in patch
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => downloadObjectAsJson(selectedCommit, `${selectedCommit.short}.json`)}
-                        className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-semibold hover:bg-white/10"
-                      >
-                        <span className="inline-flex items-center gap-2">
-                          <Download className="h-4 w-4" /> Commit JSON
-                        </span>
-                      </button>
-                    </div>
+              <div className="p-6 md:p-8">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab + selectedCommit.sha}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                  >
+	                    {activeTab === "diff" ? (
+	                      <div className="space-y-6">
+	                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+	                          <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] flex items-center gap-3">
+	                            <Terminal className="h-3 w-3" />
+	                            {compareBaseCommit && diffSource === "corpusAB"
+	                              ? "CORPUS_DIFF_A→B"
+	                              : `${patchFiles.length} NODES_IN_PATCH`}
+	                          </div>
+	                          <div className="flex flex-wrap items-center gap-2">
+	                            {compareBaseCommit ? (
+	                              <div className="flex items-center bg-black/40 p-1 rounded-full border border-white/10">
+	                                <button
+	                                  type="button"
+	                                  onClick={() => setDiffSource("commitPatch")}
+	                                  className={clsx(
+	                                    "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+	                                    diffSource === "commitPatch"
+	                                      ? "bg-green-500/20 text-green-400"
+	                                      : "text-slate-500 hover:text-slate-300"
+	                                  )}
+	                                >
+	                                  PATCH_B
+	                                </button>
+	                                <button
+	                                  type="button"
+	                                  onClick={() => setDiffSource("corpusAB")}
+	                                  className={clsx(
+	                                    "rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest transition-all",
+	                                    diffSource === "corpusAB"
+	                                      ? "bg-rose-500/20 text-rose-200"
+	                                      : "text-slate-500 hover:text-slate-300"
+	                                  )}
+	                                >
+	                                  CORPUS_A_B
+	                                </button>
+	                              </div>
+	                            ) : null}
 
-                    {patchFiles.map((pf, idx) => (
-                      <div key={`${pf.pathA}-${pf.pathB}-${idx}`} className="rounded-2xl border border-white/10 bg-black/30">
-                        <div className="flex items-start justify-between gap-3 border-b border-white/10 px-4 py-3">
-                          <div className="min-w-0">
-                            <div className="text-xs font-mono text-slate-500">diff</div>
-                            <div className="mt-1 font-mono text-sm text-slate-100 truncate">
-                              {pf.pathA} → {pf.pathB}
+	                            <button
+	                              type="button"
+	                              onClick={() => downloadObjectAsJson(selectedCommit, `${selectedCommit.short}.json`)}
+	                              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white/10 hover:text-white transition-all shadow-md flex items-center gap-2"
+	                            >
+	                              <Download className="h-3.5 w-3.5" />
+	                              EXTRACT_JSON
+	                            </button>
+	                          </div>
+	                        </div>
+	
+	                        {!compareBaseCommit || diffSource === "commitPatch" ? (
+	                          patchFiles.map((pf, idx) => (
+	                            <div key={`${pf.pathA}-${pf.pathB}-${idx}`} className="rounded-2xl border border-white/5 bg-black/40 overflow-hidden shadow-xl">
+	                              <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-white/5 px-5 py-3">
+	                                <div className="min-w-0">
+	                                  <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">DIFF_STREAM</div>
+	                                  <div className="mt-1 font-mono text-[13px] text-green-400 font-bold truncate">
+	                                    {pf.pathA} <span className="text-slate-700 mx-2">→</span> {pf.pathB}
+	                                  </div>
+	                                </div>
+	                              </div>
+	
+	                              <div className="p-0">
+	                                {pf.hunks.map((h, hi) => (
+	                                  <div key={hi} className="border-b border-white/5 last:border-0">
+	                                    <div className="px-5 py-2 text-[11px] font-mono font-bold text-slate-500 bg-white/[0.02] border-b border-white/5">
+	                                      {h.header}
+	                                    </div>
+	
+	                                    {diffFormat === "unified" ? (
+	                                      <pre className="p-5 overflow-auto text-[12px] font-mono leading-relaxed custom-scrollbar max-h-[500px]">
+	                                        {h.lines.map((l, li) => (
+	                                          <div
+	                                            key={li}
+	                                            className={clsx(
+	                                              "whitespace-pre rounded px-1",
+	                                              l.kind === "add"
+	                                                ? "bg-green-500/10 text-green-200"
+	                                                : l.kind === "del"
+	                                                  ? "bg-rose-500/10 text-rose-300"
+	                                                  : l.kind === "meta"
+	                                                    ? "text-slate-600 italic"
+	                                                    : "text-slate-400"
+	                                            )}
+	                                          >
+	                                            {l.text}
+	                                          </div>
+	                                        ))}
+	                                      </pre>
+	                                    ) : (
+	                                      <div className="grid grid-cols-2 gap-px bg-white/5">
+	                                        {hunkToSideBySideRows(h).map((row, ri) => {
+	                                          const cellCls = (c: SideCell) =>
+	                                            clsx(
+	                                              "min-w-0 px-4 py-1.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words transition-colors",
+	                                              c.kind === "add"
+	                                                ? "bg-green-500/10 text-green-200"
+	                                                : c.kind === "del"
+	                                                  ? "bg-rose-500/10 text-rose-300"
+	                                                  : c.kind === "context"
+	                                                    ? "bg-black/20 text-slate-400"
+	                                                    : "bg-black/40 text-slate-700"
+	                                            );
+	
+	                                          const lnCls = "select-none text-slate-700 text-[9px] pr-3 font-black inline-block w-8 text-right";
+	
+	                                          return (
+	                                            <React.Fragment key={ri}>
+	                                              <div className={cellCls(row.left)}>
+	                                                <span className={lnCls}>{row.left.lineNo ?? ""}</span>
+	                                                {row.left.text ?? ""}
+	                                              </div>
+	                                              <div className={cellCls(row.right)}>
+	                                                <span className={lnCls}>{row.right.lineNo ?? ""}</span>
+	                                                {row.right.text ?? ""}
+	                                              </div>
+	                                            </React.Fragment>
+	                                          );
+	                                        })}
+	                                      </div>
+	                                    )}
+	                                  </div>
+	                                ))}
+	                              </div>
+	                            </div>
+	                          ))
+	                        ) : (
+	                          <div className="rounded-2xl border border-white/5 bg-black/40 overflow-hidden shadow-xl">
+	                            <div className="flex items-center justify-between gap-3 border-b border-white/5 bg-white/5 px-5 py-3">
+	                              <div className="min-w-0">
+	                                <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest">CORPUS_DIFF</div>
+	                                <div className="mt-1 font-mono text-[13px] text-rose-200 font-bold truncate">
+	                                  A {compareBaseCommit.short} <span className="text-slate-700 mx-2">→</span> B {selectedCommit.short}{" "}
+	                                  <span className="text-slate-700 mx-2">·</span> {fileChoice}
+	                                </div>
+	                              </div>
+	                            </div>
+	
+	                            {"error" in (corpusDiff || {}) ? (
+	                              <div className="p-6 text-sm text-slate-300">
+	                                <div className="rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-amber-200">
+	                                  {(corpusDiff as { error: string }).error}
+	                                </div>
+	                              </div>
+	                            ) : corpusDiff && "ops" in corpusDiff ? (
+	                              diffFormat === "unified" ? (
+	                                <pre className="p-5 overflow-auto text-[12px] font-mono leading-relaxed custom-scrollbar max-h-[500px]">
+	                                  {(corpusDiff.ops as DiffOp[]).slice(0, 2000).map((op, i) => {
+	                                    const prefix = op.kind === "add" ? "+" : op.kind === "del" ? "-" : " ";
+	                                    const cls =
+	                                      op.kind === "add"
+	                                        ? "bg-green-500/10 text-green-200"
+	                                        : op.kind === "del"
+	                                          ? "bg-rose-500/10 text-rose-300"
+	                                          : "text-slate-400";
+	                                    return (
+	                                      <div key={i} className={clsx("whitespace-pre rounded px-1", cls)}>
+	                                        {prefix}{op.text}
+	                                      </div>
+	                                    );
+	                                  })}
+	                                  {(corpusDiff.ops as DiffOp[]).length > 2000 ? (
+	                                    <div className="mt-3 text-[10px] text-amber-300 uppercase tracking-widest font-black">
+	                                      TRUNCATED: showing first 2000 lines
+	                                    </div>
+	                                  ) : null}
+	                                </pre>
+	                              ) : (
+	                                <div className="grid grid-cols-2 gap-px bg-white/5">
+	                                  {corpusOpsToSideBySideRows(corpusDiff.ops as DiffOp[]).slice(0, 2000).map((row, ri) => {
+	                                    const cellCls = (c: SideCell) =>
+	                                      clsx(
+	                                        "min-w-0 px-4 py-1.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap break-words transition-colors",
+	                                        c.kind === "add"
+	                                          ? "bg-green-500/10 text-green-200"
+	                                          : c.kind === "del"
+	                                            ? "bg-rose-500/10 text-rose-300"
+	                                            : c.kind === "context"
+	                                              ? "bg-black/20 text-slate-400"
+	                                              : "bg-black/40 text-slate-700"
+	                                      );
+	
+	                                    const lnCls = "select-none text-slate-700 text-[9px] pr-3 font-black inline-block w-8 text-right";
+	
+	                                    return (
+	                                      <React.Fragment key={ri}>
+	                                        <div className={cellCls(row.left)}>
+	                                          <span className={lnCls}>{row.left.lineNo ?? ""}</span>
+	                                          {row.left.text ?? ""}
+	                                        </div>
+	                                        <div className={cellCls(row.right)}>
+	                                          <span className={lnCls}>{row.right.lineNo ?? ""}</span>
+	                                          {row.right.text ?? ""}
+	                                        </div>
+	                                      </React.Fragment>
+	                                    );
+	                                  })}
+	                                  {(corpusDiff.ops as DiffOp[]).length > 2000 ? (
+	                                    <div className="col-span-2 px-5 py-3 text-[10px] text-amber-300 uppercase tracking-widest font-black bg-black/30">
+	                                      TRUNCATED: showing first 2000 rows
+	                                    </div>
+	                                  ) : null}
+	                                </div>
+	                              )
+	                            ) : (
+	                              <div className="p-6 text-sm text-slate-400">Computing diff…</div>
+	                            )}
+	                          </div>
+	                        )}
+	                      </div>
+	                    ) : null}
+
+                    {activeTab === "snapshot" ? <MarkdownView markdown={snapshotMarkdown} /> : null}
+                    {activeTab === "raw" ? (
+                      <pre className="rounded-2xl border border-white/10 bg-black/40 p-8 overflow-auto max-h-[72vh] text-[12px] font-mono leading-relaxed text-slate-300 custom-scrollbar selection:bg-green-500/30 shadow-inner">
+                        {snapshotMarkdown}
+                      </pre>
+                    ) : null}
+
+                    {activeTab === "ledger" ? (
+                      <div className="space-y-4">
+                        {!selectedCommit.review ? (
+                          <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-8 text-center border-dashed">
+                            <HelpCircle className="h-12 w-12 text-slate-700 mx-auto mb-4" />
+                            <div className="text-base font-black tracking-widest text-slate-400 uppercase">UNREVIEWED_PROTOCOL_NODE</div>
+                            <p className="mt-2 text-xs font-bold text-slate-600 uppercase tracking-widest">
+                              No manual change-groups have been logged for this archive node yet.
+                            </p>
+                          </div>
+                        ) : (
+                          <>
+                            {(selectedCommit.review.groups || []).map((g, gi) => {
+                              const conf = typeof g.confidence === "number" ? Math.max(0, Math.min(1, g.confidence)) : 0;
+                              const confPct = Math.round(conf * 100);
+                              const buckets = (g.buckets || []).filter((b) => b >= 0 && b <= 10) as BucketKey[];
+                              return (
+                                <div key={gi} className="rounded-2xl border border-white/10 bg-black/40 p-6 md:p-8 shadow-xl relative group">
+                                  <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                  <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between mb-8 pb-8 border-b border-white/5">
+                                    <div className="min-w-0">
+                                      <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">GROUP_SEQUENCE_{String(gi + 1).padStart(2, '0')}</div>
+                                      <div className="mt-2 text-xl md:text-2xl font-black tracking-tight text-white uppercase italic">
+                                        {g.title || "Untitled_Sequence"}
+                                      </div>
+                                      <div className="mt-4 flex flex-wrap gap-2">
+                                        {(buckets.length ? buckets : ([10] as BucketKey[])).map((b) => (
+                                          <BucketChip key={b} bucket={b} onClick={() => openBucketInfo(b)} />
+                                        ))}
+                                      </div>
+                                    </div>
+
+                                    <div className="shrink-0 rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-4 min-w-[160px] shadow-inner">
+                                      <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 flex items-center justify-between">
+                                        CONFIDENCE
+                                        <span className={clsx("font-mono text-xs", conf > 0.8 ? "text-green-400" : "text-amber-400")}>{confPct}%</span>
+                                      </div>
+                                      <div className="h-1.5 w-full rounded-full bg-black/40 overflow-hidden border border-white/5">
+                                        <motion.div
+                                          initial={{ width: 0 }}
+                                          animate={{ width: `${confPct}%` }}
+                                          transition={{ duration: 1, ease: "easeOut" }}
+                                          className="h-full rounded-full"
+                                          style={{ background: conf > 0.8 ? "rgba(34,197,94,0.8)" : "rgba(251,191,36,0.8)", boxShadow: "0 0 10px currentColor" }}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="grid md:grid-cols-2 gap-8">
+                                    <div>
+                                      <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Info className="h-3 w-3" />
+                                        RATIONALE_LOG
+                                      </div>
+                                      <p className="text-[13px] leading-relaxed text-slate-300 font-medium">{g.rationale || "No rationale provided."}</p>
+                                    </div>
+
+                                    <div>
+                                      <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                                        <Terminal className="h-3 w-3" />
+                                        EVIDENCE_LEDGER
+                                      </div>
+                                      <ul className="space-y-3">
+                                        {(g.evidence || []).length ? (
+                                          (g.evidence || []).map((e, ei) => (
+                                            <li key={ei} className="text-[12px] text-slate-400 flex gap-3 leading-relaxed">
+                                              <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-green-500/40" />
+                                              {e}
+                                            </li>
+                                          ))
+                                        ) : (
+                                          <li className="text-xs text-slate-700 italic font-bold uppercase tracking-tighter">_LEDGER_EMPTY</li>
+                                        )}
+                                      </ul>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })}
+
+                            {(selectedCommit.review.notes || []).length ? (
+                              <FrankenContainer withBolts={false} className="bg-white/[0.02] border-white/10 p-8 shadow-2xl">
+                                <div className="text-sm font-black tracking-[0.2em] text-white uppercase mb-4 flex items-center gap-3">
+                                  <div className="h-2 w-2 bg-amber-500 rounded-full animate-pulse" />
+                                  OPEN_QUERIES_&_OBSERVATIONS
+                                </div>
+                                <ul className="grid gap-4">
+                                  {(selectedCommit.review.notes || []).map((n, ni) => (
+                                    <li key={ni} className="text-[13px] font-medium text-slate-400 bg-white/5 p-4 rounded-xl border border-white/5 flex gap-4 leading-relaxed">
+                                      <span className="text-amber-500/60 font-mono text-[10px] font-black mt-0.5">[{String(ni + 1).padStart(2, '0')}]</span>
+                                      {n}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </FrankenContainer>
+                            ) : null}
+                          </>
+                        )}
+                      </div>
+                    ) : null}
+
+                    {activeTab === "files" ? (
+                      compareModel ? (
+                        <div className="space-y-6">
+                          <div
+                            data-testid="compare-file-summary"
+                            className="rounded-2xl border border-white/10 bg-black/40 p-6 shadow-xl"
+                          >
+                            <div className="flex items-center justify-between gap-3">
+                              <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
+                                A→B_FILE_SUMMARY
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-[10px] font-black text-rose-300 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                                  A {compareModel.base.short}
+                                </span>
+                                <span className="text-slate-700">→</span>
+                                <span className="font-mono text-[10px] font-black text-green-400 bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">
+                                  B {compareModel.target.short}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="mt-5 grid gap-4 md:grid-cols-3">
+                              {(
+                                [
+                                  ["ADDED", compareModel.fileSummary.added, "text-green-300 border-green-500/20 bg-green-500/5"],
+                                  ["REMOVED", compareModel.fileSummary.removed, "text-rose-300 border-rose-500/20 bg-rose-500/5"],
+                                  ["MODIFIED", compareModel.fileSummary.modified, "text-amber-200 border-amber-500/20 bg-amber-500/5"],
+                                ] as const
+                              ).map(([label, list, cls]) => (
+                                <div key={label} className={clsx("rounded-xl border p-4", cls)}>
+                                  <div className="text-[9px] font-black uppercase tracking-widest opacity-80">
+                                    {label} <span className="ml-2 font-mono">({list.length})</span>
+                                  </div>
+                                  {list.length ? (
+                                    <ul className="mt-3 space-y-1">
+                                      {list.slice(0, 12).map((p) => (
+                                        <li key={p} className="font-mono text-[11px] text-slate-300 truncate">
+                                          {p}
+                                        </li>
+                                      ))}
+                                      {list.length > 12 ? (
+                                        <li className="font-mono text-[10px] text-slate-500 uppercase tracking-widest">
+                                          +{list.length - 12} more
+                                        </li>
+                                      ) : null}
+                                    </ul>
+                                  ) : (
+                                    <div className="mt-3 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+                                      NONE
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
-                        </div>
 
-                        <div className="p-4 space-y-4">
-                          {pf.hunks.map((h, hi) => (
-                            <div key={hi} className="rounded-xl border border-white/10 bg-black/20 overflow-hidden">
-                              <div className="px-3 py-2 text-xs font-mono text-slate-400 bg-white/5 border-b border-white/10">
-                                {h.header}
-                              </div>
+                          <div className="text-[10px] font-black text-slate-600 uppercase tracking-[0.2em]">
+                            COMMIT_PATCH_NUMSTAT (prev→B)
+                          </div>
 
-                              {diffFormat === "unified" ? (
-                                <pre className="p-3 overflow-auto text-xs font-mono leading-relaxed">
-                                  {h.lines.map((l, li) => (
-                                    <div
-                                      key={li}
-                                      className={clsx(
-                                        "whitespace-pre",
-                                        l.kind === "add"
-                                          ? "bg-green-500/10 text-green-100"
-                                          : l.kind === "del"
-                                            ? "bg-rose-500/10 text-rose-100"
-                                            : l.kind === "meta"
-                                              ? "text-slate-500"
-                                              : "text-slate-200"
-                                      )}
-                                    >
-                                      {l.text}
+                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                            {selectedCommit.numstat.map((ns) => (
+                              <div key={ns.path} className="rounded-2xl border border-white/5 bg-black/40 p-6 shadow-xl hover:border-white/10 transition-colors group">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="min-w-0">
+                                    <div className="font-mono text-xs font-bold text-slate-500 uppercase tracking-tighter group-hover:text-slate-300 transition-colors">{ns.path}</div>
+                                    <div className="mt-3 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
+                                      <span className="text-green-400 bg-green-500/10 px-2 py-1 rounded">+{ns.added || 0}</span>
+                                      <span className="text-rose-400 bg-rose-500/10 px-2 py-1 rounded">-{ns.deleted || 0}</span>
                                     </div>
-                                  ))}
-                                </pre>
-                              ) : (
-                                <div className="grid grid-cols-2 gap-px bg-white/10">
-                                  {hunkToSideBySideRows(h).map((row, ri) => {
-                                    const cellCls = (c: SideCell) =>
-                                      clsx(
-                                        "min-w-0 px-3 py-1 font-mono text-xs leading-relaxed whitespace-pre-wrap break-words",
-                                        c.kind === "add"
-                                          ? "bg-green-500/10 text-green-100"
-                                          : c.kind === "del"
-                                            ? "bg-rose-500/10 text-rose-100"
-                                            : c.kind === "context"
-                                              ? "bg-black/20 text-slate-200"
-                                              : "bg-black/10 text-slate-500"
-                                      );
-
-                                    const lnCls = "select-none text-slate-500 text-[10px] pr-2";
-
-                                    return (
-                                      <React.Fragment key={ri}>
-                                        <div className={cellCls(row.left)}>
-                                          <span className={lnCls}>{row.left.lineNo ?? ""}</span>
-                                          {row.left.text ?? ""}
-                                        </div>
-                                        <div className={cellCls(row.right)}>
-                                          <span className={lnCls}>{row.right.lineNo ?? ""}</span>
-                                          {row.right.text ?? ""}
-                                        </div>
-                                      </React.Fragment>
-                                    );
-                                  })}
+                                  </div>
+                                  <div className="text-[10px] font-black text-slate-700 uppercase tracking-[0.2em] border-l border-white/5 pl-4 py-1">
+                                    DELTA_Σ
+                                    <div className="mt-1 text-base font-mono text-slate-500">{(ns.added || 0) + (ns.deleted || 0)}</div>
+                                  </div>
                                 </div>
-                              )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+                          {selectedCommit.numstat.map((ns) => (
+                            <div key={ns.path} className="rounded-2xl border border-white/5 bg-black/40 p-6 shadow-xl hover:border-white/10 transition-colors group">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <div className="font-mono text-xs font-bold text-slate-500 uppercase tracking-tighter group-hover:text-slate-300 transition-colors">{ns.path}</div>
+                                  <div className="mt-3 flex items-center gap-3 text-[10px] font-black uppercase tracking-widest">
+                                    <span className="text-green-400 bg-green-500/10 px-2 py-1 rounded">+{ns.added || 0}</span>
+                                    <span className="text-rose-400 bg-rose-500/10 px-2 py-1 rounded">-{ns.deleted || 0}</span>
+                                  </div>
+                                </div>
+                                <div className="text-[10px] font-black text-slate-700 uppercase tracking-[0.2em] border-l border-white/5 pl-4 py-1">
+                                  DELTA_Σ
+                                  <div className="mt-1 text-base font-mono text-slate-500">{(ns.added || 0) + (ns.deleted || 0)}</div>
+                                </div>
+                              </div>
                             </div>
                           ))}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
+                      )
+                    ) : null}
 
-                {activeTab === "snapshot" ? <MarkdownView markdown={snapshotMarkdown} /> : null}
-                {activeTab === "raw" ? (
-                  <pre className="rounded-2xl border border-white/10 bg-black/30 p-4 overflow-auto max-h-[72vh] text-xs font-mono text-slate-200">
-                    {snapshotMarkdown}
-                  </pre>
-                ) : null}
-
-                {activeTab === "ledger" ? (
-                  <div className="space-y-3">
-                    {!selectedCommit.review ? (
-                      <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                        <div className="font-black tracking-tight">Unreviewed commit</div>
-                        <p className="mt-1 text-sm text-slate-400">
-                          No manual change-groups have been logged for this commit yet. The chart counts it as bucket{" "}
-                          <span className="font-mono">0</span>.
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        {(selectedCommit.review.groups || []).map((g, gi) => {
-                          const conf = typeof g.confidence === "number" ? Math.max(0, Math.min(1, g.confidence)) : 0;
-                          const confPct = Math.round(conf * 100);
-                          const buckets = (g.buckets || []).filter((b) => b >= 0 && b <= 10) as BucketKey[];
-                          return (
-                            <div key={gi} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                <div className="min-w-0">
-                                  <div className="text-xs font-mono text-slate-500">Group {gi + 1}</div>
-                                  <div className="mt-1 text-base font-black tracking-tight">
-                                    {g.title || "Untitled"}
-                                  </div>
-                                  <div className="mt-2 flex flex-wrap gap-2">
-                                    {(buckets.length ? buckets : ([10] as BucketKey[])).map((b) => (
-                                      <BucketChip key={b} bucket={b} onClick={() => openBucketInfo(b)} />
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className="shrink-0 rounded-2xl border border-white/10 bg-white/5 px-3 py-2">
-                                  <div className="text-[11px] font-mono text-slate-400">confidence</div>
-                                  <div className="mt-1 flex items-center gap-2">
-                                    <div className="h-2 w-28 rounded-full bg-white/10 overflow-hidden">
-                                      <div
-                                        className="h-2 rounded-full"
-                                        style={{ width: `${confPct}%`, background: "rgba(34,197,94,0.85)" }}
-                                      />
-                                    </div>
-                                    <div className="text-xs font-mono text-slate-200">{confPct}%</div>
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="mt-3 text-sm text-slate-300">
-                                <div className="text-xs font-mono text-slate-500">Rationale</div>
-                                <p className="mt-1">{g.rationale || ""}</p>
-                              </div>
-
-                              <div className="mt-3">
-                                <div className="text-xs font-mono text-slate-500">Evidence ledger</div>
-                                <ul className="mt-1 list-disc pl-5 space-y-1">
-                                  {(g.evidence || []).length ? (
-                                    (g.evidence || []).map((e, ei) => (
-                                      <li key={ei} className="text-sm text-slate-300">
-                                        {e}
-                                      </li>
-                                    ))
-                                  ) : (
-                                    <li className="text-sm text-slate-400">(none)</li>
-                                  )}
-                                </ul>
-                              </div>
-                            </div>
-                          );
-                        })}
-
-                        {(selectedCommit.review.notes || []).length ? (
-                          <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                            <div className="font-black tracking-tight">Notes / Open Questions</div>
-                            <ul className="mt-2 list-disc pl-5 space-y-1 text-sm text-slate-300">
-                              {(selectedCommit.review.notes || []).map((n, ni) => (
-                                <li key={ni}>{n}</li>
-                              ))}
-                            </ul>
-                          </div>
-                        ) : null}
-                      </>
-                    )}
-                  </div>
-                ) : null}
-
-                {activeTab === "files" ? (
-                  <div className="grid gap-3">
-                    {selectedCommit.numstat.map((ns) => (
-                      <div key={ns.path} className="rounded-2xl border border-white/10 bg-black/30 p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="min-w-0">
-                            <div className="font-mono text-xs text-slate-500">{ns.path}</div>
-                            <div className="mt-1 flex flex-wrap gap-2 text-xs">
-                              <span className="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 font-mono text-green-200">
-                                +{ns.added || 0}
-                              </span>
-                              <span className="rounded-full border border-rose-500/20 bg-rose-500/10 px-2 py-0.5 font-mono text-rose-200">
-                                -{ns.deleted || 0}
-                              </span>
-                            </div>
-                          </div>
-                          <div className="text-xs font-mono text-slate-500">Δ {(ns.added || 0) + (ns.deleted || 0)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-
-                {distanceOut ? <div className="mt-4 text-[11px] text-slate-500 font-mono">{distanceOut}</div> : null}
+                    {distanceOut ? (
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="mt-8 bg-green-500/[0.03] border border-green-500/10 rounded-xl p-4 text-[10px] font-black uppercase tracking-[0.2em] text-green-500/60 font-mono"
+                      >
+                        {distanceOut}
+                      </motion.div>
+                    ) : null}
+                  </motion.div>
+                </AnimatePresence>
               </div>
-            </div>
+              <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 opacity-10" />
+            </FrankenContainer>
           </section>
         </div>
       </div>
@@ -1567,10 +2092,10 @@ export default function SpecEvolutionLab() {
       {/* Legend */}
       <DialogShell
         dialogRef={legendDialogRef}
-        title="Legend (Revision Buckets)"
-        subtitle="Tap a bucket to filter commits; chips open bucket details."
+        title="Forensic Taxonomy Legend"
+        subtitle="Manual change-group categorization buckets"
       >
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="grid gap-3 sm:grid-cols-2">
           {BUCKET_KEYS.map((b) => {
             const active = bucketFilter === b;
             return (
@@ -1582,17 +2107,20 @@ export default function SpecEvolutionLab() {
                   legendDialogRef.current?.close();
                 }}
                 className={clsx(
-                  "w-full text-left rounded-2xl border border-white/10 px-4 py-3",
-                  active ? "bg-green-500/10 ring-1 ring-green-400/40" : "bg-white/5 hover:bg-white/10"
+                  "w-full text-left rounded-2xl border px-5 py-4 transition-all group relative overflow-hidden",
+                  active 
+                    ? "bg-green-500/10 border-green-500/40 shadow-[0_0_20px_rgba(34,197,94,0.1)]" 
+                    : "bg-white/5 border-white/10 hover:border-white/20 hover:bg-white/10"
                 )}
               >
-                <div className="flex items-start gap-3">
-                  <div className="mt-1 h-3 w-3 rounded-full" style={{ background: bucketColors[b] }} />
+                {active && <NeuralPulse className="opacity-40" />}
+                <div className="flex items-start gap-4 relative z-10">
+                  <div className="mt-1 h-3 w-3 rounded-full shadow-[0_0_10px_currentColor]" style={{ background: bucketColors[b], color: bucketColors[b] }} />
                   <div className="min-w-0">
-                    <div className="font-black tracking-tight">
+                    <div className="text-sm font-black tracking-tight text-white uppercase tracking-wider">
                       {b}. {bucketNames[b]}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">{dataset.bucket_defs?.[String(b)] || ""}</div>
+                    <div className="mt-1.5 text-[11px] font-medium text-slate-500 leading-relaxed uppercase tracking-widest">{dataset.bucket_defs?.[String(b)] || "System default protocol."}</div>
                   </div>
                 </div>
               </button>
@@ -1604,30 +2132,29 @@ export default function SpecEvolutionLab() {
       {/* Bucket info */}
       <DialogShell
         dialogRef={bucketInfoDialogRef}
-        title={bucketInfo !== null ? `${bucketInfo}. ${bucketNames[bucketInfo]}` : "Bucket"}
-        subtitle={bucketInfoDesc}
+        title={bucketInfo !== null ? `${bucketInfo}. ${bucketNames[bucketInfo].toUpperCase()}` : "BUCKET_NODE"}
+        subtitle="Forensic category details"
       >
-        <div className="space-y-3">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="text-[11px] font-mono text-slate-400">
-              Filter: {bucketFilter === null ? "none" : `${bucketFilter}. ${bucketNames[bucketFilter]}`}
-            </div>
-            <div className="mt-1 text-xs text-slate-300">
-              Tip: filtering isolates commits that include this category; clear via the pill in the header.
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-white/5 bg-white/[0.03] p-6 shadow-inner">
+            <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] mb-3">SYSTEM_DEFINITION</div>
+            <p className="text-sm font-medium text-slate-300 leading-relaxed italic">&ldquo;{bucketInfoDesc || "No manual definition provided for this node."}&rdquo;</p>
+            <div className="mt-6 flex items-center gap-3 text-[9px] font-black text-slate-600 uppercase tracking-widest">
+              CURRENT_FILTER_STATUS: <span className={clsx(bucketFilter === bucketInfo ? "text-green-400" : "text-slate-400")}>{bucketFilter === bucketInfo ? "ACTIVE" : "INACTIVE"}</span>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             <button
               type="button"
               onClick={() => {
                 if (bucketInfo === null) return;
                 toggleBucketFilter(bucketInfo);
               }}
-              className="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-300 hover:bg-green-500/15"
+              className="flex-1 rounded-full border border-green-500/20 bg-green-500/10 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-green-400 hover:bg-green-500/20 transition-all active:scale-95 shadow-lg"
             >
-              <span className="inline-flex items-center gap-2">
+              <span className="flex items-center justify-center gap-3">
                 <Filter className="h-4 w-4" />
-                {bucketInfo !== null && bucketFilter === bucketInfo ? "Clear this filter" : "Filter commits"}
+                {bucketInfo !== null && bucketFilter === bucketInfo ? "CLEAR_FILTER" : "FILTER_BY_NODE"}
               </span>
             </button>
             <button
@@ -1636,11 +2163,11 @@ export default function SpecEvolutionLab() {
                 bucketInfoDialogRef.current?.close();
                 openLegend();
               }}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10"
+              className="flex-1 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-white/10 hover:text-white transition-all active:scale-95 shadow-lg"
             >
-              <span className="inline-flex items-center gap-2">
+              <span className="flex items-center justify-center gap-3">
                 <Info className="h-4 w-4" />
-                Open full legend
+                VIEW_ALL_TAXONOMY
               </span>
             </button>
           </div>
@@ -1650,136 +2177,164 @@ export default function SpecEvolutionLab() {
       {/* Controls (mobile) */}
       <DialogShell
         dialogRef={controlsDialogRef}
-        title="Controls"
-        subtitle="Mobile-friendly controls for search, bucketing, metrics, and legend."
+        title="Tools & Parameters"
+        subtitle="Forensic traversal configuration"
       >
-        <div className="space-y-3">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
-            <input
-              type="search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search commits…"
-              className="w-full rounded-2xl border border-white/10 bg-white/5 pl-9 pr-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400/60"
-            />
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">SEARCH_ARCHIVE</div>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="SEARCH_FORENSIC_DATA..."
+                className="w-full rounded-2xl border border-white/10 bg-white/5 pl-12 pr-4 py-4 text-xs font-bold tracking-widest text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-green-500/40"
+              />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            <select
-              value={bucketMode}
-              onChange={(e) => setBucketMode(e.target.value as BucketMode)}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-400/60"
-            >
-              <option value="day">Bucket: Day</option>
-              <option value="hour">Bucket: Hour</option>
-              <option value="15m">Bucket: 15m</option>
-              <option value="5m">Bucket: 5m</option>
-            </select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">TEMPORAL_SCALE</div>
+              <select
+                value={bucketMode}
+                onChange={(e) => setBucketMode(e.target.value as BucketMode)}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-xs font-black uppercase tracking-widest text-white focus:outline-none"
+              >
+                <option value="day">Day</option>
+                <option value="hour">Hour</option>
+                <option value="15m">15m</option>
+                <option value="5m">5m</option>
+              </select>
+            </div>
 
-            <select
-              value={metric}
-              onChange={(e) => setMetric(e.target.value as MetricKey)}
-              className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 focus:outline-none focus:ring-2 focus:ring-green-400/60"
-            >
-              <option value="groups">Metric: Change-Groups</option>
-              <option value="lines">Metric: Lines (+/-)</option>
-              <option value="patchBytes">Metric: Patch Bytes</option>
-            </select>
+            <div className="space-y-2">
+              <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest px-1">METRIC_DIMENSION</div>
+              <select
+                value={metric}
+                onChange={(e) => setMetric(e.target.value as MetricKey)}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-xs font-black uppercase tracking-widest text-white focus:outline-none"
+              >
+                <option value="groups">Groups</option>
+                <option value="lines">Lines</option>
+                <option value="patchBytes">Bytes</option>
+              </select>
+            </div>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="grid gap-3 pt-4 border-t border-white/5">
             <button
               type="button"
               onClick={() => {
                 controlsDialogRef.current?.close();
                 openLegend();
               }}
-              className="rounded-full border border-green-500/20 bg-green-500/10 px-4 py-2 text-sm font-semibold text-green-300 hover:bg-green-500/15"
+              className="w-full rounded-2xl border border-green-500/20 bg-green-500/10 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-green-400"
             >
-              Legend
+              LEGEND
             </button>
-            <button
-              type="button"
-              onClick={() => downloadObjectAsJson(dataset, "frankentui_spec_evolution_dataset.json")}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10"
-            >
-              Download JSON
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                controlsDialogRef.current?.close();
-                openCommits();
-              }}
-              className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-white/10"
-            >
-              Commits
-            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => downloadObjectAsJson(dataset, "frankentui_spec_evolution_dataset.json")}
+                className="rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-300"
+              >
+                EXPORT_JSON
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  controlsDialogRef.current?.close();
+                  openCommits();
+                }}
+                className="rounded-2xl border border-white/10 bg-white/5 px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-300"
+              >
+                COMMITS
+              </button>
+            </div>
           </div>
         </div>
       </DialogShell>
 
       {/* Commits (mobile) */}
-      <DialogShell dialogRef={commitsDialogRef} title="Commits" subtitle="Tap to select. Use Controls to search and filter.">
-        <div className="max-h-[72vh] overflow-auto -mx-4">
-          {filteredCommits.map((c) => (
-            <button
-              key={c.sha}
-              type="button"
-              onClick={() => {
-                selectCommit(c.idx);
-                commitsDialogRef.current?.close();
-              }}
-              className="w-full text-left px-4 py-3 border-b border-white/5 hover:bg-white/5"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-[11px] text-slate-500">{c.short}</span>
-                    <span className="font-mono text-[11px] text-slate-500">{c.dateShort}</span>
+      <DialogShell dialogRef={commitsDialogRef} title="Archive Nodes" subtitle="Historical snapshots traversal">
+        <div className="max-h-[72vh] overflow-auto -mx-6">
+          {filteredCommits.map((c) => {
+            const weights = perCommitBucketWeights(c, softMode);
+            const bucketKeys = Object.keys(weights)
+              .map((x) => parseInt(x, 10))
+              .filter((b) => Number.isFinite(b) && b >= 0 && b <= 10) as BucketKey[];
+            const showBuckets = (c.reviewed ? bucketKeys.filter((b) => b !== 0) : bucketKeys).slice(0, 4);
+
+            return (
+              <button
+                key={c.sha}
+                type="button"
+                onClick={() => {
+                  selectCommit(c.idx);
+                  commitsDialogRef.current?.close();
+                }}
+                className="w-full text-left px-6 py-5 border-b border-white/5 hover:bg-white/5 transition-colors active:bg-green-500/5 group"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-3 mb-1.5">
+                      <span className="font-mono text-[10px] font-black text-green-500">{c.short}</span>
+                      <span className="font-mono text-[10px] text-slate-600 font-bold">{c.dateShort}</span>
+                    </div>
+                    <div className="text-sm font-black text-white leading-tight mb-3 group-active:text-green-400">{c.subject || "Untitled Archive Node"}</div>
+                    <div className="flex flex-wrap gap-1.5 items-center">
+                      {showBuckets.length ? (
+                        showBuckets.map((b) => (
+                          <span
+                            key={b}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.03] border border-white/5 px-2 py-0.5 text-[9px] font-mono font-bold text-slate-500"
+                          >
+                            <span className="h-1.5 w-1.5 rounded-full shadow-[0_0_3px_currentColor]" style={{ background: bucketColors[b], color: bucketColors[b] }} />
+                            {b}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-[9px] text-slate-700 font-black uppercase tracking-tighter italic">NULL_BUCKET</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm font-semibold text-slate-100 truncate">{c.subject || ""}</div>
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    {c.reviewed ? (
+                      <span className="rounded-full border border-green-500/30 bg-green-500/10 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-green-400">
+                        VALIDATED
+                      </span>
+                    ) : (
+                      <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[8px] font-black uppercase tracking-widest text-slate-600">
+                        PENDING
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col items-end gap-1">
-                  {c.reviewed ? (
-                    <span className="rounded-full border border-green-500/20 bg-green-500/10 px-2 py-0.5 text-[10px] font-semibold text-green-300">
-                      Reviewed
-                    </span>
-                  ) : (
-                    <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-semibold text-slate-400">
-                      Unreviewed
-                    </span>
-                  )}
-                </div>
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       </DialogShell>
 
       {/* Help */}
-      <DialogShell dialogRef={helpDialogRef} title="Keyboard Shortcuts" subtitle="Designed for fast forensic browsing.">
-        <div className="grid gap-2 text-sm text-slate-200">
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-mono">← / →</span>
-            <span className="text-slate-400">Previous / next commit</span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-mono">?</span>
-            <span className="text-slate-400">Open this dialog</span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-mono">/</span>
-            <span className="text-slate-400">Focus search (desktop)</span>
-          </div>
-          <div className="flex items-center justify-between gap-3">
-            <span className="font-mono">Esc</span>
-            <span className="text-slate-400">Close dialogs</span>
-          </div>
+      <DialogShell dialogRef={helpDialogRef} title="Traversal Protocols" subtitle="Archive node interface keybindings">
+        <div className="grid gap-4">
+          {[
+            { key: "← / →", action: "Archive Node Traversal (Previous / Next)" },
+            { key: "?", action: "Display Protocol Metadata" },
+            { key: "/", action: "Focus Forensic Search Interface (Desktop)" },
+            { key: "Esc", action: "Terminate Dialog Session" },
+          ].map((item) => (
+            <div key={item.key} className="flex items-center justify-between gap-6 p-4 rounded-2xl bg-white/[0.03] border border-white/5 group hover:border-green-500/30 transition-all">
+              <span className="font-mono text-xs font-black text-green-400 bg-green-500/10 px-3 py-1.5 rounded-lg border border-green-500/20 shadow-[0_0_10px_rgba(34,197,94,0.1)] group-hover:scale-110 transition-transform">{item.key}</span>
+              <span className="text-[11px] font-black text-slate-400 uppercase tracking-widest text-right">{item.action}</span>
+            </div>
+          ))}
         </div>
       </DialogShell>
     </main>
   );
 }
-

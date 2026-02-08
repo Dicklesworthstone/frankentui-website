@@ -1,14 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
+import { ArrowRight, Clock, Link2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { changelog, tweets, buildLogLines, devSessionInsights, devProcessStats } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
 import Timeline from "@/components/timeline";
 import TweetWall from "@/components/tweet-wall";
 import FrankenEye from "@/components/franken-eye";
-import { FrankenContainer, NeuralPulse } from "@/components/franken-elements";
+import { FrankenContainer, NeuralPulse, FrankenBolt, FrankenStitch } from "@/components/franken-elements";
 import FrankenGlitch from "@/components/franken-glitch";
 
 const keyStats = [
@@ -238,6 +238,101 @@ export default function HowItWasBuiltPage() {
           </div>
         </div>
       </SectionShell>
+
+      {/* ── Spec Evolution Lab ─────────────────────────────── */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+      >
+        <SectionShell
+          id="spec-evolution-lab"
+          icon="barChart3"
+          title="Spec Evolution Lab"
+          kicker="Forensic visualization of the FrankenTUI spec corpus evolving over time, reconstructed from real git history and manually categorized."
+        >
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="relative overflow-hidden rounded-2xl border border-green-900/40 bg-gradient-to-br from-green-950/30 via-emerald-950/15 to-black p-6 shadow-xl shadow-green-950/20 group">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_0%,rgba(34,197,94,0.16),transparent_55%)]" />
+              <FrankenBolt className="absolute -left-1 -top-1 z-20" />
+              <FrankenBolt className="absolute -right-1 -bottom-1 z-20" />
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-green-300">
+                  New
+                  <span className="h-1 w-1 rounded-full bg-green-300 animate-pulse" />
+                  Interactive Lab
+                </div>
+                <h3 className="mt-4 text-xl font-black tracking-tight text-white uppercase tracking-wider">Time-lapse diff explorer</h3>
+                <p className="mt-3 text-sm leading-relaxed text-slate-300 font-medium">
+                  Scrub through commits and inspect diffs, rendered markdown snapshots, and the evidence ledger for each
+                  categorized change-group.
+                </p>
+
+                <ul className="mt-4 space-y-2 text-sm text-slate-300 font-medium">
+                  <li className="flex gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400/80 shadow-[0_0_5px_#4ade80]" />
+                    Stacked taxonomy bars (day/hour/15m/5m) with bucket legend and mobile-friendly bucket details.
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400/80 shadow-[0_0_5px_#4ade80]" />
+                    Timeline scrubber with keyboard navigation (←/→), search (/), and help (?).
+                  </li>
+                  <li className="flex gap-2">
+                    <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-green-400/80 shadow-[0_0_5px_#4ade80]" />
+                    Diff viewer (unified + side-by-side), plus rendered markdown snapshot with responsive tables.
+                  </li>
+                </ul>
+
+                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <Link
+                    href="/how-it-was-built/spec-evolution-lab"
+                    className="group/btn inline-flex items-center justify-center gap-2 rounded-full bg-green-600 px-6 py-3 text-sm font-black uppercase tracking-widest text-white shadow-lg shadow-green-900/30 transition-all hover:bg-green-500 hover:shadow-green-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 active:scale-95"
+                  >
+                    Open Lab
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
+                  </Link>
+                  <a
+                    href="/how-it-was-built/visualization_of_the_evolution_of_the_frankentui_specs_document_from_inception.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-black uppercase tracking-widest text-white transition-all hover:border-green-500/30 hover:bg-green-950/30 active:scale-95"
+                  >
+                    Legacy Artifact
+                    <Link2 className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 shadow-xl relative overflow-hidden group">
+              <div className="absolute top-0 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
+              <h3 className="text-base font-black tracking-tight text-white uppercase tracking-wider">Origin Protocol</h3>
+              <p className="mt-3 text-sm leading-relaxed text-slate-400 font-medium">
+                FrankenTUI’s spec corpus evolved extremely fast. This lab is the “forensics view”: it reconstructs what
+                changed, when it changed, and why, so the project is auditable and easier to extend.
+              </p>
+              <div className="mt-6 grid gap-4">
+                <div className="rounded-xl border border-white/5 bg-black/40 p-4 transition-colors hover:border-green-500/20">
+                  <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Revision_Taxonomy</div>
+                  <div className="mt-1.5 text-sm text-slate-300 font-medium leading-relaxed">
+                    Commits are manually grouped and labeled across 10 buckets (logic fixes, architecture, scrivening,
+                    alien-artifact math, etc.).
+                  </div>
+                </div>
+                <div className="rounded-xl border border-white/5 bg-black/40 p-4 transition-colors hover:border-green-500/20">
+                  <div className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Forensic_Inspection</div>
+                  <div className="mt-1.5 text-sm text-slate-300 font-medium leading-relaxed">
+                    Tables and dense evidence are rendered without horizontal scroll, using stacked key/value layouts
+                    and tap-to-open legends.
+                  </div>
+                </div>
+              </div>
+              <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 opacity-10 group-hover:opacity-30 transition-opacity" />
+            </div>
+          </div>
+        </SectionShell>
+      </motion.div>
 
       {/* ── Sprint Git Log (Selected) ───────────────────────────── */}
       <motion.div
