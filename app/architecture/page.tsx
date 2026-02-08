@@ -23,6 +23,7 @@ import AlgorithmCard from "@/components/algorithm-card";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer, FrankenStitch } from "@/components/franken-elements";
 import DecodingText from "@/components/decoding-text";
+import FrankenGlitch from "@/components/franken-glitch";
 
 /* ── Pipeline stage data ─────────────────────────────────── */
 
@@ -109,18 +110,20 @@ export default function ArchitecturePage() {
               Technical Specification
             </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              <DecodingText text="Inside the" delay={0.2} /> <br />
-              <span className="text-animate-green">
-                <DecodingText text="Machine." delay={0.6} />
-              </span>
-            </h1>
+            <FrankenGlitch trigger="random" intensity="low">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 text-left">
+                <DecodingText text="Inside the" delay={0.2} /> <br />
+                <span className="text-animate-green">
+                  <DecodingText text="Machine." delay={0.6} />
+                </span>
+              </h1>
+            </FrankenGlitch>
             
             <motion.p 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1, duration: 1 }}
-              className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl leading-relaxed"
+              className="text-xl md:text-2xl text-slate-400 font-medium max-w-3xl leading-relaxed text-left"
             >
               A deep dive into the 16-byte cell architecture, 
               Bayesian rendering strategies, and the zero-unsafe kernel 
@@ -159,14 +162,16 @@ export default function ArchitecturePage() {
                 viewport={{ once: true }}
                 className="relative group"
               >
-                <FrankenContainer withBolts={false} className="glass-modern p-8 text-center h-full flex flex-col items-center hover:bg-green-500/5 hover:border-green-500/30 transition-all overflow-hidden">
+                <FrankenContainer withBolts={false} withPulse={true} className="glass-modern p-8 text-center h-full flex flex-col items-center hover:bg-green-500/5 hover:border-green-500/30 transition-all overflow-hidden border-green-500/10">
                   <motion.div 
                     whileHover={{ rotate: [0, -10, 10, 0], transition: { duration: 0.4 } }}
                     className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-green-400 mb-6 group-hover:scale-110 transition-transform shadow-[0_0_15px_rgba(34,197,94,0.1)]"
                   >
                     <Icon className="h-6 w-6" />
                   </motion.div>
-                  <h3 className="text-lg font-black text-white mb-2 uppercase tracking-widest">{stage.label}</h3>
+                  <FrankenGlitch trigger="hover" intensity="low">
+                    <h3 className="text-lg font-black text-white mb-2 uppercase tracking-widest">{stage.label}</h3>
+                  </FrankenGlitch>
                   <p className="text-xs text-slate-500 font-bold leading-relaxed">{stage.description}</p>
                   
                   {/* Step Number */}
@@ -319,10 +324,18 @@ export default function ArchitecturePage() {
                 correctness guarantees from day one.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                <Link href="/getting-started" className="group w-full sm:w-auto px-8 py-4 rounded-2xl bg-green-500 text-black font-black text-lg shadow-[0_0_30px_rgba(34,197,94,0.3)] hover:scale-105 transition-transform">
+                <Link 
+                  href="/getting-started" 
+                  data-magnetic="true"
+                  className="group w-full sm:w-auto px-8 py-4 rounded-2xl bg-green-500 text-black font-black text-lg shadow-[0_0_30px_rgba(34,197,94,0.3)] hover:scale-105 transition-transform"
+                >
                   GET STARTED
                 </Link>
-                <Link href="/showcase" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg hover:bg-white/10 transition-colors">
+                <Link 
+                  href="/showcase" 
+                  data-magnetic="true"
+                  className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg hover:bg-white/10 transition-colors"
+                >
                   VIEW SHOWCASE
                 </Link>
               </div>

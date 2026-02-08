@@ -1,6 +1,5 @@
 "use client";
 
-import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
 import { motion } from "framer-motion";
@@ -9,8 +8,9 @@ import SectionShell from "@/components/section-shell";
 import Timeline from "@/components/timeline";
 import TweetWall from "@/components/tweet-wall";
 import FrankenEye from "@/components/franken-eye";
-import { FrankenContainer } from "@/components/franken-elements";
+import { FrankenContainer, NeuralPulse } from "@/components/franken-elements";
 import DecodingText from "@/components/decoding-text";
+import FrankenGlitch from "@/components/franken-glitch";
 
 const keyStats = [
   {
@@ -60,12 +60,14 @@ export default function HowItWasBuiltPage() {
               100-Hour Sprint
             </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              <DecodingText text="Built in" delay={0.2} /> <br />
-              <span className="text-animate-green">
-                <DecodingText text="5 Days." delay={0.6} />
-              </span>
-            </h1>
+            <FrankenGlitch trigger="random" intensity="low">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
+                <DecodingText text="Built in" delay={0.2} /> <br />
+                <span className="text-animate-green">
+                  <DecodingText text="5 Days." delay={0.6} />
+                </span>
+              </h1>
+            </FrankenGlitch>
             
             <motion.p 
               initial={{ opacity: 0 }}
@@ -93,7 +95,7 @@ export default function HowItWasBuiltPage() {
         title="Key Stats"
         kicker="The numbers behind the sprint. Every hour counted."
       >
-        <dl className="grid gap-px overflow-hidden rounded-2xl border border-green-900/40 bg-green-900/20 text-sm text-slate-200 shadow-xl shadow-green-950/20 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-px overflow-hidden rounded-2xl border border-green-900/40 bg-green-900/20 text-sm text-slate-200 shadow-xl shadow-green-950/20 sm:grid-cols-2 lg:grid-cols-4">
           {keyStats.map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -103,6 +105,7 @@ export default function HowItWasBuiltPage() {
               transition={{ delay: i * 0.1 }}
               className="group relative bg-[#020a02]/60 px-6 py-6 backdrop-blur transition-colors hover:bg-[#020a02]/40"
             >
+              <NeuralPulse className="opacity-0 group-hover:opacity-100 transition-opacity" />
               <div
                 className="absolute inset-x-0 top-0 h-px origin-center scale-x-0 bg-gradient-to-r from-green-400 via-lime-400 to-green-400 transition-transform duration-500 group-hover:scale-x-100"
                 aria-hidden="true"
@@ -125,7 +128,7 @@ export default function HowItWasBuiltPage() {
               </p>
             </motion.div>
           ))}
-        </dl>
+        </div>
       </SectionShell>
 
       {/* ── Full Timeline ─────────────────────────────────────── */}
@@ -153,7 +156,7 @@ export default function HowItWasBuiltPage() {
         kicker="Highlights reconstructed from real sprint artifacts: git history plus archived Claude Code + Codex CLI session logs (2026-01-31 → 2026-02-05)."
       >
         <div className="space-y-8">
-          <dl className="grid gap-px overflow-hidden rounded-2xl border border-green-900/40 bg-green-900/20 text-sm text-slate-200 shadow-xl shadow-green-950/20 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-px overflow-hidden rounded-2xl border border-green-900/40 bg-green-900/20 text-sm text-slate-200 shadow-xl shadow-green-950/20 sm:grid-cols-2 lg:grid-cols-3">
             {devProcessStats.map((stat, i) => (
               <motion.div
                 key={stat.label}
@@ -163,6 +166,7 @@ export default function HowItWasBuiltPage() {
                 transition={{ delay: i * 0.1 }}
                 className="group relative bg-[#020a02]/60 px-6 py-6 backdrop-blur transition-colors hover:bg-[#020a02]/40"
               >
+                <NeuralPulse className="opacity-0 group-hover:opacity-100 transition-opacity" />
                 <dt className="text-xs font-bold uppercase tracking-widest text-slate-500 transition-colors group-hover:text-green-400/70">
                   {stat.label}
                 </dt>
@@ -174,7 +178,7 @@ export default function HowItWasBuiltPage() {
                 </p>
               </motion.div>
             ))}
-          </dl>
+          </div>
 
           <div className="space-y-4">
             {devSessionInsights.map((insight, i) => {
@@ -207,9 +211,10 @@ export default function HowItWasBuiltPage() {
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.05 }}
-                  className={`rounded-xl border p-5 transition-colors ${flavorStyles[insight.flavor]}`}
+                  className={`rounded-xl border p-5 transition-colors group relative overflow-hidden ${flavorStyles[insight.flavor]}`}
                 >
-                  <div className="mb-3 flex flex-wrap items-center gap-3">
+                  <NeuralPulse className="opacity-0 group-hover:opacity-40 transition-opacity" />
+                  <div className="mb-3 flex flex-wrap items-center gap-3 relative z-10">
                     <span className="font-mono text-[11px] text-slate-500">
                       {insight.date}
                     </span>
@@ -222,10 +227,10 @@ export default function HowItWasBuiltPage() {
                       {flavorLabels[insight.flavor]}
                     </span>
                   </div>
-                  <h3 className="mb-2 text-base font-bold text-white">
+                  <h3 className="mb-2 text-base font-bold text-white relative z-10">
                     {insight.title}
                   </h3>
-                  <p className="text-sm leading-relaxed text-slate-400">
+                  <p className="text-sm leading-relaxed text-slate-400 relative z-10">
                     {insight.description}
                   </p>
                 </motion.div>
@@ -248,8 +253,8 @@ export default function HowItWasBuiltPage() {
           title="Sprint Git Log"
           kicker="Selected, timestamped commit messages from the sprint (local tz)."
         >
-          <FrankenContainer className="bg-black/60 p-0 overflow-hidden shadow-2xl border-white/5">
-            <div className="flex items-center gap-3 border-b border-white/5 bg-white/5 px-4 py-3">
+          <FrankenContainer withPulse={true} className="bg-black/60 p-0 overflow-hidden shadow-2xl border-green-500/10 group">
+            <div className="flex items-center gap-3 border-b border-white/5 bg-white/5 px-4 py-3 relative z-10">
               <div className="flex gap-1.5">
                 <div className="h-3 w-3 rounded-full bg-red-500/60" />
                 <div className="h-3 w-3 rounded-full bg-yellow-500/60" />
@@ -257,8 +262,10 @@ export default function HowItWasBuiltPage() {
               </div>
               <span className="text-xs font-mono text-slate-500">git log --oneline (selected)</span>
             </div>
-            <div className="p-6 font-mono text-[13px] leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
-              <div className="space-y-1">
+            <div className="p-6 font-mono text-[13px] leading-relaxed overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar relative z-10">
+              {/* Terminal scanline effect for log */}
+              <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.05)_50%)] bg-[length:100%_4px] opacity-20" />
+              <div className="space-y-1 relative z-10">
                 {buildLogLines.map((line, i) => {
                   const isPublishLine =
                     /\bpublish\b/i.test(line) ||
@@ -282,6 +289,7 @@ export default function HowItWasBuiltPage() {
           </FrankenContainer>
         </SectionShell>
       </motion.div>
+
 
       {/* ── What People Said ──────────────────────────────────── */}
       <SectionShell
@@ -317,6 +325,7 @@ export default function HowItWasBuiltPage() {
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
               <Link
                 href="/showcase"
+                data-magnetic="true"
                 className="group inline-flex items-center gap-2.5 rounded-full border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition-all hover:border-green-500/30 hover:bg-green-950/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 View Showcase
@@ -324,6 +333,7 @@ export default function HowItWasBuiltPage() {
               </Link>
               <Link
                 href="/getting-started"
+                data-magnetic="true"
                 className="group inline-flex items-center gap-2.5 rounded-full bg-green-600 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-green-900/30 transition-all hover:bg-green-500 hover:shadow-green-500/25 focus:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
               >
                 Get Started

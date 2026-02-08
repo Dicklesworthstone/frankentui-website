@@ -8,6 +8,7 @@ import BottomSheet from "@/components/ui/bottom-sheet";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
 import DecodingText from "@/components/decoding-text";
+import FrankenGlitch from "@/components/franken-glitch";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -127,12 +128,14 @@ export default function GlossaryPage() {
               Machine Lexicon
             </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              <DecodingText text="The" delay={0.2} /> <br />
-              <span className="text-animate-green">
-                <DecodingText text="Glossary." delay={0.6} />
-              </span>
-            </h1>
+            <FrankenGlitch trigger="random" intensity="low">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
+                <DecodingText text="The" delay={0.2} /> <br />
+                <span className="text-animate-green">
+                  <DecodingText text="Glossary." delay={0.6} />
+                </span>
+              </h1>
+            </FrankenGlitch>
             
             <motion.p 
               initial={{ opacity: 0 }}
@@ -217,13 +220,16 @@ export default function GlossaryPage() {
                       key={key}
                       type="button"
                       onClick={() => handleOpen([key, term])}
+                      data-magnetic="true"
                       className="group text-left focus:outline-none"
                     >
-                      <FrankenContainer withStitches={false} className="h-full glass-modern p-8 md:p-10 transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-green-500/30 group-hover:-translate-y-1 shadow-lg hover:shadow-green-500/5">
+                      <FrankenContainer withStitches={false} withPulse={true} className="h-full glass-modern p-8 md:p-10 transition-all duration-500 group-hover:bg-white/[0.03] group-hover:border-green-500/30 group-hover:-translate-y-1 shadow-lg hover:shadow-green-500/5 border-white/5">
                         <div className="flex flex-col h-full items-start">
-                          <h3 className="text-2xl font-black text-white mb-4 group-hover:text-green-400 transition-colors tracking-tight">
-                            {term.term}
-                          </h3>
+                          <FrankenGlitch trigger="hover" intensity="low">
+                            <h3 className="text-2xl font-black text-white mb-4 group-hover:text-green-400 transition-colors tracking-tight">
+                              {term.term}
+                            </h3>
+                          </FrankenGlitch>
                           <p className="text-base font-medium leading-relaxed text-slate-400 group-hover:text-slate-300 transition-colors line-clamp-3 mb-8 flex-1">
                             {term.short}
                           </p>

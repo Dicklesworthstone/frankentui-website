@@ -10,6 +10,7 @@ import ScreenshotGallery from "@/components/screenshot-gallery";
 import VideoPlayer from "@/components/video-player";
 import FrankenEye from "@/components/franken-eye";
 import DecodingText from "@/components/decoding-text";
+import FrankenGlitch from "@/components/franken-glitch";
 
 export default function ShowcasePage() {
   return (
@@ -32,12 +33,14 @@ export default function ShowcasePage() {
               Visual Gallery
             </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
-              <DecodingText text="The" delay={0.2} /> <br />
-              <span className="text-animate-green">
-                <DecodingText text="Showcase." delay={0.6} />
-              </span>
-            </h1>
+            <FrankenGlitch trigger="random" intensity="low">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8">
+                <DecodingText text="The" delay={0.2} /> <br />
+                <span className="text-animate-green">
+                  <DecodingText text="Showcase." delay={0.6} />
+                </span>
+              </h1>
+            </FrankenGlitch>
             
             <motion.p 
               initial={{ opacity: 0 }}

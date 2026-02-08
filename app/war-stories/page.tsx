@@ -1,22 +1,20 @@
 "use client";
 
-import type { Metadata } from "next";
 import Link from "next/link";
 import { Skull } from "lucide-react";
 import { motion } from "framer-motion";
-import { warStories, warStoriesExtended, optimizations, performanceSLAs } from "@/lib/content";
+import { optimizations, performanceSLAs } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
-import WarStoryCard from "@/components/war-story-card";
 import OptimizationCard from "@/components/optimization-card";
 import FrankenEye from "@/components/franken-eye";
 import WarStoriesMap from "@/components/war-stories-map";
+import FrankenGlitch from "@/components/franken-glitch";
 
 export default function WarStoriesPage() {
   return (
     <main 
       id="main-content" 
       className="relative min-h-screen bg-black overflow-x-hidden"
-      data-flashlight="true"
     >
       {/* ── CINEMATIC HEADER ─────────────────────────────────── */}
       <header className="relative pt-44 pb-20 overflow-hidden border-b border-white/5">
@@ -36,15 +34,22 @@ export default function WarStoriesPage() {
               Battle Reports
             </div>
             
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 leading-none">
-              War <br /><span className="text-animate-green">Stories.</span>
-            </h1>
+            <FrankenGlitch trigger="random" intensity="low">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 leading-none text-left">
+                War <br /><span className="text-animate-green">Stories.</span>
+              </h1>
+            </FrankenGlitch>
             
-            <p className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed">
+            <motion.p 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1, duration: 1 }}
+              className="text-xl md:text-2xl text-slate-400 font-medium max-w-2xl leading-relaxed text-left"
+            >
               Building a TUI kernel in 5 days meant fighting 
               synchronized output deadlocks, battling character 
               collisions, and optimizing allocations into oblivion.
-            </p>
+            </motion.p>
           </motion.div>
         </div>
 
@@ -53,10 +58,6 @@ export default function WarStoriesPage() {
           <FrankenEye className="scale-[1.8] rotate-[-10deg]" />
         </div>
       </header>
-
-import WarStoriesMap from "@/components/war-stories-map";
-
-// ... inside the component, replace the story sections with:
 
       {/* ── War Stories Tactical Map ────────────────────────── */}
       <SectionShell
@@ -144,17 +145,19 @@ import WarStoriesMap from "@/components/war-stories-map";
               Built for correctness from the ground up.
             </p>
 
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 relative z-10">
               <a
                 href="https://github.com/Dicklesworthstone/frankentui"
                 target="_blank"
                 rel="noopener noreferrer"
+                data-magnetic="true"
                 className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white text-black font-black text-lg hover:bg-green-500 transition-all shadow-xl active:scale-95"
               >
                 VIEW ON GITHUB
               </a>
               <Link
                 href="/getting-started"
+                data-magnetic="true"
                 className="w-full sm:w-auto px-10 py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg hover:bg-white/10 transition-all active:scale-95"
               >
                 GET STARTED

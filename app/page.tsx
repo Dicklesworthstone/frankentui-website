@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import {
   Github,
@@ -7,6 +8,8 @@ import {
   Rocket,
   Package,
   Terminal,
+  Activity,
+  ExternalLink,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -20,6 +23,7 @@ import RustCodeBlock from "@/components/rust-code-block";
 import Timeline from "@/components/timeline";
 import TweetWall from "@/components/tweet-wall";
 import FrankenEye from "@/components/franken-eye";
+import FrankenGlitch from "@/components/franken-glitch";
 import { FrankenContainer } from "@/components/franken-elements";
 import { Magnetic, BorderBeam } from "@/components/motion-wrapper";
 import DecodingText from "@/components/decoding-text";
@@ -62,10 +66,12 @@ export default function HomePage() {
             </motion.div>
 
             <h1 className="text-[clamp(3.5rem,10vw,7rem)] font-black tracking-tight leading-[0.85] text-white mb-10">
-              <DecodingText text="The" delay={0.2} /> <span className="text-animate-green">
-                <DecodingText text="Monster" delay={0.6} />
-              </span> <br />
-              <DecodingText text="Terminal Kernel." delay={1} />
+              <FrankenGlitch trigger="random" intensity="low">
+                <DecodingText text="The" delay={0.2} /> <span className="text-animate-green">
+                  <DecodingText text="Monster" delay={0.6} />
+                </span> <br />
+                <DecodingText text="Terminal Kernel." delay={1} />
+              </FrankenGlitch>
             </h1>
 
             <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mb-12">
@@ -78,6 +84,7 @@ export default function HomePage() {
               <Magnetic strength={0.1}>
                 <Link
                   href="/getting-started"
+                  data-magnetic="true"
                   className="px-10 py-5 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
                 >
                   <Rocket className="h-5 w-5" />
@@ -89,6 +96,7 @@ export default function HomePage() {
                   href={siteConfig.github}
                   target="_blank"
                   rel="noopener noreferrer"
+                  data-magnetic="true"
                   className="px-10 py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-3 active:scale-95"
                 >
                   <Github className="h-5 w-5" />
@@ -97,6 +105,7 @@ export default function HomePage() {
               </Magnetic>
             </div>
           </div>
+
 
           {/* Full-Width Video — the centrepiece */}
           <div className="relative mt-16 w-full group">
@@ -248,15 +257,26 @@ export default function HomePage() {
 
         {/* Tweet wall */}
         <div className="mt-20">
-          <div className="mb-10 flex items-center gap-3">
-            <div className="h-px w-6 bg-gradient-to-r from-green-500/80 to-transparent" />
-            <p className="text-xs font-bold uppercase tracking-widest text-green-400/90">
-              From the Author
-            </p>
+          <div className="mb-10 flex items-center gap-4">
+            <div className="relative h-16 w-16 shrink-0 rounded-2xl overflow-hidden border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+              <Image
+                src="/images/frankentui-alien-artifact.webp"
+                alt="FrankenTUI"
+                fill
+                sizes="64px"
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-400/90">
+                From the Author
+              </p>
+              <p className="text-[10px] text-slate-600 font-bold mt-0.5">
+                &ldquo;Hey, it fell off the back of a Spaceship.&rdquo;
+              </p>
+            </div>
           </div>
-          <FrankenContainer className="bg-transparent border-none">
-            <TweetWall tweets={tweets} limit={4} />
-          </FrankenContainer>
+          <TweetWall tweets={tweets} />
         </div>
       </SectionShell>
 
@@ -280,11 +300,13 @@ export default function HomePage() {
             </div>
           </div>
 
-          <h2
-            className="font-bold tracking-tighter text-white text-4xl md:text-6xl"
-          >
-            Ready to Build?
-          </h2>
+          <FrankenGlitch trigger="hover" intensity="medium">
+            <h2
+              className="font-bold tracking-tighter text-white text-4xl md:text-6xl"
+            >
+              Ready to Build?
+            </h2>
+          </FrankenGlitch>
 
           <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-slate-400 md:text-xl font-medium">
             Add FrankenTUI to your Rust project with a single command. Ship
@@ -323,6 +345,7 @@ export default function HomePage() {
 
             <Link
               href="/getting-started"
+              data-magnetic="true"
               className="glow-green group inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-green-600 to-emerald-600 px-8 py-4 text-base font-bold text-white shadow-lg shadow-green-900/30 transition-all hover:from-green-500 hover:to-emerald-500 hover:shadow-green-800/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#020a02]"
             >
               <Rocket className="h-5 w-5" />
@@ -330,6 +353,102 @@ export default function HomePage() {
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* ================================================================
+          8. AUTHOR CREDIT (Agent Flywheel)
+          ================================================================ */}
+      <section className="relative py-32 border-t border-white/5 overflow-hidden">
+        <div className="absolute inset-0 z-0 opacity-20">
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-green-500/5 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
+          <FrankenContainer withPulse={true} className="glass-modern p-8 md:p-16 border-green-500/10">
+            <div className="grid lg:grid-cols-2 gap-16 items-center">
+              {/* Text Side */}
+              <div className="space-y-8 text-left">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-green-500/20 bg-green-500/5 text-[10px] font-black uppercase tracking-[0.3em] text-green-500">
+                  <Activity className="h-3 w-3" />
+                  Origin_Protocol
+                </div>
+
+                <FrankenGlitch trigger="always" intensity="low">
+                  <h2 className="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight">
+                    Crafted by <br />
+                    <span className="text-animate-green">Jeffrey Emanuel.</span>
+                  </h2>
+                </FrankenGlitch>
+
+                <p className="text-xl text-slate-400 font-medium leading-relaxed">
+                  This entire system was architected and built using 
+                  <strong className="text-white"> Agent Flywheel</strong> — a high-velocity 
+                  AI engineering ecosystem.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Magnetic strength={0.2}>
+                    <a
+                      href="https://agent-flywheel.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-magnetic="true"
+                      className="px-8 py-4 rounded-2xl bg-green-500 text-black font-black text-sm hover:bg-white transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_rgba(34,197,94,0.2)]"
+                    >
+                      EXPLORE FLYWHEEL
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  </Magnetic>
+                  <Magnetic strength={0.1}>
+                    <a
+                      href={siteConfig.social.authorGithub}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-magnetic="true"
+                      className="px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-sm hover:bg-white/10 transition-all flex items-center justify-center gap-3"
+                    >
+                      <Github className="h-4 w-4" />
+                      AUTHOR_CORE
+                    </a>
+                  </Magnetic>
+                </div>
+              </div>
+
+              {/* Visual Side - 3D Tilted OG Image */}
+              <div className="relative group perspective-1000">
+                <motion.div
+                  whileHover={{ 
+                    rotateY: -10, 
+                    rotateX: 5, 
+                    scale: 1.02,
+                    boxShadow: "0 20px 80px -20px rgba(34, 197, 94, 0.3)"
+                  }}
+                  transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                  className="relative aspect-video rounded-2xl overflow-hidden border border-white/10 bg-black shadow-2xl transition-all"
+                >
+                  <Image 
+                    src="/images/frankentui_illustration.webp" 
+                    alt="FrankenTUI Origin" 
+                    fill 
+                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  />
+                  
+                  {/* Overlay scanlines */}
+                  <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.1)_50%)] bg-[length:100%_4px] opacity-20" />
+                  
+                  {/* HUD elements over image */}
+                  <div className="absolute bottom-4 left-4 flex items-center gap-3 px-3 py-1.5 rounded-lg bg-black/60 backdrop-blur-md border border-white/5">
+                    <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-ping" />
+                    <span className="text-[8px] font-black text-white uppercase tracking-widest">Flywheel_Generated</span>
+                  </div>
+                </motion.div>
+                
+                {/* Back decorative glow */}
+                <div className="absolute -inset-4 bg-green-500/10 rounded-[2rem] blur-2xl -z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              </div>
+            </div>
+          </FrankenContainer>
         </div>
       </section>
     </main>

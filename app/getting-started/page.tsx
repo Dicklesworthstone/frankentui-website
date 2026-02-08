@@ -18,6 +18,7 @@ import RustCodeBlock from "@/components/rust-code-block";
 import FrankenEye from "@/components/franken-eye";
 import { FrankenContainer } from "@/components/franken-elements";
 import DecodingText from "@/components/decoding-text";
+import FrankenGlitch from "@/components/franken-glitch";
 
 export default function GettingStartedPage() {
   const [copied, setCopied] = useState(false);
@@ -48,12 +49,14 @@ export default function GettingStartedPage() {
               Quick Start Protocol
             </motion.div>
             
-            <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 leading-none">
-              <DecodingText text="Get" delay={0.2} /> <br />
-              <span className="text-animate-green">
-                <DecodingText text="Started." delay={0.6} />
-              </span>
-            </h1>
+            <FrankenGlitch trigger="random" intensity="low">
+              <h1 className="text-6xl md:text-8xl font-black tracking-tight text-white mb-8 leading-none">
+                <DecodingText text="Get" delay={0.2} /> <br />
+                <span className="text-animate-green">
+                  <DecodingText text="Started." delay={0.6} />
+                </span>
+              </h1>
+            </FrankenGlitch>
             
             <motion.p 
               initial={{ opacity: 0 }}
@@ -211,10 +214,18 @@ export default function GettingStartedPage() {
           <div className="relative z-10 max-w-2xl mx-auto">
             <h2 className="text-4xl md:text-6xl font-black text-white mb-8 tracking-tight">Keep exploring.</h2>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link href="/architecture" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-black font-black text-lg">
+              <Link 
+                href="/architecture" 
+                data-magnetic="true"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-black font-black text-lg hover:bg-green-500 transition-all active:scale-95"
+              >
                 ARCHITECTURE
               </Link>
-              <Link href="/glossary" className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg">
+              <Link 
+                href="/glossary" 
+                data-magnetic="true"
+                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg hover:bg-white/10 transition-all active:scale-95"
+              >
                 LEXICON
               </Link>
             </div>
