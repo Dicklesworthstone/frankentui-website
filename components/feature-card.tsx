@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { Terminal, Cpu, Lock, Shield, Blocks, Sparkles, Activity } from "lucide-react";
 import type { Feature } from "@/lib/content";
 import { FrankenBolt, FrankenContainer } from "./franken-elements";
@@ -21,6 +21,7 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
   const { isAnatomyMode } = useSite();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
+  const titleId = `feature-title-${feature.title.toLowerCase().replace(/\s+/g, "-")}`;
 
   const background = useMotionTemplate`radial-gradient(600px circle at ${mouseX}px ${mouseY}px, rgba(34, 197, 94, 0.1), transparent 80%)`;
 
@@ -38,6 +39,13 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
     updateMousePos(e.touches[0].clientX, e.touches[0].clientY, e.currentTarget);
   }, [updateMousePos]);
 
+  const anatomyData = useMemo(() => {
+    return Array.from({ length: 40 }).map(() => ({
+      left: Math.random().toString(16).substring(2, 40),
+      right: Math.random().toString(16).substring(2, 40),
+    }));
+  }, []);
+
   const Icon = iconMap[feature.icon] || Sparkles;
 
   return (
@@ -45,6 +53,7 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
       onMouseMove={handleMouseMove}
       onTouchMove={handleTouchMove}
       onTouchStart={handleTouchMove}
+      aria-labelledby={titleId}
       className="group relative h-full rounded-[2rem] transition-all duration-500 hover:-translate-y-2 overflow-hidden kinetic-card"
     >
       <FrankenContainer withPulse={true} className="h-full border-none bg-white/[0.02] group-hover:bg-white/[0.04] transition-all duration-500 p-8 md:p-10 group-hover:border-green-500/20">
@@ -64,10 +73,10 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
             className="absolute inset-0 z-0 p-8 pointer-events-none overflow-hidden"
           >
             <div className="w-full h-full font-mono text-[8px] text-green-500/20 whitespace-pre leading-none">
-              {Array.from({ length: 40 }).map((_, i) => (
+              {anatomyData.map((data, i) => (
                 <div key={i}>
-                  {Math.random().toString(16).substring(2, 40)}
-                  {Math.random().toString(16).substring(2, 40)}
+                  {data.left}
+                  {data.right}
                 </div>
               ))}
             </div>
@@ -92,7 +101,7 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
           <div className="h-px w-12 bg-gradient-to-r from-green-500/40 to-transparent" />
         </div>
 
-        <h3 className="text-2xl font-black tracking-tight text-white mb-4 group-hover:text-green-400 transition-colors">
+        <h3 id={titleId} className="text-2xl font-black tracking-tight text-white mb-4 group-hover:text-green-400 transition-colors">
           {feature.title}
         </h3>
 

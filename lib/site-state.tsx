@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
-import { isTextInputLike } from "./utils";
+import { cn, isTextInputLike } from "./utils";
 
 interface SiteContextType {
   isAnatomyMode: boolean;
@@ -22,64 +22,80 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   const audioEnabledRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
+  // Cleanup audio context on unmount
+  useEffect(() => {
+    return () => {
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(console.error);
+        audioContextRef.current = null;
+      }
+    };
+  }, []);
+
   const playSfx = useCallback((type: "click" | "zap" | "hum" | "error") => {
     if (!audioEnabledRef.current) return;
 
-    if (!audioContextRef.current) {
-      const WebkitAudioContext = (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-      const AudioCtx = window.AudioContext || WebkitAudioContext;
-      if (!AudioCtx) return;
-      audioContextRef.current = new AudioCtx();
-    }
+    try {
+      if (!audioContextRef.current) {
+        const WebkitAudioContext = (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+        const AudioCtx = window.AudioContext || WebkitAudioContext;
+        if (!AudioCtx) return;
+        audioContextRef.current = new AudioCtx();
+      }
 
-    const ctx = audioContextRef.current;
-    if (ctx.state === "suspended") ctx.resume();
+      const ctx = audioContextRef.current;
+      if (ctx.state === "suspended") {
+        ctx.resume().catch(console.error);
+      }
 
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
 
-    osc.connect(gain);
-    gain.connect(ctx.destination);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
 
-    const now = ctx.currentTime;
+      const now = ctx.currentTime;
 
-    switch (type) {
-      case "click":
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(800, now);
-        osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
-        gain.gain.setValueAtTime(0.1, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
-        osc.start(now);
-        osc.stop(now + 0.1);
-        break;
-      case "zap":
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(600, now);
-        osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
-        gain.gain.setValueAtTime(0.04, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.15);
-        osc.start(now);
-        osc.stop(now + 0.15);
-        break;
-      case "hum":
-        osc.type = "triangle";
-        osc.frequency.setValueAtTime(60, now);
-        gain.gain.setValueAtTime(0, now);
-        gain.gain.linearRampToValueAtTime(0.1, now + 0.1);
-        gain.gain.linearRampToValueAtTime(0, now + 0.5);
-        osc.start(now);
-        osc.stop(now + 0.5);
-        break;
-      case "error":
-        osc.type = "square";
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.setValueAtTime(100, now + 0.1);
-        gain.gain.setValueAtTime(0.05, now);
-        gain.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now);
-        osc.stop(now + 0.3);
-        break;
+      switch (type) {
+        case "click":
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(800, now);
+          osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+          gain.gain.setValueAtTime(0.1, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+          osc.start(now);
+          osc.stop(now + 0.1);
+          break;
+        case "zap":
+          osc.type = "sine";
+          osc.frequency.setValueAtTime(600, now);
+          osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+          gain.gain.setValueAtTime(0.04, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.15);
+          osc.start(now);
+          osc.stop(now + 0.15);
+          break;
+        case "hum":
+          osc.type = "triangle";
+          osc.frequency.setValueAtTime(60, now);
+          gain.gain.setValueAtTime(0, now);
+          gain.gain.linearRampToValueAtTime(0.1, now + 0.1);
+          gain.gain.linearRampToValueAtTime(0, now + 0.5);
+          osc.start(now);
+          osc.stop(now + 0.5);
+          break;
+        case "error":
+          osc.type = "square";
+          osc.frequency.setValueAtTime(150, now);
+          osc.frequency.setValueAtTime(100, now + 0.1);
+          gain.gain.setValueAtTime(0.05, now);
+          gain.gain.linearRampToValueAtTime(0, now + 0.3);
+          osc.start(now);
+          osc.stop(now + 0.3);
+          break;
+      }
+    } catch (err) {
+      console.error("Audio protocol failure:", err);
     }
   }, []);
 
@@ -89,14 +105,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
   }, [playSfx]);
 
   const toggleAudio = useCallback(() => {
-    setIsAudioEnabled(prev => {
-      const newState = !prev;
-      audioEnabledRef.current = newState;
-      if (newState) {
-        setTimeout(() => playSfx("hum"), 100);
-      }
-      return newState;
-    });
+    const newState = !audioEnabledRef.current;
+    audioEnabledRef.current = newState;
+    setIsAudioEnabled(newState);
+    if (newState) {
+      // Small delay to allow AudioContext to initialize if it hasn't
+      setTimeout(() => playSfx("hum"), 150);
+    }
   }, [playSfx]);
 
   // Handle keyboard shortcuts
@@ -106,8 +121,6 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
 
       // Backtick to toggle terminal
       if (e.key === "`") {
-        // Don't steal keystrokes from inputs unless the terminal is already open
-        // (allowing a quick close even while focused inside the terminal input).
         if (!isTerminalOpen && typing) return;
         e.preventDefault();
         setTerminalOpen(prev => !prev);
@@ -136,20 +149,22 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
         playSfx
       }}
     >
-      <div className={isAnatomyMode ? "anatomy-mode" : ""}>
+      <div className={cn("min-h-screen transition-colors duration-700", isAnatomyMode ? "anatomy-mode" : "")}>
         {children}
       </div>
       
       <style jsx global>{`
         .anatomy-mode [class*="FrankenContainer"],
         .anatomy-mode [class*="glass-modern"],
+        .anatomy-mode [class*="SiteHeader"],
         .anatomy-mode section {
-          outline: 1px solid rgba(34, 197, 94, 0.2) !important;
-          outline-offset: 4px;
+          outline: 1.5px solid rgba(34, 197, 94, 0.3) !important;
+          outline-offset: 6px;
+          box-shadow: 0 0 20px rgba(34, 197, 94, 0.1) !important;
         }
         .anatomy-mode img, .anatomy-mode video {
-          filter: grayscale(0.4) opacity(0.8);
-          transition: filter 0.5s ease;
+          filter: grayscale(0.6) opacity(0.7) contrast(1.1);
+          transition: filter 0.8s ease;
         }
         @keyframes scanline {
           0% { transform: translateY(-100%); }
@@ -160,12 +175,12 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           position: fixed;
           inset: 0;
           background-image: 
-            linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-          background-size: 30px 30px;
+            linear-gradient(rgba(34, 197, 94, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(34, 197, 94, 0.03) 1px, transparent 1px);
+          background-size: 40px 40px;
           pointer-events: none;
-          z-index: 50; /* Lower z-index so it doesn't cover interactive elements */
-          opacity: 0.5;
+          z-index: 40;
+          opacity: 0.6;
         }
         .anatomy-mode::after {
           content: "";
@@ -177,13 +192,13 @@ export function SiteProvider({ children }: { children: React.ReactNode }) {
           background: linear-gradient(
             to bottom,
             transparent 0%,
-            rgba(34, 197, 94, 0.03) 50%,
+            rgba(34, 197, 94, 0.04) 50%,
             transparent 100%
           );
-          background-size: 100% 12px;
+          background-size: 100% 15px;
           pointer-events: none;
-          z-index: 51;
-          animation: scanline 15s linear infinite;
+          z-index: 41;
+          animation: scanline 12s linear infinite;
         }
       `}</style>
 
