@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
-import { motion, useSpring, useMotionValue, AnimatePresence, useReducedMotion, type MotionValue } from "framer-motion";
+import { motion, useMotionValue, AnimatePresence, useReducedMotion, type MotionValue } from "framer-motion";
 
 function prng(seed: number): number {
   // Deterministic pseudo-random in [0, 1). Avoids Math.random during render (React purity).
@@ -211,10 +211,10 @@ export default function CustomCursor() {
         disable();
       };
     } else {
-      // Legacy Safari fallback
-      (media as any).addListener(onMediaChange);
+      // Legacy Safari fallback (addListener/removeListener are deprecated but typed)
+      media.addListener(onMediaChange as (ev: MediaQueryListEvent) => void);
       return () => {
-        (media as any).removeListener(onMediaChange);
+        media.removeListener(onMediaChange as (ev: MediaQueryListEvent) => void);
         disable();
       };
     }

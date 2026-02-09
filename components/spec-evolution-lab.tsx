@@ -31,7 +31,6 @@ import {
   computeTextStats,
   myersDiffTextLines,
   type DiffOp,
-  type PerFileContribution,
 } from "@/lib/spec-evolution-compare";
 import { LRUCache } from "@/lib/lru-cache";
 import {

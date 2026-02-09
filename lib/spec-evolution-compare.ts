@@ -174,7 +174,6 @@ function backtrackMyers(trace: Map<number, number>[], a: string[], b: string[]):
 
   for (let d = trace.length - 1; d >= 0; d--) {
     const k = x - y;
-    const v = trace[d];
 
     if (d > 0) {
       const vPrev = trace[d - 1];

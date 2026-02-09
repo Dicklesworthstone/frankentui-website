@@ -22,16 +22,16 @@ export default function DecodingText({
   duration?: number;
 }) {
   const prefersReducedMotion = useReducedMotion();
-  const [displayText, setDisplayText] = useState(text);
+  const [animatedText, setAnimatedText] = useState(text);
   const [isAnimating, setIsAnimating] = useState(false);
   const frameRef = useRef<number | null>(null);
   const startTimeRef = useRef<number | null>(null);
 
+  // When reduced motion is on, always show the real text directly (no setState in effect)
+  const displayText = prefersReducedMotion ? text : animatedText;
+
   useEffect(() => {
-    if (prefersReducedMotion) {
-      setDisplayText(text);
-      return undefined;
-    }
+    if (prefersReducedMotion) return undefined;
 
     const startAnimation = () => {
       setIsAnimating(true);
@@ -54,7 +54,7 @@ export default function DecodingText({
         })
         .join("");
 
-      setDisplayText(nextText);
+      setAnimatedText(nextText);
 
       if (progress < 1) {
         frameRef.current = requestAnimationFrame(animate);

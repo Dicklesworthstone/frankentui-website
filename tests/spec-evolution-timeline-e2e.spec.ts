@@ -140,8 +140,7 @@ test.describe("spec evolution lab: timeline mini-map + playback", () => {
 
     // Read initial index
     const counter = page.locator(".font-mono.text-green-400").filter({ hasText: "/" }).first();
-    const initialText = await counter.textContent();
-    const initialNum = parseInt(initialText!.split("/")[0].trim(), 10);
+    await counter.textContent();
 
     // Click near the end of the slider (80% position)
     const box = await slider.boundingBox();

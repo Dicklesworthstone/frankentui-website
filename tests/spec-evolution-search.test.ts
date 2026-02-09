@@ -3,7 +3,6 @@ import {
   searchSingleCommit,
   tokenize,
   CorpusIndex,
-  type SearchHit,
 } from "../lib/spec-evolution-search";
 
 const makeCommit = (idx: number, files: { path: string; content: string }[], extra?: Partial<{ short: string; date: string; subject: string }>) => ({

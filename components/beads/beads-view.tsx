@@ -292,9 +292,11 @@ export default function BeadsView() {
     if (sqlLoaded && !db) {
       loadDatabase();
     }
+    // Capture the ref object (stable across renders) to avoid exhaustive-deps warning
+    const loadRef = activeLoadRef;
     return () => {
       // Invalidate any ongoing load
-      activeLoadRef.current++;
+      loadRef.current++;
     };
   }, [sqlLoaded, db, loadDatabase]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useCallback, useState, useEffect } from "react";
+import React, { useRef, useCallback, useSyncExternalStore } from "react";
 import { motion, useSpring, useMotionValue } from "framer-motion";
 import { createPortal } from "react-dom";
 
@@ -66,12 +66,11 @@ export function BorderBeam({ className }: { className?: string }) {
  * Simple Portal component to render children at the end of document.body.
  * Crucial for avoiding "Fixed position inside transform" bugs.
  */
-export function Portal({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+const noop = () => () => {};
 
-  if (!mounted) return null;
+export function Portal({ children }: { children: React.ReactNode }) {
+  const isClient = useSyncExternalStore(noop, () => true, () => false);
+
+  if (!isClient) return null;
   return createPortal(children, document.body);
 }

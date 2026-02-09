@@ -1,17 +1,15 @@
 "use client";
 
-import React, { useState, useMemo, useCallback, useEffect, useId, useRef } from "react";
-import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import Link from "next/link";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutGrid, GitBranch, Search, X, ExternalLink, Zap, Star, Play,
-  ArrowRight, Check, Cog, Activity, Image as ImageIcon, Archive,
+  LayoutGrid, GitBranch, Search, Zap,
+  Cog, Activity, Image as ImageIcon, Archive,
   FileCode, Sparkles, ShieldCheck, Mail, Bug, Brain, ShieldAlert,
-  RefreshCw, Cpu, Fingerprint, Microscope, Radio, FlaskConical, Dna
+  RefreshCw, Fingerprint, Microscope, Radio, FlaskConical, Dna
 } from "lucide-react";
-import { flywheelTools, flywheelDescription, type FlywheelTool } from "@/lib/content";
-import { cn, NOISE_SVG_DATA_URI } from "@/lib/utils";
-import { getColorDefinition } from "@/lib/colors";
+import { flywheelTools, flywheelDescription } from "@/lib/content";
+import { cn } from "@/lib/utils";
 import { useHapticFeedback } from "@/hooks/use-haptic-feedback";
 import BottomSheet from "@/components/ui/bottom-sheet";
 import Magnetic from "@/components/motion/magnetic";
@@ -60,7 +58,7 @@ function getLightningPath(from: { x: number; y: number }, to: { x: number; y: nu
 /**
  * High-frequency lightning arc
  */
-function LightningArc({ from, to, color, active }: { from: any, to: any, color: string, active: boolean }) {
+function LightningArc({ from, to, color, active }: { from: { x: number; y: number }, to: { x: number; y: number }, color: string, active: boolean }) {
   const [path, setPath] = useState(() => getLightningPath(from, to));
 
   useEffect(() => {
@@ -83,16 +81,24 @@ function LightningArc({ from, to, color, active }: { from: any, to: any, color: 
   );
 }
 
+// Deterministic pseudo-random in [0, 1). Avoids Math.random during render (React purity).
+function prng(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
 /**
  * Floating neural "bits"
  */
 function NeuralFragments() {
   const bits = useMemo(() => Array.from({ length: 12 }).map((_, i) => ({
     id: i,
-    x: Math.random() * CONTAINER_SIZE,
-    y: Math.random() * CONTAINER_SIZE,
-    size: 2 + Math.random() * 4,
-    duration: 10 + Math.random() * 20,
+    x: prng(i * 17.1) * CONTAINER_SIZE,
+    y: prng(i * 29.3) * CONTAINER_SIZE,
+    size: 2 + prng(i * 43.7) * 4,
+    duration: 10 + prng(i * 59.9) * 20,
+    driftX: prng(i * 71.2) * 100 - 50,
+    driftY: prng(i * 83.1) * 100 - 50,
   })), []);
 
   return (
@@ -103,8 +109,8 @@ function NeuralFragments() {
           className="absolute rounded-full bg-green-500/40"
           style={{ width: bit.size, height: bit.size, left: bit.x, top: bit.y }}
           animate={{
-            x: [0, Math.random() * 100 - 50, 0],
-            y: [0, Math.random() * 100 - 50, 0],
+            x: [0, bit.driftX, 0],
+            y: [0, bit.driftY, 0],
             opacity: [0.2, 0.6, 0.2],
           }}
           transition={{ duration: bit.duration, repeat: Infinity, ease: "linear" }}
@@ -134,21 +140,10 @@ export default function FrankenFlywheel() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [hoveredId, setHoveredId] = useState<string | null>(null);
   const [isGlitching, setIsGlitching] = useState(false);
-  const scopeId = useId();
   const { lightTap, mediumTap, errorTap } = useHapticFeedback();
-  const prefersReducedMotion = useReducedMotion();
 
   const activeId = selectedId || hoveredId;
   const selectedTool = flywheelTools.find(t => t.id === selectedId) || null;
-
-  // Trigger "Circuit Break" glitch when switching tools
-  useEffect(() => {
-    if (selectedId) {
-      setIsGlitching(true);
-      const id = setTimeout(() => setIsGlitching(false), 300);
-      return () => clearTimeout(id);
-    }
-  }, [selectedId]);
 
   const handleSelect = useCallback((id: string | null) => {
     if (id === selectedId) {
@@ -156,6 +151,8 @@ export default function FrankenFlywheel() {
       lightTap();
     } else {
       setSelectedId(id);
+      setIsGlitching(true);
+      setTimeout(() => setIsGlitching(false), 300);
       mediumTap();
       if (id) errorTap(); // More intense tap for selection
     }
@@ -216,7 +213,7 @@ export default function FrankenFlywheel() {
           <div className="relative flex items-center justify-center p-6 md:p-24 border-r border-white/5 min-h-[500px] md:min-h-[600px] overflow-hidden">
             <NeuralFragments />
             
-            <div className="relative scale-[var(--flywheel-scale)] md:scale-100" style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE, "--flywheel-scale": 0.55 } as any}>
+            <div className="relative scale-[var(--flywheel-scale)] md:scale-100" style={{ width: CONTAINER_SIZE, height: CONTAINER_SIZE, "--flywheel-scale": 0.55 } as React.CSSProperties}>
               <svg className="absolute inset-0 overflow-visible" width={CONTAINER_SIZE} height={CONTAINER_SIZE}>
                 {/* lightning field */}
                 {connections.map(conn => {

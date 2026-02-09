@@ -1,6 +1,6 @@
 import { appendFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
-import { test, expect, type Page, type TestInfo } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 function getDiagnosticsLogPath() {
   const diagnosticsDir = path.join(process.cwd(), "test-results", "logs");
@@ -33,7 +33,7 @@ test.describe("spec evolution lab: performance", () => {
     await loadLabAndWaitForData(page);
 
     // Measure long tasks during rapid scrubbing
-    const longTaskDurations: number[] = await page.evaluate(() => {
+    await page.evaluate(() => {
       return new Promise<number[]>((resolve) => {
         const durations: number[] = [];
         const observer = new PerformanceObserver((list) => {
