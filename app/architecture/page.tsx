@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import type { SVGProps } from "react";
@@ -71,20 +72,33 @@ function DecisionCard({
   description: string;
   eyebrow: string;
 }) {
+  // Deterministic color based on title length
+  const accentColor = React.useMemo(() => {
+    const spectrum = ["#38bdf8", "#a78bfa", "#f472b6", "#ef4444", "#fb923c", "#fbbf24", "#34d399", "#22d3ee"];
+    const hash = title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return spectrum[hash % spectrum.length];
+  }, [title]);
+
   return (
-    <FrankenContainer withStitches={false} className="group glass-modern h-full p-6 md:p-10 transition-all hover:bg-white/[0.03]">
+    <FrankenContainer withStitches={false} accentColor={accentColor} className="group glass-modern h-full p-6 md:p-10 transition-all hover:bg-white/[0.03] border-white/5 hover:border-white/10">
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between mb-8">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500/5 border border-green-500/20 text-green-400 group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
+          <div 
+            className="flex h-14 w-14 items-center justify-center rounded-2xl border transition-all duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-sm"
+            style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+          >
             <Icon className="h-6 w-6" />
           </div>
-          <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] group-hover:text-green-500/40 transition-colors">
+          <span className="text-[9px] font-black uppercase tracking-[0.3em] transition-colors" style={{ color: `${accentColor}aa` }}>
             {eyebrow}
           </span>
         </div>
-        <h3 className="text-2xl font-black text-white mb-4 group-hover:text-green-400 transition-colors">
+        <motion.h3 
+          className="text-2xl font-black text-white mb-4 transition-colors"
+          whileHover={{ color: accentColor }}
+        >
           {title}
-        </h3>
+        </motion.h3>
         <p className="text-slate-400 font-medium leading-relaxed">
           {description}
         </p>

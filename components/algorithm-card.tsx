@@ -8,30 +8,44 @@ import DecodingText from "./decoding-text";
 import FrankenGlitch from "./franken-glitch";
 
 export default function AlgorithmCard({ algorithm }: { algorithm: Algorithm }) {
+  const spectrum = ["#38bdf8", "#a78bfa", "#f472b6", "#ef4444", "#fb923c", "#fbbf24", "#34d399", "#22d3ee"];
+  
+  // Deterministic color based on name length
+  const accentColor = useMemo(() => {
+    const hash = algorithm.name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return spectrum[hash % spectrum.length];
+  }, [algorithm.name]);
+
   return (
     <motion.div
       whileHover={{ y: -5 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       className="h-full"
     >
-      <FrankenContainer withStitches={false} withPulse={true} className="group h-full glass-modern transition-all duration-500 hover:bg-green-500/[0.02] border-white/5 hover:border-green-500/20">
+      <FrankenContainer withStitches={false} withPulse={true} accentColor={accentColor} className="group h-full glass-modern transition-all duration-500 hover:bg-white/[0.03] border-white/5 group-hover:border-white/10">
         <div className="flex h-full flex-col p-8">
           <div className="mb-8 flex items-center justify-between">
-            <span className="inline-flex rounded-full bg-green-500/10 border border-green-500/20 px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em] text-green-400">
+            <span 
+              className="inline-flex rounded-full border px-3 py-1 text-[9px] font-black uppercase tracking-[0.2em]"
+              style={{ backgroundColor: `${accentColor}15`, borderColor: `${accentColor}30`, color: accentColor }}
+            >
               {algorithm.category}
             </span>
             <motion.div
               whileHover={{ rotate: 180 }}
               transition={{ duration: 0.5 }}
             >
-              <Binary className="h-4 w-4 text-slate-700 group-hover:text-green-500/40 transition-colors" />
+              <Binary className="h-4 w-4 text-slate-700 transition-colors" style={{ ["--hover-color" as any]: accentColor }} />
             </motion.div>
           </div>
 
           <FrankenGlitch trigger="hover" intensity="low">
-            <h3 className="text-xl font-black text-white mb-3 group-hover:text-green-400 transition-colors">
+            <motion.h3 
+              className="text-xl font-black text-white mb-3 transition-colors"
+              whileHover={{ color: accentColor }}
+            >
               {algorithm.name}
-            </h3>
+            </motion.h3>
           </FrankenGlitch>
           
           <p className="text-sm font-medium leading-relaxed text-slate-400 group-hover:text-slate-300 transition-colors mb-8 flex-1">
@@ -40,8 +54,8 @@ export default function AlgorithmCard({ algorithm }: { algorithm: Algorithm }) {
 
           {algorithm.formula && (
             <div className="relative group/code mt-auto">
-              <div className="absolute -inset-2 bg-green-500/5 rounded-lg opacity-0 group-hover/code:opacity-100 transition-opacity" />
-              <div className="relative font-mono text-[11px] font-bold text-green-300/70 group-hover:text-green-400 transition-colors overflow-hidden">
+              <div className="absolute -inset-2 rounded-lg opacity-0 group-hover/code:opacity-100 transition-opacity" style={{ backgroundColor: `${accentColor}05` }} />
+              <div className="relative font-mono text-[11px] font-bold transition-colors overflow-hidden" style={{ color: `${accentColor}aa` }}>
                 <DecodingText text={algorithm.formula} duration={1.5} />
               </div>
             </div>
@@ -49,7 +63,13 @@ export default function AlgorithmCard({ algorithm }: { algorithm: Algorithm }) {
 
           <div className="mt-8 pt-6 border-t border-white/5 flex items-center justify-between">
             <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600">Impact</span>
-            <span className="text-[10px] font-bold text-green-500/80 uppercase tracking-tighter">{algorithm.impact}</span>
+            <motion.span 
+              className="text-[10px] font-bold uppercase tracking-tighter transition-colors"
+              whileHover={{ color: accentColor }}
+              style={{ color: `${accentColor}cc` }}
+            >
+              {algorithm.impact}
+            </motion.span>
           </div>
         </div>
       </FrankenContainer>

@@ -20,12 +20,14 @@ export default function GlowOrbits() {
 
   const parallaxX = useTransform(springX, (val) => {
     if (typeof window === "undefined") return 0;
-    return (val / window.innerWidth - 0.5) * -40;
+    return (val / window.innerWidth - 0.5) * -60;
   });
   const parallaxY = useTransform(springY, (val) => {
     if (typeof window === "undefined") return 0;
-    return (val / window.innerHeight - 0.5) * -40;
+    return (val / window.innerHeight - 0.5) * -60;
   });
+
+  const spectrum = ["#38bdf8", "#a78bfa", "#f472b6", "#ef4444", "#fb923c", "#fbbf24", "#34d399", "#22d3ee"];
 
   useEffect(() => {
     if (prefersReducedMotion) return undefined;
@@ -52,14 +54,14 @@ export default function GlowOrbits() {
     rings.forEach((ring, i) => {
       const animation = ring.animate(
         [
-          { transform: "rotate(0deg) scale(1)" },
-          { transform: "rotate(180deg) scale(1.06)" },
-          { transform: "rotate(360deg) scale(1)" },
+          { transform: "rotate(0deg) scale(1)", opacity: 0.1 },
+          { transform: "rotate(180deg) scale(1.15)", opacity: 0.25 },
+          { transform: "rotate(360deg) scale(1)", opacity: 0.1 },
         ],
         {
-          duration: 48000 + i * 4000,
+          duration: 30000 + i * 8000,
           iterations: Infinity,
-          easing: "linear",
+          easing: "ease-in-out",
         }
       );
       animations.push(animation);
@@ -77,9 +79,31 @@ export default function GlowOrbits() {
       style={prefersReducedMotion ? undefined : { x: parallaxX, y: parallaxY }}
       className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
     >
-      <div className="glow-ring absolute -top-32 -left-10 h-96 w-96 md:h-72 md:w-72 rounded-[999px] bg-gradient-to-tr from-green-500/40 via-emerald-500/20 to-transparent blur-3xl" />
-      <div className="glow-ring absolute -bottom-40 -right-4 h-[500px] w-[500px] md:h-80 md:w-80 rounded-[999px] bg-gradient-to-tr from-lime-400/40 via-green-500/20 to-transparent blur-3xl" />
-      <div className="glow-ring absolute top-1/2 left-1/2 h-[600px] w-[600px] md:h-96 md:w-96 -translate-x-1/2 -translate-y-1/2 rounded-[999px] bg-gradient-to-tr from-emerald-500/35 via-green-500/15 to-transparent blur-3xl" />
+      {/* Dynamic Spectrum Rings */}
+      <div className="glow-ring absolute -top-[20%] -left-[10%] h-[60%] w-[60%] rounded-full blur-[120px]" 
+           style={{ background: `radial-gradient(circle at center, ${spectrum[0]}33, transparent 70%)` }} />
+      <div className="glow-ring absolute -bottom-[20%] -right-[10%] h-[70%] w-[70%] rounded-full blur-[140px]" 
+           style={{ background: `radial-gradient(circle at center, ${spectrum[2]}22, transparent 70%)` }} />
+      <div className="glow-ring absolute top-1/2 left-1/2 h-[80%] w-[80%] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[160px]" 
+           style={{ background: `radial-gradient(circle at center, ${spectrum[6]}11, transparent 70%)` }} />
+      
+      {/* Small accent blobs */}
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.2, 1],
+          opacity: [0.1, 0.2, 0.1]
+        }}
+        transition={{ duration: 10, repeat: Infinity }}
+        className="absolute top-1/4 right-1/4 h-64 w-64 rounded-full bg-emerald-500/20 blur-[100px]" 
+      />
+      <motion.div 
+        animate={{ 
+          scale: [1.2, 1, 1.2],
+          opacity: [0.1, 0.15, 0.1]
+        }}
+        transition={{ duration: 12, repeat: Infinity, delay: 2 }}
+        className="absolute bottom-1/4 left-1/3 h-80 w-80 rounded-full bg-blue-500/20 blur-[110px]" 
+      />
     </motion.div>
   );
 }

@@ -21,14 +21,19 @@ export default function MemoryDump() {
 
     const hexChars = "0123456789ABCDEF";
     const fontSize = 14;
+    const colors = ["#22c55e", "#10b981", "#3b82f6", "#8b5cf6", "#ec4899", "#f43f5e"];
     let columns = Math.floor(width / fontSize);
     let drops: number[] = [];
+    const columnColors: string[] = [];
+    const columnSpeeds: number[] = [];
 
     const initDrops = (cols: number, existingDrops: number[] = []) => {
       const newDrops = [...existingDrops];
       for (let i = 0; i < cols; i++) {
         if (newDrops[i] === undefined) {
           newDrops[i] = Math.random() * -100;
+          columnColors[i] = colors[Math.floor(Math.random() * colors.length)];
+          columnSpeeds[i] = 0.5 + Math.random() * 1.5;
         }
       }
       return newDrops.slice(0, cols);
@@ -39,21 +44,38 @@ export default function MemoryDump() {
     let animationFrameId: number;
 
     const draw = () => {
-      ctx.fillStyle = "rgba(0, 0, 0, 0.05)";
+      // Very faint trail
+      ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
       ctx.fillRect(0, 0, width, height);
 
-      ctx.fillStyle = "rgba(34, 197, 94, 0.12)";
-      ctx.font = `${fontSize}px monospace`;
+      ctx.font = `bold ${fontSize}px monospace`;
 
       for (let i = 0; i < drops.length; i++) {
         const text = hexChars[Math.floor(Math.random() * hexChars.length)];
+        
+        // Stutter/Glitch effect: occasionally change color or speed
+        if (Math.random() > 0.99) {
+          columnColors[i] = colors[Math.floor(Math.random() * colors.length)];
+        }
+        
+        // Draw the character
+        ctx.fillStyle = columnColors[i] + "33"; // 20% opacity
         ctx.fillText(text, i * fontSize, drops[i] * fontSize);
 
-        if (drops[i] * fontSize > height && Math.random() > 0.975) {
+        // Leading character is brighter
+        ctx.fillStyle = columnColors[i] + "aa"; // 66% opacity
+        ctx.fillText(text, i * fontSize, (drops[i] - 1) * fontSize);
+
+        if (drops[i] * fontSize > height && Math.random() > 0.985) {
           drops[i] = 0;
+          columnSpeeds[i] = 0.5 + Math.random() * 1.5;
         }
-        drops[i]++;
+        
+        // Apply speed with occasional small jumps (glitches)
+        const glitch = Math.random() > 0.999 ? 5 : 0;
+        drops[i] += columnSpeeds[i] + glitch;
       }
+      
       animationFrameId = requestAnimationFrame(draw);
     };
 

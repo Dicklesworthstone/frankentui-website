@@ -183,82 +183,63 @@ export default function HomePage() {
         <div className="relative mx-auto max-w-6xl px-6">
           <Link href="/how-it-was-built/spec-evolution-lab" className="group block relative">
             {/* Pulsing glow behind the container */}
-            <div className="absolute -inset-10 bg-red-500/5 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="absolute -inset-10 bg-red-500/10 rounded-full blur-[120px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
             
-            <FrankenContainer withPulse={false} className="glass-modern border-red-500/10 group-hover:border-red-500/40 transition-all duration-700 hover:shadow-[0_0_100px_rgba(239,68,68,0.2)] bg-black/40 backdrop-blur-sm p-0">
-              {/* Custom Red Neural Pulse */}
-              <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit] z-0">
-                <motion.div
-                  animate={{
-                    top: ["0%", "0%", "100%", "100%", "0%"],
-                    left: ["0%", "100%", "100%", "0%", "0%"],
-                    opacity: [0, 0.8, 0.8, 0.8, 0],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    ease: "linear",
-                  }}
-                  className="absolute h-1 w-12 bg-gradient-to-r from-transparent via-red-500 to-transparent blur-[3px] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                />
-              </div>
-
+            <FrankenContainer withPulse={true} accentColor="#ef4444" className="glass-modern border-red-500/20 group-hover:border-red-500/50 transition-all duration-700 hover:shadow-[0_0_120px_rgba(239,68,68,0.25)] bg-black/60 backdrop-blur-md p-0 overflow-hidden">
               <div className="relative flex flex-col md:flex-row items-center gap-10 md:gap-16 p-10 md:p-16 z-10">
                 {/* Frankenstein Head — Forensic Style */}
                 <div className="relative shrink-0">
-                  <div className="absolute -inset-8 bg-red-500/20 rounded-full blur-3xl group-hover:bg-red-500/40 transition-all duration-700 animate-pulse" />
+                  <div className="absolute -inset-12 bg-red-500/25 rounded-full blur-3xl group-hover:bg-red-500/45 transition-all duration-700 animate-pulse" />
                   
                   {/* Decorative corner brackets */}
-                  <div className="absolute -top-4 -left-4 w-8 h-8 border-t-2 border-l-2 border-red-500/40 group-hover:border-red-500 transition-colors duration-500" />
-                  <div className="absolute -bottom-4 -right-4 w-8 h-8 border-b-2 border-r-2 border-red-500/40 group-hover:border-red-500 transition-colors duration-500" />
+                  <div className="absolute -top-6 -left-6 w-12 h-12 border-t-2 border-l-2 border-red-500/40 group-hover:border-red-500 transition-all duration-500 group-hover:scale-110" />
+                  <div className="absolute -bottom-6 -right-6 w-12 h-12 border-b-2 border-r-2 border-red-500/40 group-hover:border-red-500 transition-all duration-500 group-hover:scale-110" />
 
                   <motion.div
-                    whileHover={{ scale: 1.08, rotate: [0, -2, 2, 0] }}
-                    transition={{ duration: 0.5 }}
-                    className="relative h-32 w-32 md:h-44 md:w-44 rounded-3xl overflow-hidden border border-red-500/30 group-hover:border-red-500/60 shadow-[0_0_50px_rgba(239,68,68,0.3)] transition-all duration-500 bg-black"
+                    whileHover={{ scale: 1.1, rotate: [0, -3, 3, -1, 0] }}
+                    transition={{ duration: 0.6, ease: "easeInOut" }}
+                    className="relative h-32 w-32 md:h-48 md:w-48 rounded-3xl overflow-hidden border-2 border-red-500/40 group-hover:border-red-500/80 shadow-[0_0_60px_rgba(239,68,68,0.4)] transition-all duration-500 bg-black"
                   >
                     <Image
                       src="/images/franken-favicon.webp"
                       alt="FrankenTUI Spec Evolution Lab"
                       fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-1000 opacity-80 group-hover:opacity-100"
+                      className="object-cover group-hover:scale-125 transition-transform duration-[2000ms] opacity-70 group-hover:opacity-100"
                     />
                     {/* Scanline overlay */}
-                    <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.2)_50%)] bg-[length:100%_4px] opacity-40" />
+                    <div className="absolute inset-0 pointer-events-none bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.3)_50%)] bg-[length:100%_4px] opacity-60" />
                     {/* Flickering red overlay */}
                     <motion.div 
-                      animate={{ opacity: [0.1, 0.3, 0.1, 0.4, 0.1] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                      className="absolute inset-0 bg-red-500/5 pointer-events-none"
+                      animate={{ opacity: [0.1, 0.4, 0.1, 0.5, 0.2] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="absolute inset-0 bg-red-500/10 pointer-events-none"
                     />
                   </motion.div>
 
-                  {/* Lightning Strike Arcs (Custom SVG) */}
-                  <svg className="absolute inset-[-40px] w-[calc(100%+80px)] h-[calc(100%+80px)] pointer-events-none overflow-visible opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <motion.path
-                      d="M 20,40 Q 40,30 60,60 T 100,20"
-                      stroke="#ef4444"
-                      strokeWidth="1"
-                      fill="none"
-                      animate={{ 
-                        pathLength: [0, 1, 0],
-                        opacity: [0, 1, 0]
-                      }}
-                      transition={{ duration: 0.4, repeat: Infinity, repeatDelay: 1 }}
-                      style={{ filter: "drop-shadow(0 0 5px #ef4444)" }}
-                    />
-                    <motion.path
-                      d="M 140,120 Q 120,100 100,140 T 60,100"
-                      stroke="#ef4444"
-                      strokeWidth="1"
-                      fill="none"
-                      animate={{ 
-                        pathLength: [0, 1, 0],
-                        opacity: [0, 1, 0]
-                      }}
-                      transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 1.5 }}
-                      style={{ filter: "drop-shadow(0 0 5px #ef4444)" }}
-                    />
+                  {/* Lightning Strike Arcs (Custom SVG) - More Intense on Hover */}
+                  <svg className="absolute inset-[-60px] w-[calc(100%+120px)] h-[calc(100%+120px)] pointer-events-none overflow-visible">
+                    {[...Array(3)].map((_, i) => (
+                      <motion.path
+                        key={i}
+                        d={`M ${20 + i*20},${40 + i*10} Q ${40 + i*30},${30 - i*20} ${60 + i*40},${60 + i*30} T ${100 + i*50},${20 + i*40}`}
+                        stroke="#ef4444"
+                        strokeWidth={1 + i*0.5}
+                        fill="none"
+                        animate={{ 
+                          pathLength: [0, 1, 0],
+                          opacity: [0, 1, 0],
+                          strokeWidth: [1, 3, 1]
+                        }}
+                        transition={{
+                          duration: 0.3 + i*0.1,
+                          repeat: Infinity,
+                          repeatDelay: 0.5 + [1.2, 0.8, 1.7][i] ,
+                          delay: i * 0.2
+                        }}
+                        style={{ filter: "drop-shadow(0 0 8px #ef4444)" }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                      />
+                    ))}
                   </svg>
                 </div>
 
@@ -366,7 +347,7 @@ export default function HomePage() {
         title="Minimal API, Maximum Power"
         kicker="A complete interactive app in under 40 lines. The Elm/Bubbletea-style architecture separates model, update, and view into clean, testable functions."
       >
-        <FrankenContainer className="p-1 md:p-2 bg-black/40">
+        <FrankenContainer withPulse={true} accentColor="#22c55e" className="p-1 md:p-2 bg-black/40">
           <RustCodeBlock code={codeExample} title="examples/tick.rs" />
         </FrankenContainer>
       </SectionShell>

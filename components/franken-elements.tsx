@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
  * A small industrial bolt-like element for corners
  * Enhanced with galvanic electrical arcs on hover
  */
-export function FrankenBolt({ className }: { className?: string }) {
+export function FrankenBolt({ className, color = "#4ade80" }: { className?: string; color?: string }) {
   const [isHovered, setIsHovered] = useState(false);
   const controls = useAnimationControls();
 
@@ -34,36 +34,36 @@ export function FrankenBolt({ className }: { className?: string }) {
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
       className={cn(
-        "group relative h-3.5 w-3.5 rounded-full bg-gradient-to-br from-slate-700 via-green-900 to-slate-900 border border-green-800/50 shadow-[inset_0_1px_1px_rgba(34,197,94,0.1),0_1px_2px_rgba(0,0,0,0.4)] flex items-center justify-center",
+        "group relative h-3.5 w-3.5 rounded-full bg-gradient-to-br from-slate-700 via-slate-900 to-black border border-white/10 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05),0_1px_3px_rgba(0,0,0,0.6)] flex items-center justify-center",
         className
       )}
-      whileHover={{ scale: 1.1 }}
+      whileHover={{ scale: 1.15 }}
     >
-      <div className="h-full w-[1.5px] bg-slate-800/80 rotate-45 absolute" />
-      <div className="h-full w-[1.5px] bg-slate-800/80 -rotate-45 absolute" />
+      <div className="h-[60%] w-[1.5px] bg-slate-800 rotate-45 absolute" />
+      <div className="h-[60%] w-[1.5px] bg-slate-800 -rotate-45 absolute" />
       
       {/* Electrical Arc SVG */}
       <svg
-        className="absolute inset-[-4px] w-[calc(100%+8px)] h-[calc(100%+8px)] pointer-events-none overflow-visible"
+        className="absolute inset-[-6px] w-[calc(100%+12px)] h-[calc(100%+12px)] pointer-events-none overflow-visible"
         viewBox="0 0 20 20"
       >
         <motion.path
           d="M 10,2 Q 13,5 10,10 T 10,18"
-          stroke="#4ade80"
-          strokeWidth="0.5"
+          stroke={color}
+          strokeWidth="0.75"
           fill="none"
           animate={controls}
           initial={{ opacity: 0 }}
-          style={{ filter: "drop-shadow(0 0 2px #22c55e)" }}
+          style={{ filter: `drop-shadow(0 0 3px ${color})` }}
         />
         <motion.path
           d="M 2,10 Q 5,13 10,10 T 18,10"
-          stroke="#4ade80"
-          strokeWidth="0.5"
+          stroke={color}
+          strokeWidth="0.75"
           fill="none"
           animate={controls}
           initial={{ opacity: 0 }}
-          style={{ filter: "drop-shadow(0 0 2px #22c55e)" }}
+          style={{ filter: `drop-shadow(0 0 3px ${color})` }}
         />
       </svg>
     </motion.div>
@@ -77,23 +77,21 @@ export function FrankenBolt({ className }: { className?: string }) {
 export function FrankenStitch({
   className,
   orientation = "horizontal",
-  color = "green",
+  color = "currentColor",
 }: {
   className?: string;
   orientation?: "horizontal" | "vertical";
-  color?: "green" | "slate";
+  color?: string;
 }) {
-  const strokeColor = color === "green" ? "stroke-green-500/40" : "stroke-slate-500/30";
-
   const stitchVariants = {
-    initial: { scale: 1, opacity: 0.4 },
+    initial: { scale: 1, opacity: 0.35 },
     hover: {
-      scale: 1.1,
-      opacity: 0.8,
+      scale: 1.05,
+      opacity: 0.7,
       transition: {
         type: "spring" as const,
         stiffness: 400,
-        damping: 10
+        damping: 15
       }
     }
   };
@@ -114,9 +112,9 @@ export function FrankenStitch({
           variants={stitchVariants}
           d="M5 6 L15 6 M10 1 L10 11 M25 6 L35 6 M30 1 L30 11 M45 6 L55 6 M50 1 L50 11 M65 6 L75 6 M70 1 L70 11 M85 6 L95 6 M90 1 L90 11"
           fill="none"
+          stroke={color}
           strokeWidth="1.5"
           strokeLinecap="round"
-          className={strokeColor}
         />
       </motion.svg>
     );
@@ -137,9 +135,9 @@ export function FrankenStitch({
         variants={stitchVariants}
         d="M6 5 L6 15 M1 10 L11 10 M6 25 L6 35 M1 30 L11 30 M6 45 L6 55 M1 50 L11 50 M6 65 L6 75 M1 70 L11 70 M6 85 L6 95 M1 90 L11 90"
         fill="none"
+        stroke={color}
         strokeWidth="1.5"
         strokeLinecap="round"
-        className={strokeColor}
       />
     </motion.svg>
   );
@@ -148,7 +146,7 @@ export function FrankenStitch({
 /**
  * A traveling spark that moves along the border of a container
  */
-export function NeuralPulse({ className }: { className?: string }) {
+export function NeuralPulse({ className, color = "#4ade80" }: { className?: string; color?: string }) {
   return (
     <div className={cn("absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]", className)}>
       <motion.div
@@ -164,7 +162,8 @@ export function NeuralPulse({ className }: { className?: string }) {
           ease: "linear",
           times: [0, 0.25, 0.5, 0.75, 1],
         }}
-        className="absolute h-1 w-8 bg-gradient-to-r from-transparent via-green-400 to-transparent blur-[2px] z-0"
+        className="absolute h-1 w-12 bg-gradient-to-r from-transparent via-current to-transparent blur-[3px] z-0"
+        style={{ color: color }}
       />
       <motion.div
         initial={{ top: 0, left: 0, opacity: 0 }}
@@ -180,7 +179,8 @@ export function NeuralPulse({ className }: { className?: string }) {
           times: [0, 0.25, 0.5, 0.75, 1],
           delay: 2, // staggered
         }}
-        className="absolute w-1 h-8 bg-gradient-to-b from-transparent via-emerald-400 to-transparent blur-[2px] z-0"
+        className="absolute w-1 h-12 bg-gradient-to-b from-transparent via-current to-transparent blur-[3px] z-0"
+        style={{ color: color }}
       />
     </div>
   );
@@ -195,34 +195,46 @@ export function FrankenContainer({
   withBolts = true,
   withStitches = true,
   withPulse = false,
+  accentColor = "#4ade80",
 }: {
   children: React.ReactNode;
   className?: string;
   withBolts?: boolean;
   withStitches?: boolean;
   withPulse?: boolean;
+  accentColor?: string;
 }) {
   return (
-    <div className={cn("relative group/container rounded-2xl border border-white/5 bg-black/20", className)}>
-      {withPulse && <NeuralPulse className="opacity-0 group-hover/container:opacity-100 transition-opacity duration-500 z-0" />}
+    <div className={cn("relative group/container rounded-2xl border border-white/5 bg-black/40 overflow-hidden", className)}>
+      {/* Background Stitched Texture */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+           style={{ 
+             backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M10 0v5M10 15v10M10 35v5M30 0v5M30 15v10M30 35v5M0 10h5M15 10h10M35 10h5M0 30h5M15 30h10M35 30h5' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E")`,
+             backgroundSize: '80px 80px'
+           }} 
+      />
+
+      {withPulse && <NeuralPulse color={accentColor} className="opacity-0 group-hover/container:opacity-100 transition-opacity duration-700 z-0" />}
       
       {withBolts && (
         <>
-          <FrankenBolt className="absolute -left-1.5 -top-1.5 z-10" />
-          <FrankenBolt className="absolute -right-1.5 -top-1.5 z-10" />
-          <FrankenBolt className="absolute -left-1.5 -bottom-1.5 z-10" />
-          <FrankenBolt className="absolute -right-1.5 -bottom-1.5 z-10" />
+          <FrankenBolt color={accentColor} className="absolute -left-1.5 -top-1.5 z-30" />
+          <FrankenBolt color={accentColor} className="absolute -right-1.5 -top-1.5 z-30" />
+          <FrankenBolt color={accentColor} className="absolute -left-1.5 -bottom-1.5 z-30" />
+          <FrankenBolt color={accentColor} className="absolute -right-1.5 -bottom-1.5 z-30" />
         </>
       )}
 
       {withStitches && (
         <>
-          <FrankenStitch className="absolute top-0 left-1/4 right-1/4 w-1/2 group-hover/container:opacity-100 z-10" />
-          <FrankenStitch className="absolute bottom-0 left-1/4 right-1/4 w-1/2 rotate-180 group-hover/container:opacity-100 z-10" />
+          <FrankenStitch color={accentColor} className="absolute top-0 left-1/4 right-1/4 w-1/2 opacity-20 group-hover/container:opacity-60 transition-opacity z-20" />
+          <FrankenStitch color={accentColor} className="absolute bottom-0 left-1/4 right-1/4 w-1/2 rotate-180 opacity-20 group-hover/container:opacity-60 transition-opacity z-20" />
+          <FrankenStitch color={accentColor} orientation="vertical" className="absolute left-0 top-1/4 bottom-1/4 h-1/2 opacity-10 group-hover/container:opacity-40 transition-opacity z-20" />
+          <FrankenStitch color={accentColor} orientation="vertical" className="absolute right-0 top-1/4 bottom-1/4 h-1/2 rotate-180 opacity-10 group-hover/container:opacity-40 transition-opacity z-20" />
         </>
       )}
 
-      <div className="relative z-20 h-full w-full">
+      <div className="relative z-10 h-full w-full">
         {children}
       </div>
     </div>

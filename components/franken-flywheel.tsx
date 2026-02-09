@@ -316,6 +316,7 @@ export default function FrankenFlywheel() {
                 const isConnected = !!activeId && (tool.connectsTo.includes(activeId) || (flywheelTools.find(t => t.id === activeId)?.connectsTo.includes(tool.id) || false));
                 const isDimmed = !!activeId && activeId !== tool.id && !isConnected;
                 const nodeColor = getAccent(tool.id);
+                const isHovered = hoveredId === tool.id && !isSelected;
 
                 return (
                   <motion.div
@@ -331,21 +332,21 @@ export default function FrankenFlywheel() {
                         onClick={() => handleSelect(tool.id)}
                         onMouseEnter={() => setHoveredId(tool.id)}
                         onMouseLeave={() => setHoveredId(null)}
-                        className="relative w-full h-full rounded-xl border flex flex-col items-center justify-center transition-all duration-500 overflow-hidden group"
+                        className="relative w-full h-full rounded-xl border flex flex-col items-center justify-center transition-all duration-500 overflow-hidden"
                         style={{
-                          backgroundColor: isSelected ? withAlpha(nodeColor, 0.3) : "rgba(0,0,0,0.8)",
-                          borderColor: isSelected ? nodeColor : "rgba(255,255,255,0.1)",
-                          boxShadow: isSelected ? `0 0 50px ${withAlpha(nodeColor, 0.5)}` : "none",
+                          backgroundColor: isSelected ? withAlpha(nodeColor, 0.3) : isHovered ? withAlpha(nodeColor, 0.1) : "rgba(0,0,0,0.8)",
+                          borderColor: isSelected ? nodeColor : isHovered ? withAlpha(nodeColor, 0.5) : "rgba(255,255,255,0.1)",
+                          boxShadow: isSelected ? `0 0 50px ${withAlpha(nodeColor, 0.5)}` : isHovered ? `0 0 20px ${withAlpha(nodeColor, 0.2)}` : "none",
                         }}
                       >
                         <NodePulse active={isSelected} color={nodeColor} />
                         <div className={cn("relative z-10 transition-transform duration-500", isSelected && "scale-110")}>
                           {React.createElement(iconMap[tool.icon] || Zap, {
                             className: "h-6 w-6 mb-1",
-                            style: { color: isSelected ? "#ffffff" : withAlpha(nodeColor, 0.7) }
+                            style: { color: isSelected ? "#ffffff" : isHovered ? nodeColor : withAlpha(nodeColor, 0.7) }
                           })}
                         </div>
-                        <span className="text-[7px] font-black uppercase tracking-tighter transition-colors" style={{ color: isSelected ? "#ffffff" : "rgb(148,163,184)" }}>{tool.shortName}</span>
+                        <span className="text-[7px] font-black uppercase tracking-tighter transition-colors" style={{ color: isSelected ? "#ffffff" : isHovered ? nodeColor : "rgb(148,163,184)" }}>{tool.shortName}</span>
                         <FrankenBolt className="absolute -left-1.5 -top-1.5 scale-[0.3] opacity-20" />
                         <FrankenBolt className="absolute -right-1.5 -bottom-1.5 scale-[0.3] opacity-20" />
                       </button>
@@ -396,10 +397,9 @@ export default function FrankenFlywheel() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: fi * 0.1 }}
-                          className="flex items-center gap-4 p-4 rounded-xl bg-black/40 border border-white/5 group/organ transition-all"
-                          style={{ ["--hover-border" as string]: withAlpha(panelAccent, 0.3) }}
+                          className="flex items-center gap-4 p-4 rounded-xl bg-black/40 border border-white/5 group/organ transition-all hover:border-white/15 hover:bg-black/30"
                         >
-                          <div className="h-2 w-2 rounded-full transition-all" style={{ backgroundColor: withAlpha(panelAccent, 0.3), boxShadow: `0 0 0px transparent` }} />
+                          <div className="h-2 w-2 rounded-full shrink-0 transition-all group-hover/organ:scale-125" style={{ backgroundColor: panelAccent, boxShadow: `0 0 6px ${withAlpha(panelAccent, 0.4)}` }} />
                           <span className="text-sm font-medium text-slate-300">{f}</span>
                         </motion.div>
                       ))}

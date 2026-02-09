@@ -11,6 +11,8 @@ import CustomCursor from "@/components/custom-cursor";
 import { SiteProvider } from "@/lib/site-state";
 import MemoryDump from "@/components/memory-dump";
 import SiteTerminal from "@/components/site-terminal";
+import SpectralBackground from "@/components/spectral-background";
+import SignalHUD from "@/components/signal-hud";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -25,6 +27,8 @@ export default function ClientShell({ children }: { children: React.ReactNode })
       <SiteProvider>
         <div className="flex min-h-screen flex-col overflow-x-hidden relative">
           <MemoryDump />
+          <SpectralBackground />
+          <SignalHUD />
           <SiteTerminal />
           <CustomCursor />
           

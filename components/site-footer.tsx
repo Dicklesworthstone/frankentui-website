@@ -31,7 +31,7 @@ export default function SiteFooter() {
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 lg:px-8">
-        <FrankenContainer withBolts={false} withPulse={true} className="glass-modern p-12 md:p-16 border-green-500/10">
+        <FrankenContainer withBolts={false} withPulse={true} accentColor="#22c55e" className="glass-modern p-12 md:p-16 border-green-500/10">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
             
             {/* BRAND & STATUS */}

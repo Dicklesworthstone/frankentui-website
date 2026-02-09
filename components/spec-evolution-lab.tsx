@@ -1661,7 +1661,7 @@ export default function SpecEvolutionLab() {
           {/* Sidebar */}
           <aside className="hidden lg:block">
             <div className="sticky top-[180px]">
-              <FrankenContainer withBolts={true} withStitches={false} className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl overflow-hidden flex flex-col h-[calc(100vh-240px)]">
+              <FrankenContainer withBolts={true} withStitches={false} accentColor="#ef4444" className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl overflow-hidden flex flex-col h-[calc(100vh-240px)]">
                 <div className="flex flex-col border-b border-white/5 bg-white/[0.02] px-6 py-5 gap-4">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1772,7 +1772,7 @@ export default function SpecEvolutionLab() {
           {/* Main content */}
           <section className="space-y-10">
             {/* Chart card */}
-            <FrankenContainer withBolts={false} withPulse={true} className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden relative group/chart">
+            <FrankenContainer withBolts={false} withPulse={true} accentColor="#22c55e" className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden relative group/chart">
               {/* Internal decorative elements */}
               <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,rgba(34,197,94,0.05),transparent)] pointer-events-none" />
               
@@ -1916,7 +1916,7 @@ export default function SpecEvolutionLab() {
             </FrankenContainer>
 
             {/* Timeline scrubber */}
-            <FrankenContainer withBolts={true} className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl p-0 overflow-hidden">
+            <FrankenContainer withBolts={true} accentColor="#22c55e" className="bg-black/40 backdrop-blur-xl border-white/10 shadow-2xl p-0 overflow-hidden">
               <div className="flex flex-col gap-3 border-b border-white/5 bg-white/5 px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h2 className="text-lg font-black tracking-tight text-white uppercase tracking-widest">Scrub_Node_Selector</h2>
@@ -2399,7 +2399,7 @@ export default function SpecEvolutionLab() {
             )}
 
             {/* Inspector */}
-            <FrankenContainer withBolts={true} withPulse={true} className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden flex flex-col min-h-[600px] group/inspector">
+            <FrankenContainer withBolts={true} withPulse={true} accentColor="#3b82f6" className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden flex flex-col min-h-[600px] group/inspector">
               <div className="flex flex-col gap-4 border-b border-white/5 bg-white/[0.03] px-8 py-6 md:flex-row md:items-center md:justify-between relative">
                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
                 <div>

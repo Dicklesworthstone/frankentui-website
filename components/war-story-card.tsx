@@ -44,7 +44,7 @@ export default function WarStoryCard({ story }: { story: WarStory }) {
   const Icon = icons[story.icon] || Bug;
 
   return (
-    <FrankenContainer withStitches={false} withPulse={true} className="group h-full glass-modern transition-all duration-500 hover:bg-white/[0.03] hover:border-red-500/30 hover:-translate-y-1 border-white/5">
+    <FrankenContainer withStitches={false} withPulse={true} accentColor="#ef4444" className="group h-full glass-modern transition-all duration-500 hover:bg-white/[0.03] hover:border-red-500/30 hover:-translate-y-1 border-white/5">
       <div className="flex h-full flex-col p-8 md:p-10 text-left">
         <div className="mb-8 flex items-center justify-between">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-red-500/5 border border-red-500/20 text-red-400 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-[0_0_20px_rgba(239,68,68,0.1)]">
@@ -56,9 +56,12 @@ export default function WarStoryCard({ story }: { story: WarStory }) {
         </div>
 
         <FrankenGlitch trigger="hover" intensity="low">
-          <h3 className="text-2xl font-black text-white mb-2 group-hover:text-red-400 transition-colors tracking-tight">
+          <motion.h3 
+            className="text-2xl font-black text-white mb-2 transition-colors tracking-tight"
+            whileHover={{ color: "#ef4444" }}
+          >
             {story.title}
-          </h3>
+          </motion.h3>
         </FrankenGlitch>
         <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-6">
           {story.subtitle}

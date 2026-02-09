@@ -17,13 +17,21 @@ const iconMap: Record<string, React.ElementType> = {
   sparkles: Sparkles,
 };
 
+const SPECTRUM = ["#38bdf8", "#a78bfa", "#f472b6", "#ef4444", "#fb923c", "#fbbf24", "#34d399", "#22d3ee"];
+
 export default function FeatureCard({ feature }: { feature: Feature }) {
   const { isAnatomyMode } = useSite();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const titleId = `feature-title-${feature.title.toLowerCase().replace(/\s+/g, "-")}`;
 
-  const background = useMotionTemplate`radial-gradient(600px circle at ${mouseX}px ${mouseY}px, rgba(34, 197, 94, 0.1), transparent 80%)`;
+  // Deterministic color based on title length
+  const accentColor = useMemo(() => {
+    const hash = feature.title.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return SPECTRUM[hash % SPECTRUM.length];
+  }, [feature.title]);
+
+  const background = useMotionTemplate`radial-gradient(600px circle at ${mouseX}px ${mouseY}px, ${accentColor}15, transparent 80%)`;
 
   const updateMousePos = useCallback((clientX: number, clientY: number, currentTarget: HTMLElement) => {
     const { left, top } = currentTarget.getBoundingClientRect();
@@ -56,7 +64,7 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
       aria-labelledby={titleId}
       className="group relative h-full rounded-[2rem] transition-all duration-500 hover:-translate-y-2 overflow-hidden kinetic-card"
     >
-      <FrankenContainer withPulse={true} className="h-full border-none bg-white/[0.02] group-hover:bg-white/[0.04] transition-all duration-500 p-8 md:p-10 group-hover:border-green-500/20">
+      <FrankenContainer withPulse={true} accentColor={accentColor} className="h-full border-none bg-white/[0.02] group-hover:bg-white/[0.04] transition-all duration-500 p-8 md:p-10 group-hover:border-white/10">
         {/* Monster-Tech Glow Overlay - Hardware Accelerated */}
         <motion.div
           className="pointer-events-none absolute -inset-px rounded-[2rem] opacity-0 group-hover:opacity-100 transition-opacity duration-500"
@@ -72,7 +80,7 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
             exit={{ opacity: 0 }}
             className="absolute inset-0 z-0 p-8 pointer-events-none overflow-hidden"
           >
-            <div className="w-full h-full font-mono text-[8px] text-green-500/20 whitespace-pre leading-none">
+            <div className="w-full h-full font-mono text-[8px] whitespace-pre leading-none" style={{ color: `${accentColor}33` }}>
               {anatomyData.map((data, i) => (
                 <div key={i}>
                   {data.left}
@@ -81,7 +89,7 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
               ))}
             </div>
             {/* SVG Wireframe */}
-            <svg className="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 100 100">
+            <svg className="absolute inset-0 w-full h-full opacity-10" viewBox="0 0 100 100" style={{ color: accentColor }}>
               <path d="M 10 10 L 90 10 L 90 90 L 10 90 Z" fill="none" stroke="currentColor" strokeWidth="0.5" />
               <path d="M 10 10 L 90 90 M 90 10 L 10 90" fill="none" stroke="currentColor" strokeWidth="0.5" />
               <circle cx="50" cy="50" r="30" fill="none" stroke="currentColor" strokeWidth="0.5" />
@@ -94,31 +102,46 @@ export default function FeatureCard({ feature }: { feature: Feature }) {
         {/* Icon & Corner Detail */}
         <div className="flex items-center justify-between mb-10">
           <FrankenGlitch trigger="hover" intensity="medium">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-500/10 text-green-400 border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.1)] group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+            <div 
+              className="flex h-14 w-14 items-center justify-center rounded-2xl border transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+              style={{ 
+                backgroundColor: `${accentColor}20`, 
+                borderColor: `${accentColor}30`, 
+                color: accentColor,
+                boxShadow: `0 0 20px ${accentColor}20` 
+              }}
+            >
               <Icon className="h-6 w-6" />
             </div>
           </FrankenGlitch>
-          <div className="h-px w-12 bg-gradient-to-r from-green-500/40 to-transparent" />
+          <div className="h-px w-12 bg-gradient-to-r from-white/10 to-transparent" style={{ backgroundImage: `linear-gradient(to right, ${accentColor}40, transparent)` }} />
         </div>
 
-        <h3 id={titleId} className="text-2xl font-black tracking-tight text-white mb-4 group-hover:text-green-400 transition-colors">
+        <motion.h3 
+          id={titleId} 
+          className="text-2xl font-black tracking-tight text-white mb-4 transition-colors"
+          whileHover={{ color: accentColor }}
+        >
           {feature.title}
-        </h3>
+        </motion.h3>
 
         <p className="text-slate-400 font-medium leading-relaxed mb-8 flex-1">
           {feature.description}
         </p>
 
         {/* Action Detail */}
-        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-green-500 transition-colors">
+        <motion.div 
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 transition-colors"
+          whileHover={{ color: accentColor }}
+        >
           <Activity className="h-3 w-3" />
           <span>Core System Protocol</span>
-        </div>
+        </motion.div>
       </div>
 
       {/* corner bolts */}
-      <FrankenBolt className="absolute top-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity" />
-      <FrankenBolt className="absolute bottom-4 left-4 opacity-20 group-hover:opacity-100 transition-opacity" />
+      <FrankenBolt color={accentColor} className="absolute top-4 right-4 opacity-20 group-hover:opacity-100 transition-opacity" />
+      <FrankenBolt color={accentColor} className="absolute bottom-4 left-4 opacity-20 group-hover:opacity-100 transition-opacity" />
       </FrankenContainer>
     </article>
   );
