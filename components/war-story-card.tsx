@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { WarStory } from "@/lib/content";
 import { FrankenContainer } from "./franken-elements";
+import { motion } from "framer-motion";
 import Streamdown from "./ui/streamdown";
 
 const icons: Record<string, LucideIcon> = {
