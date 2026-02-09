@@ -22,6 +22,7 @@ import {
 import { FrankenContainer, NeuralPulse } from "@/components/franken-elements";
 import FrankenGlitch from "@/components/franken-glitch";
 import { cn, formatDate } from "@/lib/utils";
+import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
 import Script from "next/script";
 import BeadHUD from "@/components/bead-hud";
 import Streamdown from "@/components/ui/streamdown";
@@ -192,6 +193,17 @@ export default function BeadsView() {
   
   const graphRef = useRef<ForceGraphInstance | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useBodyScrollLock(!!selectedIssue);
+
+  useEffect(() => {
+    if (!selectedIssue) return undefined;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedIssue(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedIssue]);
 
   // Check for already loaded scripts on mount
   useEffect(() => {
@@ -651,7 +663,7 @@ export default function BeadsView() {
         {selectedIssue && (
           <Portal>
             <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 md:p-12">
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedIssue(null)} className="absolute inset-0 bg-black/95 backdrop-blur-2xl" />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedIssue(null)} className="absolute inset-0 bg-black/95 backdrop-blur-md" />
               <motion.div initial={{ opacity: 0, scale: 0.95, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 40 }} className="relative w-full max-w-5xl max-h-full overflow-hidden shadow-[0_0_100px_rgba(34,197,94,0.15)] text-left">
                 <FrankenContainer withPulse={true} className="bg-[#020a02] border-green-500/20 overflow-hidden flex flex-col max-h-[90vh]">
                   <div className="p-10 border-b border-white/5 flex items-start justify-between bg-white/[0.02] relative overflow-hidden">

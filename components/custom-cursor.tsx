@@ -98,28 +98,48 @@ export default function CustomCursor() {
       const { clientX, clientY, target } = last;
       if (!target) return;
 
-      const closestButton = target.closest("button");
-      const closestLink = target.closest("a");
+      let closestButton: Element | null = null;
+      let closestLink: Element | null = null;
+      let closestPre: Element | null = null;
+      let closestCode: Element | null = null;
+      let closestTechnical: Element | null = null;
+      let closestFlashlight: Element | null = null;
+      let closestHeader: Element | null = null;
+      let magneticElement: HTMLElement | null = null;
+      let hasPointerRole = false;
+
+      let el: HTMLElement | null = target;
+      while (el) {
+        const tag = el.tagName;
+        if (!closestButton && tag === "BUTTON") closestButton = el;
+        if (!closestLink && tag === "A") closestLink = el;
+        if (!closestPre && tag === "PRE") closestPre = el;
+        if (!closestCode && tag === "CODE") closestCode = el;
+        if (!closestHeader && tag === "HEADER") closestHeader = el;
+        if (!closestTechnical && el.dataset.technical === "true") closestTechnical = el;
+        if (!closestFlashlight && el.dataset.flashlight === "true") closestFlashlight = el;
+        if (!magneticElement && el.dataset.magnetic === "true") magneticElement = el;
+        if (!hasPointerRole && (el.getAttribute("role") === "button" || el.dataset.cursor === "pointer")) hasPointerRole = true;
+        el = el.parentElement;
+      }
 
       const isClickable =
-        target.tagName.toLowerCase() === "button" ||
-        target.tagName.toLowerCase() === "a" ||
+        target.tagName === "BUTTON" ||
+        target.tagName === "A" ||
         Boolean(closestButton) ||
         Boolean(closestLink) ||
-        window.getComputedStyle(target).cursor === "pointer";
+        hasPointerRole;
 
       setIsPointer((prev) => (prev === isClickable ? prev : isClickable));
 
       const isTech =
-        Boolean(target.closest("pre")) ||
-        Boolean(target.closest("code")) ||
-        Boolean(target.closest("[data-technical='true']"));
+        Boolean(closestPre) ||
+        Boolean(closestCode) ||
+        Boolean(closestTechnical);
       setIsTechnicalArea((prev) => (prev === isTech ? prev : isTech));
 
-      const isFlashlight = Boolean(target.closest("[data-flashlight='true']")) && !target.closest("header");
+      const isFlashlight = Boolean(closestFlashlight) && !closestHeader;
       setIsOverFlashlightSection((prev) => (prev === isFlashlight ? prev : isFlashlight));
-
-      const magneticElement = target.closest<HTMLElement>("[data-magnetic='true']");
       if (magneticElement) {
         const rect = magneticElement.getBoundingClientRect();
         const centerX = rect.left + rect.width / 2;
@@ -204,7 +224,7 @@ export default function CustomCursor() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-0 z-[9999] overflow-hidden hidden md:block">
+      <div className="pointer-events-none fixed inset-0 z-[10000] overflow-hidden hidden md:block" style={{ willChange: "transform" }}>
         <AnimatePresence>
           {isVisible && (
             <>
