@@ -1659,7 +1659,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "NTM",
     href: "https://github.com/Dicklesworthstone/ntm",
     icon: "LayoutGrid",
-    color: "from-green-600 to-emerald-600",
+    color: "from-sky-500 to-blue-600",
     tagline: "Multi-agent tmux orchestration",
     connectsTo: ["slb", "mail", "cass", "bv"],
     connectionDescriptions: {
@@ -1682,7 +1682,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "SLB",
     href: "https://github.com/Dicklesworthstone/slb",
     icon: "ShieldCheck",
-    color: "from-emerald-500 to-green-600",
+    color: "from-red-500 to-rose-600",
     tagline: "Peer review for dangerous commands",
     connectsTo: ["mail", "ubs"],
     connectionDescriptions: {
@@ -1703,7 +1703,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "Mail",
     href: "https://github.com/Dicklesworthstone/mcp_agent_mail",
     icon: "Mail",
-    color: "from-green-500 to-teal-500",
+    color: "from-amber-500 to-yellow-600",
     tagline: "Inter-agent messaging & coordination",
     connectsTo: ["bv", "cm", "slb"],
     connectionDescriptions: {
@@ -1726,7 +1726,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "BV",
     href: "https://github.com/Dicklesworthstone/beads_viewer",
     icon: "GitBranch",
-    color: "from-emerald-600 to-lime-500",
+    color: "from-violet-500 to-purple-600",
     tagline: "Graph analytics for task dependencies",
     connectsTo: ["mail", "ubs", "cass"],
     connectionDescriptions: {
@@ -1749,7 +1749,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "UBS",
     href: "https://github.com/Dicklesworthstone/ultimate_bug_scanner",
     icon: "Bug",
-    color: "from-lime-600 to-green-500",
+    color: "from-orange-500 to-amber-600",
     tagline: "Pattern-based bug detection",
     connectsTo: ["bv", "slb"],
     connectionDescriptions: {
@@ -1770,7 +1770,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "CM",
     href: "https://github.com/Dicklesworthstone/cass_memory_system",
     icon: "Brain",
-    color: "from-teal-500 to-emerald-400",
+    color: "from-emerald-500 to-green-600",
     tagline: "Persistent memory across sessions",
     connectsTo: ["mail", "cass", "bv"],
     connectionDescriptions: {
@@ -1793,7 +1793,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "CASS",
     href: "https://github.com/Dicklesworthstone/coding_agent_session_search",
     icon: "Search",
-    color: "from-green-400 to-cyan-500",
+    color: "from-cyan-500 to-sky-600",
     tagline: "Unified search across 11+ agent formats",
     connectsTo: ["cm", "ntm", "bv", "mail"],
     connectionDescriptions: {
@@ -1816,7 +1816,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "ACFS",
     href: "https://github.com/Dicklesworthstone/agentic_coding_flywheel_setup",
     icon: "Cog",
-    color: "from-emerald-600 to-teal-600",
+    color: "from-blue-500 to-indigo-600",
     tagline: "One-command environment bootstrap",
     connectsTo: ["ntm", "mail", "dcg"],
     connectionDescriptions: {
@@ -1859,7 +1859,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "RU",
     href: "https://github.com/Dicklesworthstone/repo_updater",
     icon: "RefreshCw",
-    color: "from-green-500 to-lime-600",
+    color: "from-teal-500 to-cyan-600",
     tagline: "Multi-repo sync in one command",
     connectsTo: ["ubs", "ntm"],
     connectionDescriptions: {
@@ -1879,7 +1879,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "GIIL",
     href: "https://github.com/Dicklesworthstone/giil",
     icon: "Image",
-    color: "from-emerald-400 to-green-500",
+    color: "from-fuchsia-500 to-pink-600",
     tagline: "Download images from share links",
     connectsTo: ["mail", "cass"],
     connectionDescriptions: {
@@ -1899,7 +1899,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "XF",
     href: "https://github.com/Dicklesworthstone/xf",
     icon: "Archive",
-    color: "from-teal-600 to-emerald-700",
+    color: "from-indigo-500 to-violet-600",
     tagline: "Ultra-fast X/Twitter archive search",
     connectsTo: ["cass", "cm"],
     connectionDescriptions: {
@@ -1919,7 +1919,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "s2p",
     href: "https://github.com/Dicklesworthstone/source_to_prompt_tui",
     icon: "FileCode",
-    color: "from-green-600 to-teal-500",
+    color: "from-lime-500 to-green-600",
     tagline: "Combine source files into LLM prompts",
     connectsTo: ["cass", "cm"],
     connectionDescriptions: {
@@ -1939,7 +1939,7 @@ export const flywheelTools: FlywheelTool[] = [
     shortName: "MS",
     href: "https://github.com/Dicklesworthstone/meta_skill",
     icon: "Sparkles",
-    color: "from-emerald-500 to-lime-500",
+    color: "from-pink-500 to-rose-600",
     tagline: "Skill management with effectiveness tracking",
     connectsTo: ["cass", "cm", "bv"],
     connectionDescriptions: {
