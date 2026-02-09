@@ -2201,6 +2201,195 @@ function formatJsonWithHighlight(obj) {
 	  });
 	}
 
+	/* ------------------------------------------------------------------ */
+	/*  Table export helpers: TSV, CSV                                     */
+	/* ------------------------------------------------------------------ */
+
+	/**
+	 * Extract cell text content, stripping inner HTML to plain text.
+	 * Handles links, code, line breaks.
+	 */
+	function cellText(td) {
+	  if (!td) return '';
+	  // Clone to avoid mutating DOM
+	  const clone = td.cloneNode(true);
+	  // Replace <br> with newline
+	  clone.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
+	  return (clone.textContent || '').replace(/\s+/g, ' ').trim();
+	}
+
+	/**
+	 * Extract headers and rows from a table element.
+	 */
+	function extractTableData(table) {
+	  const headers = [];
+	  const headerRow = table.querySelector('thead tr');
+	  if (headerRow) {
+	    headerRow.querySelectorAll('th').forEach(th => headers.push(cellText(th)));
+	  }
+	  const rows = [];
+	  table.querySelectorAll('tbody tr').forEach(row => {
+	    const cells = [];
+	    row.querySelectorAll('td').forEach(td => cells.push(cellText(td)));
+	    rows.push(cells);
+	  });
+	  return { headers, rows };
+	}
+
+	/**
+	 * Convert a table element to TSV string.
+	 */
+	function tableToTSV(table) {
+	  const { headers, rows } = extractTableData(table);
+	  const escape = (s) => s.replace(/\t/g, ' ').replace(/\n/g, ' ');
+	  const lines = [];
+	  if (headers.length) lines.push(headers.map(escape).join('\t'));
+	  rows.forEach(row => lines.push(row.map(escape).join('\t')));
+	  return lines.join('\n');
+	}
+
+	/**
+	 * Convert a table element to CSV string (RFC 4180).
+	 */
+	function tableToCSV(table) {
+	  const { headers, rows } = extractTableData(table);
+	  const escape = (s) => {
+	    if (s.includes('"') || s.includes(',') || s.includes('\n')) {
+	      return '"' + s.replace(/"/g, '""') + '"';
+	    }
+	    return s;
+	  };
+	  const lines = [];
+	  if (headers.length) lines.push(headers.map(escape).join(','));
+	  rows.forEach(row => lines.push(row.map(escape).join(',')));
+	  return lines.join('\n');
+	}
+
+	/* ------------------------------------------------------------------ */
+	/*  Table controls: view toggle + copy/export                          */
+	/* ------------------------------------------------------------------ */
+
+	const TABLE_VIEW_PREF_KEY = 'bv-table-view-pref'; // localStorage key
+
+	function getTableViewPref() {
+	  try { return localStorage.getItem(TABLE_VIEW_PREF_KEY) || 'auto'; } catch { return 'auto'; }
+	}
+
+	function setTableViewPref(mode) {
+	  try { localStorage.setItem(TABLE_VIEW_PREF_KEY, mode); } catch { /* ignore */ }
+	}
+
+	/**
+	 * Inject a small toolbar above each enhanced table.
+	 * Safe to call on already-processed DOM (idempotent).
+	 */
+	function injectTableControls(root) {
+	  if (!root || typeof root.querySelectorAll !== 'function') return;
+	  const tables = root.querySelectorAll('table[data-bv-table="1"]');
+	  if (!tables.length) return;
+
+	  const pref = getTableViewPref();
+
+	  tables.forEach((table) => {
+	    // Skip if already has controls
+	    if (table.parentElement && table.parentElement.querySelector('.bv-table-controls')) return;
+
+	    // Apply saved preference
+	    if (pref === 'cards') {
+	      table.classList.add('bv-table--force-cards');
+	      table.classList.remove('bv-table--force-table');
+	    } else if (pref === 'table') {
+	      table.classList.add('bv-table--force-table');
+	      table.classList.remove('bv-table--force-cards');
+	    }
+
+	    const toolbar = document.createElement('div');
+	    toolbar.className = 'bv-table-controls';
+	    toolbar.setAttribute('data-testid', 'bv-table-controls');
+
+	    // View toggle
+	    const toggleBtn = document.createElement('button');
+	    toggleBtn.type = 'button';
+	    toggleBtn.className = 'bv-table-ctrl-btn';
+	    toggleBtn.setAttribute('data-testid', 'bv-table-view-toggle');
+	    toggleBtn.setAttribute('aria-label', 'Toggle table view mode');
+	    const updateToggleLabel = () => {
+	      const isCards = table.classList.contains('bv-table--force-cards');
+	      toggleBtn.textContent = isCards ? '⊞ Table' : '☰ Cards';
+	    };
+	    updateToggleLabel();
+	    toggleBtn.addEventListener('click', () => {
+	      const isCards = table.classList.contains('bv-table--force-cards');
+	      if (isCards) {
+	        table.classList.remove('bv-table--force-cards');
+	        table.classList.add('bv-table--force-table');
+	        setTableViewPref('table');
+	      } else {
+	        table.classList.add('bv-table--force-cards');
+	        table.classList.remove('bv-table--force-table');
+	        setTableViewPref('cards');
+	      }
+	      updateToggleLabel();
+	      // Update all sibling tables on the page too
+	      root.querySelectorAll('table[data-bv-table="1"]').forEach(t => {
+	        if (t === table) return;
+	        t.classList.toggle('bv-table--force-cards', table.classList.contains('bv-table--force-cards'));
+	        t.classList.toggle('bv-table--force-table', table.classList.contains('bv-table--force-table'));
+	      });
+	      // Update all toggle labels
+	      root.querySelectorAll('[data-testid="bv-table-view-toggle"]').forEach(btn => {
+	        const tbl = btn.closest('.bv-table-controls')?.nextElementSibling;
+	        if (tbl) {
+	          btn.textContent = tbl.classList.contains('bv-table--force-cards') ? '⊞ Table' : '☰ Cards';
+	        }
+	      });
+	    });
+
+	    // Copy TSV button
+	    const copyBtn = document.createElement('button');
+	    copyBtn.type = 'button';
+	    copyBtn.className = 'bv-table-ctrl-btn';
+	    copyBtn.setAttribute('data-testid', 'bv-table-copy-tsv');
+	    copyBtn.setAttribute('aria-label', 'Copy table as TSV');
+	    copyBtn.textContent = '📋 Copy';
+	    copyBtn.addEventListener('click', () => {
+	      const tsv = tableToTSV(table);
+	      navigator.clipboard.writeText(tsv).then(() => {
+	        copyBtn.textContent = '✓ Copied';
+	        setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
+	      }).catch(() => {
+	        // Fallback: select text
+	        copyBtn.textContent = '⚠ Failed';
+	        setTimeout(() => { copyBtn.textContent = '📋 Copy'; }, 1500);
+	      });
+	    });
+
+	    // Download CSV button
+	    const csvBtn = document.createElement('button');
+	    csvBtn.type = 'button';
+	    csvBtn.className = 'bv-table-ctrl-btn';
+	    csvBtn.setAttribute('data-testid', 'bv-table-download-csv');
+	    csvBtn.setAttribute('aria-label', 'Download table as CSV');
+	    csvBtn.textContent = '⬇ CSV';
+	    csvBtn.addEventListener('click', () => {
+	      const csv = tableToCSV(table);
+	      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+	      const url = URL.createObjectURL(blob);
+	      const a = document.createElement('a');
+	      a.href = url;
+	      a.download = 'table-export.csv';
+	      a.click();
+	      URL.revokeObjectURL(url);
+	    });
+
+	    toolbar.appendChild(toggleBtn);
+	    toolbar.appendChild(copyBtn);
+	    toolbar.appendChild(csvBtn);
+
+	    table.parentNode.insertBefore(toolbar, table);
+	  });
+	}
+
 	function renderMarkdown(text) {
 	  if (!text) return '';
 	  try {
@@ -3570,4 +3759,10 @@ window.beadsViewer = {
   clearError,
   safeQuery,
   showToast,
+
+  // Table utilities
+  tableToTSV,
+  tableToCSV,
+  injectTableControls,
+  enhanceTables,
 };

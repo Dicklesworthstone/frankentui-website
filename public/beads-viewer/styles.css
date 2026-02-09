@@ -665,6 +665,196 @@
     }
 }
 
+/* Table controls toolbar */
+.bv-table-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-top: 0.5em;
+    margin-bottom: 0.25em;
+    opacity: 0;
+    transition: opacity var(--bv-transition);
+}
+
+/* Show on hover (desktop) */
+.prose table.bv-table:hover + .bv-table-controls,
+.bv-table-controls:hover,
+.prose > *:has(+ table.bv-table):hover ~ .bv-table-controls {
+    opacity: 1;
+}
+
+/* Reverse order: toolbar is injected BEFORE the table */
+.bv-table-controls:has(+ table.bv-table:hover),
+.bv-table-controls:hover {
+    opacity: 1;
+}
+
+/* Always visible on mobile (no hover) */
+@media (max-width: 640px) {
+    .bv-table-controls {
+        opacity: 1;
+    }
+}
+
+.bv-table-ctrl-btn {
+    font-size: 0.68em;
+    padding: 0.3em 0.6em;
+    border-radius: 6px;
+    border: 1px solid var(--bv-border);
+    background: var(--bv-bg-secondary);
+    color: var(--bv-fg-muted);
+    cursor: pointer;
+    white-space: nowrap;
+    min-height: 32px;
+    transition: background var(--bv-transition), color var(--bv-transition);
+}
+
+.bv-table-ctrl-btn:hover {
+    background: var(--bv-border);
+    color: var(--bv-fg);
+}
+
+.bv-table-ctrl-btn:focus-visible {
+    outline: 2px solid var(--bv-accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+    .bv-table-ctrl-btn {
+        min-height: 44px;
+        padding: 0.4em 0.75em;
+        font-size: 0.75em;
+    }
+}
+
+/* Force cards mode (desktop override) */
+.prose table.bv-table--force-cards {
+    border-collapse: separate;
+    border: 0;
+}
+
+.prose table.bv-table--force-cards,
+.prose table.bv-table--force-cards tbody,
+.prose table.bv-table--force-cards tr,
+.prose table.bv-table--force-cards td,
+.prose table.bv-table--force-cards th {
+    box-sizing: border-box;
+}
+
+.prose table.bv-table--force-cards thead {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+}
+
+.prose table.bv-table--force-cards tbody,
+.prose table.bv-table--force-cards tr {
+    display: block;
+    width: 100%;
+}
+
+.prose table.bv-table--force-cards tr {
+    background: var(--bv-bg-secondary);
+    border: 1px solid var(--bv-border);
+    border-radius: 12px;
+    padding: 0.75em 0.85em;
+    margin: 0.75em 0;
+}
+
+.prose table.bv-table--force-cards tr:nth-child(even) {
+    background: var(--bv-bg-secondary);
+}
+
+.prose table.bv-table--force-cards td,
+.prose table.bv-table--force-cards th {
+    border: 0; padding: 0; text-align: left;
+}
+
+.prose table.bv-table--force-cards td {
+    display: block;
+    width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+.prose table.bv-table--force-cards.bv-table--2col td:first-child {
+    font-weight: 700;
+    color: var(--bv-fg);
+    margin-bottom: 0.35em;
+}
+
+.prose table.bv-table--force-cards.bv-table--2col td:last-child {
+    color: var(--bv-fg-muted);
+    line-height: 1.45;
+}
+
+.prose table.bv-table--force-cards.bv-table--ncol td {
+    display: grid;
+    grid-template-columns: minmax(7rem, 40%) 1fr;
+    gap: 0.75em;
+    padding: 0.35em 0;
+    align-items: start;
+}
+
+.prose table.bv-table--force-cards.bv-table--ncol td::before {
+    content: attr(data-label);
+    font-weight: 700;
+    color: var(--bv-fg-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.72em;
+    line-height: 1.25;
+}
+
+.prose table.bv-table--force-cards.bv-table--ncol td[data-label=""]::before {
+    content: "";
+}
+
+/* Force table mode (mobile override) */
+@media (max-width: 640px) {
+    .prose table.bv-table--force-table thead {
+        position: static;
+        width: auto; height: auto;
+        padding: 0; margin: 0;
+        overflow: visible;
+        clip: auto;
+        white-space: normal;
+    }
+
+    .prose table.bv-table--force-table,
+    .prose table.bv-table--force-table tbody {
+        display: table;
+        width: 100%;
+    }
+
+    .prose table.bv-table--force-table tr {
+        display: table-row;
+        background: inherit;
+        border: none;
+        border-radius: 0;
+        padding: 0;
+        margin: 0;
+    }
+
+    .prose table.bv-table--force-table td,
+    .prose table.bv-table--force-table th {
+        display: table-cell;
+        border: 1px solid var(--bv-border);
+        padding: 0.75em 1em;
+    }
+
+    .prose table.bv-table--force-table.bv-table--ncol td {
+        display: table-cell;
+    }
+
+    .prose table.bv-table--force-table.bv-table--ncol td::before {
+        content: none;
+    }
+}
+
 /* Images */
 .prose img {
     max-width: 100%;
