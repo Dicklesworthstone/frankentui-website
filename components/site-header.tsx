@@ -51,7 +51,23 @@ export default function SiteHeader() {
             scrolled ? "glass-modern shadow-2xl scale-[0.98] border-green-500/20" : "bg-transparent border-transparent"
           )}
         >
-          {scrolled && <NeuralPulse className="opacity-40" />}
+          {scrolled && (
+            <div className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
+              <NeuralPulse color="#22c55e" className="opacity-40" />
+              {/* Border Data Stream */}
+              <motion.div 
+                animate={{ left: ["-10%", "110%"] }}
+                transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                className="absolute top-0 h-[1.5px] w-[80px] bg-gradient-to-r from-transparent via-green-400 30%, via-white 50%, via-green-400 70%, to-transparent z-20"
+              />
+              <motion.div 
+                animate={{ left: ["110%", "-10%"] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "linear", delay: 1 }}
+                className="absolute bottom-0 h-[1.5px] w-[100px] bg-gradient-to-r from-transparent via-emerald-400 30%, via-white 50%, via-emerald-400 70%, to-transparent z-20"
+              />
+              <div className="absolute inset-0 bg-green-500/[0.02] shadow-[inset_0_0_20px_rgba(34,197,94,0.05)]" />
+            </div>
+          )}
           
           <div className="grid grid-cols-3 w-full relative z-10 h-full items-center">
             {/* Column 1: Logo */}
@@ -60,16 +76,22 @@ export default function SiteHeader() {
                 href="/"
                 className="flex items-center gap-3 group shrink-0"
               >
-                <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-green-600 to-lime-400 shadow-lg transition-transform group-hover:scale-105 active:scale-95">
-                  <FrankenBolt className="absolute -left-1 -top-1 z-20 scale-50" />
-                  <FrankenBolt className="absolute -right-1 -bottom-1 z-20 scale-50" />
+                <div className="relative flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-tr from-green-600 to-lime-400 shadow-lg transition-transform group-hover:scale-105 active:scale-95 overflow-visible">
+                  <FrankenBolt color="#22c55e" className="absolute -left-1 -top-1 z-20 scale-50" />
+                  <FrankenBolt color="#22c55e" className="absolute -right-1 -bottom-1 z-20 scale-50" />
                   <span className="text-lg font-black text-black select-none">F</span>
                 </div>
                 <div className="flex flex-col text-left justify-center">
                   <span className="text-sm font-black tracking-tight text-white uppercase leading-none">
                     {siteConfig.name}
                   </span>
-                  <span className="text-[7px] font-black text-green-500 uppercase tracking-widest leading-none mt-1">SYSTEM_ALIVE</span>
+                  <motion.span 
+                    animate={{ opacity: [1, 0.4, 1, 0.8, 1] }}
+                    transition={{ duration: 4, repeat: Infinity, times: [0, 0.1, 0.15, 0.2, 1] }}
+                    className="text-[7px] font-black text-green-500 uppercase tracking-widest leading-none mt-1"
+                  >
+                    SYSTEM_ALIVE
+                  </motion.span>
                 </div>
               </Link>
             </div>
