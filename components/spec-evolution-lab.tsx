@@ -2399,7 +2399,13 @@ export default function SpecEvolutionLab() {
             )}
 
             {/* Inspector */}
-            <FrankenContainer withBolts={true} withPulse={true} accentColor="#3b82f6" className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden flex flex-col min-h-[600px] group/inspector">
+            <FrankenContainer 
+              key={`inspector-${selectedCommit.sha}`}
+              withBolts={true} 
+              withPulse={true} 
+              accentColor="#3b82f6" 
+              className="bg-black/60 backdrop-blur-2xl border-white/10 shadow-3xl p-0 overflow-hidden flex flex-col min-h-[600px] group/inspector"
+            >
               <div className="flex flex-col gap-4 border-b border-white/5 bg-white/[0.03] px-8 py-6 md:flex-row md:items-center md:justify-between relative">
                 <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-green-500/20 to-transparent" />
                 <div>
