@@ -9,9 +9,7 @@ import ErrorBoundary from "@/components/error-boundary";
 import ScrollToTop from "@/components/scroll-to-top";
 import CustomCursor from "@/components/custom-cursor";
 import { SiteProvider } from "@/lib/site-state";
-import MemoryDump from "@/components/memory-dump";
 import SiteTerminal from "@/components/site-terminal";
-import SpectralBackground from "@/components/spectral-background";
 import SignalHUD from "@/components/signal-hud";
 
 export default function ClientShell({ children }: { children: React.ReactNode }) {
@@ -26,8 +24,6 @@ export default function ClientShell({ children }: { children: React.ReactNode })
     <ErrorBoundary>
       <SiteProvider>
         <div className="flex min-h-screen flex-col overflow-x-hidden relative">
-          <MemoryDump />
-          <SpectralBackground />
           <SignalHUD />
           <SiteTerminal />
           <CustomCursor />
