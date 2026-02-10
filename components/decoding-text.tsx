@@ -78,7 +78,7 @@ export default function DecodingText({
       clearTimeout(timer);
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
-  }, [text, delay, duration, prefersReducedMotion]);
+  }, [text, chars, delay, duration, prefersReducedMotion]);
 
   return (
     <span 
