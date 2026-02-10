@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import React, { useMemo } from "react";
 import { Binary } from "lucide-react";
 import type { Algorithm } from "@/lib/content";
 import { FrankenContainer } from "./franken-elements";

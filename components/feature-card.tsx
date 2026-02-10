@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import { Terminal, Cpu, Lock, Shield, Blocks, Sparkles, Activity } from "lucide-react";
 import type { Feature } from "@/lib/content";
 import { FrankenBolt, FrankenContainer } from "./franken-elements";
