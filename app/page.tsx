@@ -377,13 +377,13 @@ export default function HomePage() {
 
         {/* Tweet wall */}
         <div className="mt-20">
-          <div className="mb-10 flex items-center gap-4">
-            <div className="relative h-24 w-24 md:h-28 md:w-28 shrink-0 rounded-2xl overflow-hidden border border-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.15)]">
+          <div className="mb-10 flex flex-col sm:flex-row sm:items-center gap-6">
+            <div className="relative h-40 w-40 md:h-48 md:w-48 shrink-0 rounded-3xl overflow-hidden border border-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.18)]">
               <Image
                 src="/images/frankentui-alien-artifact.webp"
                 alt="FrankenTUI"
                 fill
-                sizes="(min-width: 768px) 112px, 96px"
+                sizes="(min-width: 768px) 192px, 160px"
                 className="object-cover"
               />
             </div>
