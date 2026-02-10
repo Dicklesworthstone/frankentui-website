@@ -148,7 +148,10 @@ export function FrankenStitch({
  */
 export function NeuralPulse({ className, color = "#4ade80" }: { className?: string; color?: string }) {
   return (
-    <div className={cn("absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]", className)}>
+    <div 
+      className={cn("absolute inset-0 pointer-events-none overflow-hidden rounded-[inherit]", className)}
+      style={{ ["--pulse-color" as string]: color }}
+    >
       <motion.div
         initial={{ top: 0, left: 0, opacity: 0 }}
         animate={{
@@ -162,8 +165,7 @@ export function NeuralPulse({ className, color = "#4ade80" }: { className?: stri
           ease: "linear",
           times: [0, 0.25, 0.5, 0.75, 1],
         }}
-        className="absolute h-1 w-12 bg-gradient-to-r from-transparent via-current to-transparent blur-[3px] z-0"
-        style={{ color: color }}
+        className="absolute h-[1.5px] w-12 bg-gradient-to-r from-transparent via-[var(--pulse-color)] to-transparent blur-[2px] z-0"
       />
       <motion.div
         initial={{ top: 0, left: 0, opacity: 0 }}
@@ -179,8 +181,7 @@ export function NeuralPulse({ className, color = "#4ade80" }: { className?: stri
           times: [0, 0.25, 0.5, 0.75, 1],
           delay: 2, // staggered
         }}
-        className="absolute w-1 h-12 bg-gradient-to-b from-transparent via-current to-transparent blur-[3px] z-0"
-        style={{ color: color }}
+        className="absolute w-[1.5px] h-12 bg-gradient-to-b from-transparent via-[var(--pulse-color)] to-transparent blur-[2px] z-0"
       />
     </div>
   );
@@ -205,16 +206,18 @@ export function FrankenContainer({
   accentColor?: string;
 }) {
   return (
-    <div className={cn("relative group/container rounded-2xl border border-white/5 bg-black/40 overflow-hidden", className)}>
-      {/* Background Stitched Texture */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
-           style={{ 
-             backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M10 0v5M10 15v10M10 35v5M30 0v5M30 15v10M30 35v5M0 10h5M15 10h10M35 10h5M0 30h5M15 30h10M35 30h5' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E")`,
-             backgroundSize: '80px 80px'
-           }} 
-      />
-
-      {withPulse && <NeuralPulse color={accentColor} className="opacity-0 group-hover/container:opacity-100 transition-opacity duration-700 z-0" />}
+    <div className={cn("relative group/container rounded-2xl border border-white/5 bg-black/40", className)}>
+      {/* Internal Skin Layer - Handles texture and pulses without clipping bolts */}
+      <div className="absolute inset-0 overflow-hidden rounded-[inherit] pointer-events-none z-0">
+        {/* Background Stitched Texture */}
+        <div className="absolute inset-0 opacity-[0.05]" 
+             style={{ 
+               backgroundImage: `url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h40v40H0z' fill='none'/%3E%3Cpath d='M10 0v5M10 15v10M10 35v5M30 0v5M30 15v10M30 35v5M0 10h5M15 10h10M35 10h5M0 30h5M15 30h10M35 30h5' stroke='%23ffffff' stroke-width='1'/%3E%3C/svg%3E")`,
+               backgroundSize: '80px 80px'
+             }} 
+        />
+        {withPulse && <NeuralPulse color={accentColor} className="opacity-0 group-hover/container:opacity-100 transition-opacity duration-700" />}
+      </div>
       
       {withBolts && (
         <>
