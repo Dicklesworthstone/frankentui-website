@@ -17,7 +17,7 @@ export default function SpectralBackground() {
   return (
     <div className="fixed inset-0 z-[-5] pointer-events-none overflow-hidden select-none">
       {/* Film Grain / Static Noise */}
-      <div className="absolute inset-0 opacity-[0.03] mix-blend-overlay">
+      <div className="absolute inset-0 opacity-[0.04] mix-blend-overlay">
         <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
           <filter id="noiseFilter">
             <feTurbulence 
@@ -25,7 +25,14 @@ export default function SpectralBackground() {
               baseFrequency="0.65" 
               numOctaves="3" 
               stitchTiles="stitch" 
-            />
+            >
+              <animate 
+                attributeName="baseFrequency" 
+                values="0.65;0.68;0.65" 
+                dur="2s" 
+                repeatCount="indefinite" 
+              />
+            </feTurbulence>
           </filter>
           <rect width="100%" height="100%" filter="url(#noiseFilter)" />
         </svg>
