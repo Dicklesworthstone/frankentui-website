@@ -17,7 +17,6 @@ import {
   Clock, 
   Minimize2 
 } from "lucide-react";
-import type { WarStory } from "@/lib/content";
 import { FrankenContainer } from "./franken-elements";
 import { motion } from "framer-motion";
 import Streamdown from "./ui/streamdown";
@@ -40,6 +39,15 @@ const icons: Record<string, LucideIcon> = {
 };
 
 import FrankenGlitch from "./franken-glitch";
+
+export type WarStory = {
+  title: string;
+  subtitle: string;
+  description: string;
+  technicalDetails: string;
+  impact: string;
+  icon: string;
+};
 
 export default function WarStoryCard({ story }: { story: WarStory }) {
   const Icon = icons[story.icon] || Bug;

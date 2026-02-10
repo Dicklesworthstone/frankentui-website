@@ -5,6 +5,6 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default function Image() {
-  // War Stories section removed. Keep the OG image route as 404 without deleting files.
+  // Intentionally disabled route: keep as a hard 404 without deleting files.
   notFound();
 }

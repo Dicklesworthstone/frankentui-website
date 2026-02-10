@@ -3,8 +3,8 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSite } from "@/lib/site-state";
-import { warStories, warStoriesExtended } from "@/lib/content";
 import WarStoryCard from "./war-story-card";
+import type { WarStory } from "./war-story-card";
 import { Skull, AlertCircle, ShieldAlert, X } from "lucide-react";
 import { Portal } from "./motion-wrapper";
 
@@ -24,10 +24,18 @@ function toMotionId(title: string): string {
   return `${slug || "story"}_${hash.toString(16)}`;
 }
 
-export default function WarStoriesMap() {
+type WarStoriesMapProps = {
+  stories?: WarStory[];
+  criticalCount?: number;
+};
+
+export default function WarStoriesMap({ stories = [], criticalCount }: WarStoriesMapProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { playSfx } = useSite();
-  const allStories = [...warStories, ...warStoriesExtended];
+  const allStories = stories;
+  const criticalBoundary = typeof criticalCount === "number"
+    ? Math.min(Math.max(criticalCount, 0), allStories.length)
+    : allStories.length;
 
   const handleSelect = (title: string) => {
     if (selectedId === title) {
@@ -48,7 +56,7 @@ export default function WarStoriesMap() {
       <div className="absolute inset-0 p-8 md:p-16 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-x-8 gap-y-16 md:gap-12 items-center justify-items-center overflow-y-auto md:overflow-hidden scrollbar-hide">
         {allStories.map((story, i) => {
           const isSelected = selectedId === story.title;
-          const isCritical = i < warStories.length;
+          const isCritical = i < criticalBoundary;
           const storyId = toMotionId(story.title);
           
           return (

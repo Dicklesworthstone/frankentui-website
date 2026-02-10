@@ -173,51 +173,6 @@ export const comparisonData: ComparisonRow[] = [
   { feature: "Zero unsafe in render path", frankentui: "Enforced (#![forbid])", ratatui: "Minimized", tuiRs: "No", rawCrossterm: "No" },
 ];
 
-// War Stories (Bug Fixes)
-export interface WarStory {
-  title: string;
-  subtitle: string;
-  description: string;
-  technicalDetails: string;
-  impact: string;
-  icon: string;
-}
-
-export const warStories: WarStory[] = [
-  {
-    title: "Terminal Sync Freeze Safety",
-    subtitle: "Fix #86: Crash Left Terminal Frozen",
-    description: "If an application panicked mid-render while the terminal was in DEC 2026 synchronized output mode, the terminal would remain frozen — requiring a manual `reset` command.",
-    technicalDetails: "`TerminalSession::cleanup` (RAII Drop path) did not emit `SYNC_END` (`\\x1b[?2026l`). The panic hook tried to unfreeze, but normal Drop did not. Fixed by emitting `SYNC_END` from cleanup so every exit path guarantees unfreeze.",
-    impact: "Terminal never left frozen regardless of crash timing.",
-    icon: "lock",
-  },
-  {
-    title: "The SOH Collision",
-    subtitle: "Fix #105: U+0001 vs Cell::CONTINUATION",
-    description: "A collision between the SOH control character (U+0001) and the internal `Cell::CONTINUATION` marker (which was `1`) in `crates/ftui-render/src/cell.rs`.",
-    technicalDetails: "`Cell::CONTINUATION` was defined as `Self(1)`, colliding with a valid Unicode control character. SOH bytes were misread as wide-char placeholders. Fixed by changing `CONTINUATION` to `Self(0x7FFF_FFFF)` (outside the Unicode scalar range) to preserve SOH as a real character.",
-    impact: "Ensured correct rendering of binary-like or control-heavy output.",
-    icon: "bug",
-  },
-  {
-    title: "Tree Widget Allocation Optimization",
-    subtitle: "Fix #106: flatten() → render_node()",
-    description: "`Tree::render` allocated a `Vec<FlatNode>` (cloned `String` labels + depth markers) for every visible node on every frame, causing O(N * Depth) allocations in large trees.",
-    technicalDetails: "Refactored `Tree::render` to a zero-allocation recursive visitor (`render_node`) that traverses the tree in-place while carrying `is_last` on the stack. Removed the unused `flatten`/`flatten_visible`/`FlatNode` code paths and updated tests accordingly.",
-    impact: "Significant performance boost for large trees (file explorers).",
-    icon: "tree",
-  },
-  {
-    title: "Grapheme Pool Garbage Collection",
-    subtitle: "Fix #72/#74: GC Never Called",
-    description: "The runtime's `GraphemePool` (interning complex graphemes like emoji/ZWJ sequences) never released slots because garbage collection was never triggered. Long-running sessions with streaming content caused unbounded memory growth.",
-    technicalDetails: "Added `TerminalWriter::gc()` that performs mark-and-sweep using the previous frame buffer as the live set, then wired periodic `writer.gc()` calls into both `Program::run_event_loop` and the dedicated render thread loop.",
-    impact: "Stable memory usage for long-running, emoji-heavy dashboards.",
-    icon: "trash",
-  },
-];
-
 // Optimization Highlights
 export interface Optimization {
   name: string;
@@ -1234,83 +1189,6 @@ export const pipelineDiagram = `┌───────────────
 │ TerminalWriter                                        │
 │   inline (scrollback)  |  alt-screen (classic)        │
 └──────────────────────────────────────────────────────┘`;
-
-// ── Additional War Stories (from FIXES_SUMMARY) ─────────────────────
-
-export const warStoriesExtended: WarStory[] = [
-  {
-    title: "The Inline Ghosting Trilogy",
-    subtitle: "Three bugs, one symptom: ghost UI",
-    description: "Inline mode kept leaving 'ghost' frames on screen. Fix #63 removed an unconditional clear that blanked unchanged rows. Fix #68 changed Buffer::new to initialize dirty_rows=true so fresh buffers trigger full diffs. Fix #70 invalidated prev_buffer after log writes so the renderer knew the screen had moved.",
-    technicalDetails: "These three bugs interacted: #63 caused flicker by clearing too aggressively, #68 caused ghosting by not clearing enough, and #70 caused stale rendering when logs scrolled the screen. Each fix was correct individually but the full picture required all three working in concert.",
-    impact: "Eliminated all ghosting and flicker in inline mode across terminals.",
-    icon: "ghost",
-  },
-  {
-    title: "Zero-Width Char Desync",
-    subtitle: "Combining marks broke the cursor",
-    description: "Standalone combining marks (zero-width characters) caused the Presenter's cursor position to desynchronize from the terminal's actual cursor. Characters after a zero-width mark rendered at the wrong position.",
-    technicalDetails: "emit_cell wrote bytes for zero-width chars but CellContent::width() returned 0, so the internal cursor_x didn't advance while the terminal cursor did. Fixed by replacing zero-width content with U+FFFD (replacement character, width 1) to maintain grid alignment.",
-    impact: "Correct rendering of Unicode combining marks and edge-case graphemes.",
-    icon: "cursor",
-  },
-  {
-    title: "The Infinite Wrap Loop",
-    subtitle: "CJK characters wider than viewport",
-    description: "When a single CJK character (width 2) was wider than the available wrap width (1 column), the word-wrap algorithm entered an infinite loop — no progress was ever made.",
-    technicalDetails: "Both wrap_line_words and wrap_line_chars had the same vulnerability: they checked if the next grapheme fit, found it didn't, but had no fallback to force progress. Fixed by adding a forced-progress path that consumes the character even when it overflows.",
-    impact: "Prevented hangs on narrow terminals and edge-case CJK input.",
-    icon: "infinity",
-  },
-  {
-    title: "Input Parser DoS Protection",
-    subtitle: "Malformed escape sequences swallowed input",
-    description: "The CSI/OSC ignore states used for DoS protection were too sticky — they continued ignoring bytes until a valid terminator appeared. A malformed sequence like `ESC [ ... 1GB of zeros` would swallow all subsequent valid input.",
-    technicalDetails: "Updated process_csi_ignore, process_osc_content, and process_osc_ignore to abort on invalid control characters (bytes < 0x20). Now if a malicious sequence hits a control char like newline, the parser resets to ground state immediately.",
-    impact: "Terminal remains responsive even when processing corrupted or adversarial input.",
-    icon: "shield",
-  },
-  {
-    title: "Shakespeare Search: 100K Allocations",
-    subtitle: "O(N) allocs per keystroke",
-    description: "The Shakespeare text search allocated a new String (via to_ascii_lowercase) for every line in a 100K+ line document on every keystroke, causing severe input lag during search.",
-    technicalDetails: "Replaced with line_contains_ignore_case, an allocation-free helper that performs case-insensitive substring checks by comparing char-by-char. The query is lowercased once; each line is scanned without allocation. Same fix applied to Code Explorer and LogViewer.",
-    impact: "Search went from multi-second lag to instant (<5ms) on large documents.",
-    icon: "search",
-  },
-  {
-    title: "Presenter Cost Model Overflow",
-    subtitle: "Wrong cursor moves on 4K displays",
-    description: "The digit_count function capped at 3 for any input >= 100, causing incorrect cost estimation for terminals >= 1000 columns wide. This led to suboptimal cursor movement strategies on large displays.",
-    technicalDetails: "Extended digit_count to handle 4 and 5 digit numbers (up to u16::MAX = 65535). Without this, the presenter would choose 'move cursor to column' over 'relative move' even when the relative move was cheaper on wide terminals.",
-    impact: "Optimal ANSI byte output on 4K and ultrawide displays.",
-    icon: "monitor",
-  },
-  {
-    title: "Ratio Constraint Identity Crisis",
-    subtitle: "Ratio behaved like flex-grow",
-    description: "Constraint::Ratio(n, d) was implemented as a flexible weight (like CSS flex-grow) instead of a fixed fractional allocation. This made it impossible to create fixed proportional layouts like a 1/4 width sidebar.",
-    technicalDetails: "Moved Ratio handling from the flexible allocation pass to the fixed allocation pass of the layout solver. It now allocates available_size * n / d, aligning behavior with Percentage and standard grid expectations.",
-    impact: "Predictable proportional layouts that match developer intent.",
-    icon: "layout",
-  },
-  {
-    title: "TimeTravel Eviction Corruption",
-    subtitle: "Delta frames without a base",
-    description: "When the TimeTravel recorder reached capacity and evicted the oldest frame, the new oldest frame could be a delta-encoded snapshot with no base frame to reconstruct against.",
-    technicalDetails: "Updated record() to perform eviction before computing the new snapshot, and to force a Full snapshot if the history is empty after eviction. This guarantees get(0) always returns a self-contained reconstructable frame.",
-    impact: "Time-travel debugging works correctly even at buffer capacity.",
-    icon: "clock",
-  },
-  {
-    title: "SGR Delta Cost Miscalculation",
-    subtitle: "Reset-to-default cost overestimated 4x",
-    description: "The presenter estimated resetting a color to default (transparent) at 19 bytes (full RGB sequence cost), but the actual sequence is only 5 bytes. This caused unnecessary full style resets instead of cheaper delta updates.",
-    technicalDetails: "Updated delta_est to check if the new color is transparent (alpha=0) and use 5 bytes for transparent transitions, 19 for opaque. This ensures the SGR delta engine correctly identifies when a delta update is cheaper than a full reset.",
-    impact: "Up to 40% reduction in ANSI output bytes for typical workloads.",
-    icon: "minimize",
-  },
-];
 
 // ── Architecture Decision Records ───────────────────────────────────
 
