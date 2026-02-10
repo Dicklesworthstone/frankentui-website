@@ -263,7 +263,7 @@ async function runStaticSpecEvolutionSmoke(
   }
 }
 
-test("navbar: /architecture -> /war-stories renders without refresh", async ({ page }) => {
+test("navbar: /architecture -> /how-it-was-built renders without refresh", async ({ page }) => {
   const baseUrl = process.env.BASE_URL ?? "http://localhost:3100";
 
   const errors: string[] = [];
@@ -277,11 +277,11 @@ test("navbar: /architecture -> /war-stories renders without refresh", async ({ p
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
   await page.waitForTimeout(250);
 
-  await page.locator("header").first().getByRole("link", { name: "War Stories" }).click();
+  await page.locator("header").first().getByRole("link", { name: "Built in 5 Days" }).click();
 
-  await expect(page).toHaveURL(/\/war-stories\/?$/);
+  await expect(page).toHaveURL(/\/how-it-was-built\/?$/);
   await expect(
-    page.getByRole("heading", { level: 1, name: /war\s+stories/i }).first()
+    page.getByRole("heading", { level: 1, name: /built\s+in/i }).first()
   ).toBeVisible();
   // Guard against the historical failure mode: URL changes but you're still scrolled to "nowhere",
   // making the page look blank until a refresh resets scroll.

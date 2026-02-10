@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Terminal as TerminalIcon, Eye, Home, Network, LayoutGrid, Skull, Info, Cpu, Zap, ChevronRight, Rocket } from "lucide-react";
+import { Menu, X, Terminal as TerminalIcon, Eye, Home, Network, LayoutGrid, Info, Cpu, Zap, ChevronRight, Rocket } from "lucide-react";
 import { useState, useEffect } from "react";
 import { navItems, siteConfig } from "@/lib/content";
 import { useBodyScrollLock } from "@/hooks/use-body-scroll-lock";
@@ -35,7 +35,6 @@ export default function SiteHeader() {
       case 'home': return Home;
       case 'showcase': return Eye;
       case 'architecture': return Cpu;
-      case 'war stories': return Skull;
       case 'project graph': return Network;
       case 'glossary': return Info;
       case 'get started': return Zap;
@@ -154,7 +153,6 @@ export default function SiteHeader() {
               "Home": "Home",
               "Showcase": "Show",
               "Architecture": "Arch.",
-              "War Stories": "Wars",
               "Project Graph": "Graph",
               "Built in 5 Days": "Build",
               "Glossary": "Gloss.",
