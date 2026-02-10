@@ -392,7 +392,7 @@ export default function HomePage() {
                 From the Author
               </p>
               <p className="text-xs text-slate-400 font-bold mt-1 italic leading-relaxed">
-                &ldquo;Hey, it fell off the back of a Spaceship.&rdquo;
+                &ldquo;You need some Alien Artifact code? I know a guy...&rdquo;
               </p>
             </div>
           </div>
