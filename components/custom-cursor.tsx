@@ -224,113 +224,114 @@ export default function CustomCursor() {
 
   return (
     <>
-      <div className="pointer-events-none fixed inset-0 z-[10000] overflow-hidden hidden md:block" style={{ willChange: "transform" }}>
+      <div className="pointer-events-none fixed inset-0 z-[10000] hidden md:block" style={{ willChange: "transform" }}>
+        {/* Flashlight Effect — rendered independently, no AnimatePresence needed */}
+        {isVisible && isOverFlashlightSection && (
+          <motion.div
+            key="flashlight"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute h-[600px] w-[600px] rounded-full"
+            style={{
+              x: mouseX,
+              y: mouseY,
+              translateX: "-50%",
+              translateY: "-50%",
+              background: "radial-gradient(circle, transparent 0%, rgba(0, 0, 0, 0.9) 70%)",
+              boxShadow: "0 0 0 3000px rgba(0, 0, 0, 0.9)",
+            }}
+          />
+        )}
+
+        {/* Data Debris Trail — rendered independently */}
+        {isVisible && isTechnicalArea && <DataDebris x={mouseX} y={mouseY} />}
+
+        {/* Core cursor elements — always visible when mouse is in viewport */}
+        {isVisible && (
+          <>
+            {/* Outer Ring */}
+            <motion.div
+              className="absolute left-0 top-0 h-10 w-10 rounded-full border border-green-500/40"
+              style={{
+                x: isMagnetic ? magneticPos.x : mouseX,
+                y: isMagnetic ? magneticPos.y : mouseY,
+                translateX: "-50%",
+                translateY: "-50%",
+              }}
+              animate={{
+                scale: isPointer ? 1.4 : isClicking ? 0.7 : 1,
+                rotate: isClicking ? 45 : 0,
+                borderRadius: isClicking ? "20%" : "50%",
+                borderColor: isPointer ? "rgba(74, 222, 128, 0.8)" : "rgba(74, 222, 128, 0.4)",
+                borderWidth: isPointer ? 2 : 1,
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 400,
+                damping: 30,
+                mass: 0.5
+              }}
+            >
+               {/* Click Glitch Lines */}
+               <AnimatePresence>
+                 {isClicking && (
+                   <motion.div
+                     key="click-glitch"
+                     initial={{ opacity: 0, scale: 0.5 }}
+                     animate={{ opacity: 1, scale: 1.5 }}
+                     exit={{ opacity: 0 }}
+                     className="absolute inset-[-10px] border border-red-500/50 rounded-full"
+                   />
+                 )}
+               </AnimatePresence>
+            </motion.div>
+
+            {/* Inner Dot */}
+            <motion.div
+              className="absolute left-0 top-0 h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)]"
+              style={{
+                x: mouseX,
+                y: mouseY,
+                translateX: "-50%",
+                translateY: "-50%",
+              }}
+              animate={{
+                scale: isClicking ? 3 : 1,
+                backgroundColor: isClicking ? "#ef4444" : "#4ade80",
+              }}
+            />
+          </>
+        )}
+
+        {/* Crosshair lines for pointers — separate AnimatePresence */}
         <AnimatePresence>
-          {isVisible && (
-            <>
-              {/* Flashlight Effect */}
-              {isOverFlashlightSection && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute h-[600px] w-[600px] rounded-full"
-                  style={{
-                    x: mouseX,
-                    y: mouseY,
-                    translateX: "-50%",
-                    translateY: "-50%",
-                    background: "radial-gradient(circle, transparent 0%, rgba(0, 0, 0, 0.9) 70%)",
-                    boxShadow: "0 0 0 3000px rgba(0, 0, 0, 0.9)",
-                  }}
-                />
-              )}
-
-              {/* Data Debris Trail */}
-              {isTechnicalArea && <DataDebris x={mouseX} y={mouseY} />}
-
-              {/* Outer Ring */}
-              <motion.div
-                className="absolute left-0 top-0 h-10 w-10 rounded-full border border-green-500/40 mix-blend-screen"
-                style={{
-                  x: isMagnetic ? magneticPos.x : mouseX,
-                  y: isMagnetic ? magneticPos.y : mouseY,
-                  translateX: "-50%",
-                  translateY: "-50%",
-                }}
-                animate={{
-                  scale: isPointer ? 1.4 : isClicking ? 0.7 : 1,
-                  rotate: isClicking ? 45 : 0,
-                  borderRadius: isClicking ? "20%" : "50%",
-                  borderColor: isPointer ? "rgba(74, 222, 128, 0.8)" : "rgba(74, 222, 128, 0.4)",
-                  borderWidth: isPointer ? 2 : 1,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 400,
-                  damping: 30,
-                  mass: 0.5
-                }}
-              >
-                 {/* Click Glitch Lines */}
-                 <AnimatePresence>
-                   {isClicking && (
-                     <motion.div
-                       initial={{ opacity: 0, scale: 0.5 }}
-                       animate={{ opacity: 1, scale: 1.5 }}
-                       exit={{ opacity: 0 }}
-                       className="absolute inset-[-10px] border border-red-500/50 rounded-full mix-blend-overlay"
-                     />
-                   )}
-                 </AnimatePresence>
-              </motion.div>
-
-              {/* Inner Dot */}
-              <motion.div
-                className="absolute left-0 top-0 h-1.5 w-1.5 rounded-full bg-green-400 shadow-[0_0_10px_rgba(74,222,128,0.8)]"
-                style={{
-                  x: mouseX,
-                  y: mouseY,
-                  translateX: "-50%",
-                  translateY: "-50%",
-                }}
-                animate={{
-                  scale: isClicking ? 3 : 1,
-                  backgroundColor: isClicking ? "#ef4444" : "#4ade80",
-                }}
-              />
-
-              {/* Crosshair lines for pointers */}
-              {isPointer && !isMagnetic && (
-                <motion.div
-                  initial={{ opacity: 0, rotate: -45 }}
-                  animate={{ opacity: 1, rotate: 0 }}
-                  exit={{ opacity: 0, rotate: 45 }}
-                  className="absolute left-0 top-0 pointer-events-none"
-                  style={{
-                    x: mouseX,
-                    y: mouseY,
-                    translateX: "-50%",
-                    translateY: "-50%",
-                  }}
-                >
-                  <div className="absolute top-[-15px] left-1/2 h-[8px] w-[1px] bg-green-500/60 -translate-x-1/2" />
-                  <div className="absolute bottom-[-15px] left-1/2 h-[8px] w-[1px] bg-green-500/60 -translate-x-1/2" />
-                  <div className="absolute left-[-15px] top-1/2 w-[8px] h-[1px] bg-green-500/60 -translate-y-1/2" />
-                  <div className="absolute right-[-15px] top-1/2 w-[8px] h-[1px] bg-green-500/60 -translate-y-1/2" />
-                </motion.div>
-              )}
-            </>
+          {isVisible && isPointer && !isMagnetic && (
+            <motion.div
+              key="crosshair"
+              initial={{ opacity: 0, rotate: -45 }}
+              animate={{ opacity: 1, rotate: 0 }}
+              exit={{ opacity: 0, rotate: 45 }}
+              className="absolute left-0 top-0 pointer-events-none"
+              style={{
+                x: mouseX,
+                y: mouseY,
+                translateX: "-50%",
+                translateY: "-50%",
+              }}
+            >
+              <div className="absolute top-[-15px] left-1/2 h-[8px] w-[1px] bg-green-500/60 -translate-x-1/2" />
+              <div className="absolute bottom-[-15px] left-1/2 h-[8px] w-[1px] bg-green-500/60 -translate-x-1/2" />
+              <div className="absolute left-[-15px] top-1/2 w-[8px] h-[1px] bg-green-500/60 -translate-y-1/2" />
+              <div className="absolute right-[-15px] top-1/2 w-[8px] h-[1px] bg-green-500/60 -translate-y-1/2" />
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
 
       <style jsx global>{`
         @media (min-width: 768px) {
-          body {
-            cursor: none !important;
-          }
-          a, button, [role="button"], input, textarea, select {
+          *, *::before, *::after {
             cursor: none !important;
           }
         }
