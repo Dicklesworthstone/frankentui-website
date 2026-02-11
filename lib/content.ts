@@ -22,7 +22,6 @@ export const navItems = [
   { href: "/how-it-was-built", label: "Built in 5 Days" },
   { href: "/glossary", label: "Glossary" },
   { href: "/getting-started", label: "Get Started" },
-  { href: "/web_react", label: "React Widget" },
 ];
 
 // Types

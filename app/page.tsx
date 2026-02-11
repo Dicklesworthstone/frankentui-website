@@ -14,6 +14,7 @@ import {
   Zap,
   Cpu,
   Shield,
+  Blocks,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -100,6 +101,16 @@ export default function HomePage() {
                   <span className="absolute inset-0 rounded-2xl animate-pulse bg-green-400/20" />
                   <Play className="relative h-5 w-5" />
                   <span className="relative">TRY LIVE DEMO</span>
+                </Link>
+              </Magnetic>
+              <Magnetic strength={0.1}>
+                <Link
+                  href="/web_react"
+                  data-magnetic="true"
+                  className="px-10 py-5 rounded-2xl bg-white/5 border border-green-500/20 text-white font-black text-lg hover:bg-green-500/10 hover:border-green-500/40 transition-all flex items-center justify-center gap-3 active:scale-95"
+                >
+                  <Blocks className="h-5 w-5 text-green-400" />
+                  REACT WIDGET
                 </Link>
               </Magnetic>
               <Magnetic strength={0.1}>
