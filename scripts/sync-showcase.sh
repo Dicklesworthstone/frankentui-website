@@ -47,7 +47,7 @@ done
 mkdir -p "$DEST"
 
 # Build rsync args
-RSYNC_ARGS=(-av --delete)
+RSYNC_ARGS=(-av --delete --exclude='og.png' --exclude='version.json')
 if $DRY_RUN; then
   RSYNC_ARGS+=(--dry-run)
   echo "=== DRY RUN ==="
