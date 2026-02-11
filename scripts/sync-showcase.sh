@@ -59,6 +59,12 @@ echo ""
 
 rsync "${RSYNC_ARGS[@]}" "$SRC" "$DEST"
 
+# Remove wasm-pack's .gitignore that blocks all files from being committed
+if ! $DRY_RUN && [[ -f "${DEST}pkg/.gitignore" ]]; then
+  rm "${DEST}pkg/.gitignore"
+  echo "Removed wasm-pack .gitignore from pkg/ (blocks git tracking)"
+fi
+
 # Post-sync HTML injections
 if ! $DRY_RUN && [[ -f "${DEST}index.html" ]]; then
   # 1. Inject <base href="/web/"> so relative paths resolve correctly under /web
