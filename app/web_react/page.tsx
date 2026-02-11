@@ -139,7 +139,7 @@ function LazyTerminal({
             width="100%"
             height="100%"
             className="rounded-2xl border border-white/5 overflow-hidden"
-            captureKeys={false}
+            captureKeys
             showStatus
             loadTextAssets={false}
           />

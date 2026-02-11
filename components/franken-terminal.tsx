@@ -119,6 +119,7 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
     const resizeObserverRef = useRef<ResizeObserver | null>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const userZoomRef = useRef(initialZoom);
+    const applyZoomRef = useRef<(() => void) | null>(null);
 
     // ── Cleanup function ───────────────────────────────────────────────
     const cleanup = useCallback(() => {
@@ -132,6 +133,7 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
       abortControllerRef.current = null;
       resizeObserverRef.current?.disconnect();
       resizeObserverRef.current = null;
+      applyZoomRef.current = null;
       try { runnerRef.current?.destroy(); } catch { /* already freed */ }
       try { termRef.current?.destroy(); } catch { /* already freed */ }
       runnerRef.current = null;
@@ -164,7 +166,11 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
       },
       setZoom(zoom: number) {
         userZoomRef.current = zoom;
-        termRef.current?.setZoom(zoom);
+        if (applyZoomRef.current) {
+          applyZoomRef.current();
+        } else {
+          termRef.current?.setZoom(zoom);
+        }
       },
       forceRender() {
         termRef.current?.render();
@@ -227,9 +233,8 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
           if (cancelled) return;
 
           // 5. Apply initial zoom before fitToContainer
-          let userZoom = userZoomRef.current;
-          if (userZoom !== 1.0 && typeof term.setZoom === "function") {
-            term.setZoom(userZoom);
+          if (userZoomRef.current !== 1.0 && typeof term.setZoom === "function") {
+            term.setZoom(userZoomRef.current);
           }
 
           // 6. Fit to container
@@ -273,8 +278,9 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
             const r = runnerRef.current;
             const c = containerRef.current;
             if (!t || !r || !c) return;
+            const z = userZoomRef.current;
             if (typeof t.setZoom === "function") {
-              t.setZoom(userZoom);
+              t.setZoom(z);
             }
             const newDpr = window.devicePixelRatio || 1.0;
             const newGeo = t.fitToContainer(c.clientWidth, c.clientHeight, newDpr);
@@ -285,12 +291,13 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
               setDimensions({ cols: currentCols, rows: currentRows });
               onResize?.(currentCols, currentRows);
             }
-            if (Math.abs(userZoom - 1.0) > 0.01) {
-              setStatusText(`${currentCols}\u00d7${currentRows} \u2014 zoom ${Math.round(userZoom * 100)}%`);
+            if (Math.abs(z - 1.0) > 0.01) {
+              setStatusText(`${currentCols}\u00d7${currentRows} \u2014 zoom ${Math.round(z * 100)}%`);
             } else {
               setStatusText(`${currentCols}\u00d7${currentRows}`);
             }
           }
+          applyZoomRef.current = applyZoom;
 
           // 11. Start frame loop
           runningRef.current = true;
@@ -351,7 +358,12 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
               currentRows = newGeo.rows;
               r.resize(currentCols, currentRows);
               setDimensions({ cols: currentCols, rows: currentRows });
-              setStatusText(`${currentCols}\u00d7${currentRows}`);
+              const z = userZoomRef.current;
+              if (Math.abs(z - 1.0) > 0.01) {
+                setStatusText(`${currentCols}\u00d7${currentRows} \u2014 zoom ${Math.round(z * 100)}%`);
+              } else {
+                setStatusText(`${currentCols}\u00d7${currentRows}`);
+              }
               onResize?.(currentCols, currentRows);
             }
           });
@@ -415,22 +427,19 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
               const zoomMod = e.ctrlKey || e.metaKey;
               if (zoomMod && (e.key === "+" || e.key === "=")) {
                 e.preventDefault();
-                userZoom = Math.min(3.0, userZoom * 1.1);
-                userZoomRef.current = userZoom;
+                userZoomRef.current = Math.min(3.0, userZoomRef.current * 1.1);
                 applyZoom();
                 return;
               }
               if (zoomMod && e.key === "-") {
                 e.preventDefault();
-                userZoom = Math.max(0.3, userZoom / 1.1);
-                userZoomRef.current = userZoom;
+                userZoomRef.current = Math.max(0.3, userZoomRef.current / 1.1);
                 applyZoom();
                 return;
               }
               if (zoomMod && e.key === "0") {
                 e.preventDefault();
-                userZoom = 1.0;
-                userZoomRef.current = userZoom;
+                userZoomRef.current = 1.0;
                 applyZoom();
                 return;
               }
@@ -550,7 +559,7 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
             } else if (touches.length === 2) {
               touchState = TOUCH_PINCHING;
               pinchStartDist = pinchDistance(touches[0], touches[1]);
-              pinchStartZoom = userZoom;
+              pinchStartZoom = userZoomRef.current;
             }
           }, { signal, passive: false });
 
@@ -562,14 +571,13 @@ const FrankenTerminal = forwardRef<FrankenTerminalHandle, FrankenTerminalProps>(
               if (touchState !== TOUCH_PINCHING) {
                 touchState = TOUCH_PINCHING;
                 pinchStartDist = pinchDistance(touches[0], touches[1]);
-                pinchStartZoom = userZoom;
+                pinchStartZoom = userZoomRef.current;
                 return;
               }
               const dist = pinchDistance(touches[0], touches[1]);
               if (pinchStartDist > 0) {
                 const scale = dist / pinchStartDist;
-                userZoom = Math.max(0.3, Math.min(3.0, pinchStartZoom * scale));
-                userZoomRef.current = userZoom;
+                userZoomRef.current = Math.max(0.3, Math.min(3.0, pinchStartZoom * scale));
                 applyZoom();
               }
               return;
