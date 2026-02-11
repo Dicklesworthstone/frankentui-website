@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<base href="/web/">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FrankenTUI — Live Web Demo</title>
+<meta name="description" content="Experience FrankenTUI running live in your browser via WASM and WebGPU. Full Rust TUI kernel at 60fps — no install required." />
+<link rel="canonical" href="https://frankentui.com/web" />
+<link rel="icon" href="/favicon.ico" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="FrankenTUI — Live Web Demo" />
+<meta property="og:description" content="Experience FrankenTUI running live in your browser via WASM and WebGPU. Full Rust TUI kernel at 60fps — no install required." />
+<meta property="og:image" content="https://frankentui.com/web/og.png" />
+<meta property="og:url" content="https://frankentui.com/web" />
+<meta property="og:site_name" content="FrankenTUI" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="FrankenTUI — Live Web Demo" />
+<meta name="twitter:description" content="Experience FrankenTUI running live in your browser via WASM and WebGPU. Full Rust TUI kernel at 60fps — no install required." />
+<meta name="twitter:image" content="https://frankentui.com/web/og.png" />
+<link rel="preload" href="./fonts/pragmasevka-nf-subset.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+	  @font-face {
+	    font-family: "Pragmasevka NF";
+	    src: url("./fonts/pragmasevka-nf-subset.woff2") format("woff2");
+	    font-weight: 400;
+	    font-style: normal;
+	    font-display: block;
+	  }
+	  * { margin: 0; padding: 0; box-sizing: border-box; }
+	  html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0a0a; }
+	  #container {
+	    width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  #terminal-canvas {
+    display: block;
+    width: 100%; height: 100%;
+    image-rendering: pixelated;
+  }
+	  #status {
+	    position: fixed; bottom: 8px; right: 12px;
+	    color: #666; font: 12px/1 "Pragmasevka NF", monospace;
+	    pointer-events: none; z-index: 10;
+	  }
+	  #error-overlay {
+	    display: none;
+	    position: fixed; inset: 0;
+	    background: rgba(0,0,0,0.85);
+	    color: #f44; font: 16px/1.5 "Pragmasevka NF", monospace;
+	    padding: 32px; overflow: auto; z-index: 20;
+	  }
+	  #error-overlay.visible { display: block; }
+  #webgpu-fallback {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: #0a0a0a; color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 40px; overflow: auto;
+    flex-direction: column; align-items: center; justify-content: center; text-align: center;
+  }
+  #webgpu-fallback.visible { display: flex; }
+  #webgpu-fallback h1 { font-size: 28px; font-weight: 800; color: #22c55e; margin-bottom: 12px; }
+  #webgpu-fallback h2 { font-size: 18px; font-weight: 600; color: #94a3b8; margin-bottom: 24px; }
+  #webgpu-fallback .supported { background: #1a1a2e; border: 1px solid #334155; border-radius: 12px; padding: 24px; max-width: 480px; margin-bottom: 24px; }
+  #webgpu-fallback .supported h3 { color: #22c55e; font-size: 14px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+  #webgpu-fallback .browser-list { list-style: none; padding: 0; text-align: left; }
+  #webgpu-fallback .browser-list li { padding: 6px 0; color: #cbd5e1; font-size: 14px; }
+  #webgpu-fallback .browser-list li::before { content: "\2713 "; color: #22c55e; font-weight: bold; }
+  #webgpu-fallback .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  #webgpu-fallback .actions a {
+    padding: 12px 24px; border-radius: 9999px; font-weight: 700; font-size: 13px;
+    text-decoration: none; text-transform: uppercase; letter-spacing: 0.1em; transition: all 0.2s;
+  }
+  #webgpu-fallback .btn-primary { background: #22c55e; color: #000; }
+  #webgpu-fallback .btn-primary:hover { background: #16a34a; }
+  #webgpu-fallback .btn-secondary { background: transparent; color: #94a3b8; border: 1px solid #334155; }
+  #webgpu-fallback .btn-secondary:hover { border-color: #22c55e; color: #22c55e; }
+</style>
+</head>
+<body>
+<div id="container">
+  <canvas id="terminal-canvas" tabindex="0"></canvas>
+</div>
+<div id="status">Loading WASM…</div>
+<div id="webgpu-fallback">
+  <h1>FrankenTUI Live Demo</h1>
+  <h2>This demo requires WebGPU, which is not available in your browser.</h2>
+  <div class="supported">
+    <h3>Supported Browsers</h3>
+    <ul class="browser-list">
+      <li>Google Chrome 113+ (recommended)</li>
+      <li>Microsoft Edge 113+</li>
+      <li>Opera 99+</li>
+      <li>Chrome for Android 113+</li>
+    </ul>
+  </div>
+  <div class="actions">
+    <a href="/" class="btn-primary">Back to FrankenTUI</a>
+    <a href="/showcase" class="btn-secondary">View Screenshots</a>
+  </div>
+</div>
+<div id="error-overlay"></div>
+
+<script>
+if (!navigator.gpu) {
+  document.addEventListener("DOMContentLoaded", function() {
+    var fb = document.getElementById("webgpu-fallback");
+    if (fb) fb.classList.add("visible");
+    var st = document.getElementById("status");
+    if (st) st.style.display = "none";
+  });
+}
+</script>
+<script type="module">
+// ── Configuration ──────────────────────────────────────────────────────
+const INITIAL_COLS = 80;
+const INITIAL_ROWS = 24;
+const CELL_WIDTH   = 8;
+const CELL_HEIGHT  = 16;
+const LOG_JSONL    = true;   // Emit JSONL evidence to console
+const LOG_PERF     = false;  // Per-frame timing in console
+// Bump when deploying to bypass Cloudflare/browser caches for JS/WASM artifacts.
+const ASSET_VERSION = "2026-02-11.1";
+
+// ── DOM refs ───────────────────────────────────────────────────────────
+const canvas   = document.getElementById("terminal-canvas");
+const status   = document.getElementById("status");
+const errorDiv = document.getElementById("error-overlay");
+
+function showError(msg) {
+  errorDiv.textContent = msg;
+  errorDiv.classList.add("visible");
+  status.textContent = "Error";
+  console.error("[ShowcaseDemo]", msg);
+}
+
+// ── Font loading (must happen before first glyph rasterization) ───────────
+const fontsReady = (async () => {
+  if (!("fonts" in document) || !document.fonts?.load) return;
+  try {
+    status.textContent = "Loading fonts…";
+    await document.fonts.load('16px "Pragmasevka NF"');
+    await document.fonts.ready;
+  } catch (e) {
+    console.warn("[ShowcaseDemo] Font load failed; continuing with fallback.", e);
+  }
+})();
+
+// ── Large text assets (loaded out-of-band to keep WASM small) ────────────
+// These blobs are huge (multiple MB). Embedding them in WASM bloats downloads
+// and, worse, slows instantiation due to large data-segment memcpy.
+const largeAssetsPromise = (async () => {
+  try {
+    const shakespeareUrl = `./assets/shakespeare.txt?v=${ASSET_VERSION}`;
+    const sqliteUrl      = `./assets/sqlite3.c?v=${ASSET_VERSION}`;
+    const [shakespeare, sqlite] = await Promise.all([
+      fetch(shakespeareUrl).then((r) => {
+        if (!r.ok) throw new Error(`GET ${shakespeareUrl} -> ${r.status}`);
+        return r.text();
+      }),
+      fetch(sqliteUrl).then((r) => {
+        if (!r.ok) throw new Error(`GET ${sqliteUrl} -> ${r.status}`);
+        return r.text();
+      }),
+    ]);
+    return { shakespeare, sqlite };
+  } catch (e) {
+    console.warn("[ShowcaseDemo] Failed to fetch large assets; some screens may be unavailable.", e);
+    return null;
+  }
+})();
+
+// ── WASM module loading ────────────────────────────────────────────────
+// wasm-pack builds produce an ES module with an `default` init function
+// and the exported classes. Adjust paths to match your wasm-pack output.
+let termMod, runnerMod;
+try {
+  status.textContent = "Loading WASM modules…";
+  const termJsUrl = `./pkg/FrankenTerm.js?v=${ASSET_VERSION}`;
+  const runnerJsUrl = `./pkg/ftui_showcase_wasm.js?v=${ASSET_VERSION}`;
+  [termMod, runnerMod] = await Promise.all([
+    import(termJsUrl),
+    import(runnerJsUrl),
+  ]);
+  // Initialize both WASM modules (fetches .wasm files).
+  await Promise.all([
+    termMod.default(new URL(`./pkg/FrankenTerm_bg.wasm?v=${ASSET_VERSION}`, import.meta.url)),
+    runnerMod.default(new URL(`./pkg/ftui_showcase_wasm_bg.wasm?v=${ASSET_VERSION}`, import.meta.url)),
+  ]);
+} catch (e) {
+  showError(
+    `Failed to load WASM modules.\n\n` +
+    `Expected wasm-pack output at ./pkg/FrankenTerm.js and ./pkg/ftui_showcase_wasm.js\n\n` +
+    `Build with:\n` +
+    `  wasm-pack build crates/frankenterm-web --target web --out-dir ../../pkg --out-name FrankenTerm\n` +
+    `  wasm-pack build crates/ftui-showcase-wasm --target web --out-dir ../../pkg\n\n` +
+    `Error: ${e.message || e}`
+  );
+  throw e;
+}
+
+// ── Create instances ───────────────────────────────────────────────────
+const { FrankenTermWeb }  = termMod;
+const { ShowcaseRunner }  = runnerMod;
+
+const term   = new FrankenTermWeb();
+const dpr    = window.devicePixelRatio || 1.0;
+
+try {
+  await fontsReady;
+  status.textContent = "Initializing WebGPU terminal…";
+  await term.init(canvas, {
+    cols: INITIAL_COLS,
+    rows: INITIAL_ROWS,
+    cellWidth: CELL_WIDTH,
+    cellHeight: CELL_HEIGHT,
+    dpr,
+    focused: true,
+  });
+} catch (e) {
+  showError(`FrankenTermWeb.init() failed: ${e.message || e}\n\nWebGPU may not be supported in this browser.`);
+  throw e;
+}
+
+// Fit to actual container size and get real cols/rows.
+const container = document.getElementById("container");
+const geo = term.fitToContainer(container.clientWidth, container.clientHeight, dpr);
+const cols = geo.cols;
+const rows = geo.rows;
+
+const runner = new ShowcaseRunner(cols, rows);
+runner.init();
+
+// `ShowcaseRunner.init()` renders frame 1 and produces a full repaint patch batch.
+// If we don't apply it immediately, the first `step()` often returns `rendered=false`
+// and the initial frame never becomes visible (or later diffs apply against an empty buffer).
+const initPatches = runner.takeFlatPatches();
+if (initPatches.cells.length > 0) {
+  term.applyPatchBatchFlat(initPatches.spans, initPatches.cells);
+}
+term.render();
+status.textContent = `${cols}×${rows} — running`;
+
+// Inject large text assets after first frame so startup work is not blocked.
+largeAssetsPromise.then((assets) => {
+  if (!assets) return;
+  try {
+    const okA = runner.setShakespeareText(assets.shakespeare);
+    const okB = runner.setSqliteSource(assets.sqlite);
+    jsonl({
+      event: "assets_loaded",
+      shakespeare_bytes: assets.shakespeare.length,
+      sqlite_bytes: assets.sqlite.length,
+      ok: Boolean(okA && okB),
+      ts: Date.now(),
+    });
+  } catch (e) {
+    console.warn("[ShowcaseDemo] Failed to inject large assets into WASM runner.", e);
+  }
+});
+
+// ── JSONL logger ───────────────────────────────────────────────────────
+function jsonl(obj) {
+  if (LOG_JSONL) console.log(JSON.stringify(obj));
+}
+
+jsonl({ event: "init", cols, rows, dpr, ts: Date.now() });
+
+// ── Resize handling ────────────────────────────────────────────────────
+let currentCols = cols;
+let currentRows = rows;
+
+const resizeObserver = new ResizeObserver(() => {
+  const newDpr = window.devicePixelRatio || 1.0;
+  const geo = term.fitToContainer(container.clientWidth, container.clientHeight, newDpr);
+  if (geo.cols !== currentCols || geo.rows !== currentRows) {
+    currentCols = geo.cols;
+    currentRows = geo.rows;
+    runner.resize(currentCols, currentRows);
+    jsonl({ event: "resize", cols: currentCols, rows: currentRows, ts: Date.now() });
+    status.textContent = `${currentCols}×${currentRows} — running`;
+  }
+});
+resizeObserver.observe(container);
+
+// Also handle DPR changes (e.g., moving window between monitors).
+window.matchMedia(`(resolution: ${dpr}dppx)`).addEventListener("change", () => {
+  const newDpr = window.devicePixelRatio || 1.0;
+  const geo = term.fitToContainer(container.clientWidth, container.clientHeight, newDpr);
+  if (geo.cols !== currentCols || geo.rows !== currentRows) {
+    currentCols = geo.cols;
+    currentRows = geo.rows;
+    runner.resize(currentCols, currentRows);
+  }
+});
+
+// ── Input forwarding ───────────────────────────────────────────────────
+// DOM events → FrankenTermWeb.input() → drainEncodedInputs() → runner
+
+function safeTermInput(ev) {
+  try {
+    term.input(ev);
+  } catch (e) {
+    console.error("[ShowcaseDemo] term.input failed:", e, ev);
+  }
+}
+
+function domKeyToInput(e, phase) {
+  return {
+    kind: "key",
+    phase,
+    // `key` and `code` are both required by `frankenterm-web` wasm bindings.
+    // - key: logical key value (e.g. "a", "Enter")
+    // - code: physical key code (e.g. "KeyA", "Enter")
+    key: (typeof e.key === "string") ? e.key : "",
+    code: (typeof e.code === "string") ? e.code : "",
+    mods: (e.shiftKey ? 1 : 0) | (e.altKey ? 2 : 0) | (e.ctrlKey ? 4 : 0) | (e.metaKey ? 8 : 0),
+    repeat: e.repeat || false,
+  };
+}
+
+function domMouseToInput(e, phase) {
+  const rect = canvas.getBoundingClientRect();
+  const cellW = rect.width / currentCols;
+  const cellH = rect.height / currentRows;
+  const x = Math.floor((e.clientX - rect.left) / cellW);
+  const y = Math.floor((e.clientY - rect.top)  / cellH);
+  return {
+    kind: "mouse",
+    phase,
+    button: e.button,
+    x: Math.max(0, Math.min(x, currentCols - 1)),
+    y: Math.max(0, Math.min(y, currentRows - 1)),
+    mods: (e.shiftKey ? 1 : 0) | (e.altKey ? 2 : 0) | (e.ctrlKey ? 4 : 0) | (e.metaKey ? 8 : 0),
+  };
+}
+
+function domWheelToInput(e) {
+  const rect = canvas.getBoundingClientRect();
+  const cellW = rect.width / currentCols;
+  const cellH = rect.height / currentRows;
+  const x = Math.floor((e.clientX - rect.left) / cellW);
+  const y = Math.floor((e.clientY - rect.top)  / cellH);
+  return {
+    kind: "wheel",
+    x: Math.max(0, Math.min(x, currentCols - 1)),
+    y: Math.max(0, Math.min(y, currentRows - 1)),
+    dx: Math.round(e.deltaX),
+    dy: Math.round(e.deltaY),
+    mods: (e.shiftKey ? 1 : 0) | (e.altKey ? 2 : 0) | (e.ctrlKey ? 4 : 0) | (e.metaKey ? 8 : 0),
+  };
+}
+
+function shouldForwardKeyEvent(e) {
+  // Avoid double-encoding during IME composition.
+  return !(e.isComposing || e.key === "Process");
+}
+
+window.addEventListener("keydown", (e) => {
+  if (!shouldForwardKeyEvent(e)) return;
+  e.preventDefault();
+  safeTermInput(domKeyToInput(e, "down"));
+}, { capture: true });
+
+window.addEventListener("keyup", (e) => {
+  if (!shouldForwardKeyEvent(e)) return;
+  e.preventDefault();
+  safeTermInput(domKeyToInput(e, "up"));
+}, { capture: true });
+
+canvas.addEventListener("mousedown", (e) => {
+  canvas.focus();
+  safeTermInput(domMouseToInput(e, "down"));
+});
+canvas.addEventListener("mouseup", (e) => {
+  safeTermInput(domMouseToInput(e, "up"));
+});
+canvas.addEventListener("mousemove", (e) => {
+  safeTermInput(domMouseToInput(e, "move"));
+});
+canvas.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  safeTermInput(domWheelToInput(e));
+}, { passive: false });
+window.addEventListener("paste", (e) => {
+  const text = (e.clipboardData || window.clipboardData).getData("text");
+  if (text) safeTermInput({ kind: "paste", data: text });
+}, { capture: true });
+canvas.addEventListener("focus", () => { safeTermInput({ kind: "focus", focused: true }); });
+canvas.addEventListener("blur",  () => { safeTermInput({ kind: "focus", focused: false }); });
+
+window.addEventListener("blur", () => { safeTermInput({ kind: "focus", focused: false }); });
+window.addEventListener("focus", () => { safeTermInput({ kind: "focus", focused: true }); });
+document.addEventListener("visibilitychange", () => {
+  safeTermInput({ kind: "focus", focused: !document.hidden });
+});
+
+// Composition (IME) events.
+canvas.addEventListener("compositionstart", () => {
+  safeTermInput({ kind: "composition", phase: "start" });
+});
+canvas.addEventListener("compositionupdate", (e) => {
+  safeTermInput({ kind: "composition", phase: "update", data: e.data || "" });
+});
+canvas.addEventListener("compositionend", (e) => {
+  safeTermInput({ kind: "composition", phase: "end", data: e.data || "" });
+});
+
+// ── Host frame loop ────────────────────────────────────────────────────
+let lastTs = 0;
+let totalFrames = 0;
+
+function frame(timestamp) {
+  const dt = lastTs === 0 ? 16.0 : timestamp - lastTs;
+  lastTs = timestamp;
+
+  // 1. Advance deterministic clock.
+  runner.advanceTime(dt);
+
+  // 2. Drain normalized inputs from FrankenTermWeb → push to runner.
+  const inputs = term.drainEncodedInputs();
+  for (let i = 0; i < inputs.length; i++) {
+    runner.pushEncodedInput(inputs[i]);
+  }
+
+  // 3. Step the application.
+  const result = runner.step();
+
+  // 4. If a frame was rendered, apply patches and present.
+  if (result.rendered) {
+    const patches = runner.takeFlatPatches();
+    if (patches.cells.length > 0) {
+      term.applyPatchBatchFlat(patches.spans, patches.cells);
+    }
+    term.render();
+    totalFrames++;
+
+    if (LOG_JSONL) {
+      const stats = runner.patchStats();
+      jsonl({
+        event: "frame",
+        frame_idx: result.frame_idx,
+        events_processed: result.events_processed,
+        patch_hash: runner.patchHash(),
+        dirty_cells: stats ? stats.dirty_cells : 0,
+        patch_count: stats ? stats.patch_count : 0,
+        ts: Date.now(),
+      });
+    }
+  }
+
+  // 5. Drain logs.
+  const logs = runner.takeLogs();
+  for (let i = 0; i < logs.length; i++) {
+    jsonl({ event: "log", text: logs[i], frame_idx: result.frame_idx, ts: Date.now() });
+  }
+
+  // 6. Continue or stop.
+  if (result.running) {
+    requestAnimationFrame(frame);
+  } else {
+    status.textContent = `${currentCols}×${currentRows} — stopped (${totalFrames} frames)`;
+    jsonl({ event: "quit", total_frames: totalFrames, ts: Date.now() });
+    runner.destroy();
+  }
+}
+
+// Focus the canvas and start.
+canvas.focus();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
