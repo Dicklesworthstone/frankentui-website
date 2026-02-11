@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Eye } from "lucide-react";
+import { ArrowRight, Eye, Play } from "lucide-react";
 import { motion } from "framer-motion";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { screenshots, videos } from "@/lib/content";
 import type { Video } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
@@ -10,6 +11,69 @@ import ScreenshotGallery from "@/components/screenshot-gallery";
 import VideoPlayer from "@/components/video-player";
 import FrankenEye from "@/components/franken-eye";
 import FrankenGlitch from "@/components/franken-glitch";
+
+const FrankenTerminal = lazy(() => import("@/components/franken-terminal"));
+
+/** Lazy-loads the interactive terminal only when scrolled into view. */
+function LazyTerminalSection() {
+  const [visible, setVisible] = useState(false);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { rootMargin: "200px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <motion.div
+      ref={sentinelRef}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8, ease: "easeOut", delay: 0.1 }}
+    >
+      <SectionShell
+        id="interactive-demo"
+        icon="terminal"
+        title="Interactive Demo"
+        kicker="Don't just look at screenshots — try FrankenTUI live. Use Tab to switch screens, number keys for direct navigation, and arrow keys to scroll."
+      >
+        <div className="mx-auto max-w-5xl">
+          {visible ? (
+            <Suspense fallback={
+              <div className="w-full h-[500px] rounded-2xl bg-[#0a0a0a] border border-white/5 flex items-center justify-center text-slate-500 font-mono text-sm">
+                Loading interactive demo...
+              </div>
+            }>
+              <FrankenTerminal
+                width="100%"
+                height={500}
+                className="rounded-2xl border border-white/5 overflow-hidden"
+                showStatus
+                captureKeys
+                loadTextAssets
+              />
+            </Suspense>
+          ) : (
+            <div className="w-full h-[500px] rounded-2xl bg-[#0a0a0a] border border-white/5 flex items-center justify-center text-slate-500 font-mono text-sm">
+              <Play className="h-5 w-5 mr-2" />
+              Scroll down to load interactive demo
+            </div>
+          )}
+          <p className="mt-4 text-center text-xs text-slate-600">
+            Requires Chrome or Edge with WebGPU support. The full WASM kernel runs in your browser at 60fps.
+          </p>
+        </div>
+      </SectionShell>
+    </motion.div>
+  );
+}
 
 export default function ShowcasePage() {
   return (
@@ -76,6 +140,25 @@ export default function ShowcasePage() {
           <ScreenshotGallery screenshots={screenshots} columns={2} />
         </SectionShell>
       </motion.div>
+
+      {/* ── Try Live Demo CTA ───────────────────────────────── */}
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <p className="text-lg text-slate-400 mb-6">
+          Screenshots are nice, but why not try it yourself?
+        </p>
+        <Link
+          href="/web"
+          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all shadow-[0_0_30px_rgba(34,197,94,0.2)] active:scale-95"
+        >
+          <Play className="h-5 w-5" />
+          Try the Live Demo
+          <ArrowRight className="h-5 w-5" />
+        </Link>
+        <p className="mt-3 text-xs text-slate-600">Requires Chrome or Edge (WebGPU)</p>
+      </div>
+
+      {/* ── Interactive WASM Demo ───────────────────────────── */}
+      <LazyTerminalSection />
 
       {/* ── Video demos section ──────────────────────────────── */}
       <motion.div

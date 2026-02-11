@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Clock, Link2 } from "lucide-react";
+import { ArrowRight, Clock, Link2, Play } from "lucide-react";
 import { motion } from "framer-motion";
 import { changelog, tweets, buildLogLines, devSessionInsights, devProcessStats } from "@/lib/content";
 import SectionShell from "@/components/section-shell";
@@ -393,6 +393,22 @@ export default function HowItWasBuiltPage() {
       >
         <TweetWall tweets={tweets} />
       </SectionShell>
+
+      {/* ── Try Live Demo CTA ───────────────────────────────── */}
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <p className="text-lg text-slate-400 mb-6">
+          See the result — try the live demo.
+        </p>
+        <Link
+          href="/web"
+          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all shadow-[0_0_30px_rgba(34,197,94,0.2)] active:scale-95"
+        >
+          <Play className="h-5 w-5" />
+          Try the Live Demo
+          <ArrowRight className="h-5 w-5" />
+        </Link>
+        <p className="mt-3 text-xs text-slate-600">Requires Chrome or Edge (WebGPU)</p>
+      </div>
 
       {/* ── CTA section ──────────────────────────────────────── */}
       <section className="relative mx-auto max-w-7xl px-4 pb-32 pt-8 sm:px-6 lg:px-8">

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useMemo } from "react";
-import { Terminal, Cpu, Lock, Shield, Blocks, Sparkles, Activity } from "lucide-react";
+import { Terminal, Cpu, Lock, Shield, Blocks, Sparkles, Activity, Globe } from "lucide-react";
 import type { Feature } from "@/lib/content";
 import { FrankenBolt, FrankenContainer } from "./franken-elements";
 import { motion, useMotionValue, useMotionTemplate, AnimatePresence } from "framer-motion";
@@ -15,6 +15,8 @@ const iconMap: Record<string, React.ElementType> = {
   shield: Shield,
   blocks: Blocks,
   sparkles: Sparkles,
+  activity: Activity,
+  globe: Globe,
 };
 
 const SPECTRUM = ["#38bdf8", "#a78bfa", "#f472b6", "#ef4444", "#fb923c", "#fbbf24", "#34d399", "#22d3ee"];

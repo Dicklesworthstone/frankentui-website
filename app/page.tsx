@@ -10,6 +10,10 @@ import {
   Terminal,
   Activity,
   ExternalLink,
+  Play,
+  Zap,
+  Cpu,
+  Shield,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -35,6 +39,8 @@ import {
   codeExample,
   changelog,
   tweets,
+  browserAdvantages,
+  browserComparisonData,
 } from "@/lib/content";
 import TerminalDemo from "@/components/terminal-demo";
 
@@ -80,16 +86,27 @@ export default function HomePage() {
 
             <p className="text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mb-12">
               Stitched together from the finest Rust algorithms and
-              brought to life with deterministic math. Minimal, high-performance,
-              and architecturally pure.
+              brought to life with deterministic math. Runs natively in your terminal
+              and at 60fps in the browser via WASM + WebGPU.
             </p>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
               <Magnetic strength={0.1}>
                 <Link
+                  href="/web"
+                  data-magnetic="true"
+                  className="relative px-10 py-5 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
+                >
+                  <span className="absolute inset-0 rounded-2xl animate-pulse bg-green-400/20" />
+                  <Play className="relative h-5 w-5" />
+                  <span className="relative">TRY LIVE DEMO</span>
+                </Link>
+              </Magnetic>
+              <Magnetic strength={0.1}>
+                <Link
                   href="/getting-started"
                   data-magnetic="true"
-                  className="px-10 py-5 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all flex items-center justify-center gap-3 shadow-[0_0_40px_rgba(34,197,94,0.3)] active:scale-95"
+                  className="px-10 py-5 rounded-2xl bg-white/5 border border-white/10 text-white font-black text-lg hover:bg-white/10 transition-all flex items-center justify-center gap-3 active:scale-95"
                 >
                   <Rocket className="h-5 w-5" />
                   GET STARTED
@@ -298,6 +315,77 @@ export default function HomePage() {
           {features.map((feature) => (
             <FeatureCard key={feature.title} feature={feature} />
           ))}
+        </div>
+      </SectionShell>
+
+      {/* ================================================================
+          2b. WORKS IN BROWSER (WASM + WebGPU Story)
+          ================================================================ */}
+      <SectionShell
+        id="browser"
+        icon="globe"
+        eyebrow="Not Just Terminal"
+        title="The First Real TUI Kernel in Your Browser"
+        kicker="FrankenTUI compiles to WASM and renders via WebGPU at 60fps. Not a DOM-based emulator. Not a terminal.js wrapper. The actual kernel, compiled and running natively."
+      >
+        {/* Advantage Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 md:gap-6 mb-12">
+          {browserAdvantages.map((adv) => {
+            const iconMap: Record<string, React.ElementType> = { zap: Zap, cpu: Cpu, shield: Shield, activity: Activity };
+            const Icon = iconMap[adv.icon] || Zap;
+            return (
+              <div key={adv.title} className="group relative rounded-2xl border border-white/5 bg-white/[0.02] p-8 transition-all hover:border-green-500/20 hover:bg-white/[0.04]">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500/10 text-green-400">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h3 className="text-lg font-black text-white">{adv.title}</h3>
+                </div>
+                <p className="text-sm text-slate-400 leading-relaxed">{adv.description}</p>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Browser Comparison Table */}
+        <div className="rounded-2xl border border-white/5 bg-white/[0.02] overflow-hidden">
+          <div className="px-6 py-4 border-b border-white/5">
+            <h3 className="text-sm font-black uppercase tracking-widest text-slate-500">Architecture Comparison</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/5">
+                  <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">Feature</th>
+                  <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-green-400">FrankenTUI</th>
+                  <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">xterm.js</th>
+                  <th className="px-6 py-3 text-left text-[10px] font-black uppercase tracking-widest text-slate-500">hterm</th>
+                </tr>
+              </thead>
+              <tbody>
+                {browserComparisonData.map((row) => (
+                  <tr key={row.feature} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
+                    <td className="px-6 py-3 font-medium text-slate-300">{row.feature}</td>
+                    <td className="px-6 py-3 text-green-400 font-medium">{row.frankentui}</td>
+                    <td className="px-6 py-3 text-slate-500">{row.xtermjs}</td>
+                    <td className="px-6 py-3 text-slate-500">{row.hterm}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="mt-10 flex justify-center">
+          <Link
+            href="/web"
+            className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all shadow-[0_0_30px_rgba(34,197,94,0.2)] active:scale-95"
+          >
+            <Play className="h-5 w-5" />
+            Try the Live Demo
+            <ArrowRight className="h-5 w-5" />
+          </Link>
         </div>
       </SectionShell>
 

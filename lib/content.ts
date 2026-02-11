@@ -16,6 +16,7 @@ export const siteConfig = {
 export const navItems = [
   { href: "/", label: "Home" },
   { href: "/showcase", label: "Showcase" },
+  { href: "/web", label: "Live Demo" },
   { href: "/architecture", label: "Architecture" },
   { href: "/beads", label: "Project Graph" },
   { href: "/how-it-was-built", label: "Built in 5 Days" },
@@ -35,7 +36,7 @@ export const heroStats: Stat[] = [
   { label: "Workspace Crates", value: "12", helper: "Composable, focused modules" },
   { label: "Built In", value: "5", helper: "Days from scratch" },
   { label: "Algorithms", value: "30+", helper: "Alien-artifact quality" },
-  { label: "Sparse Diff", value: "602K", helper: "cells/sec throughput" },
+  { label: "Browser Render", value: "60", helper: "fps via WASM + WebGPU" },
 ];
 
 // Features for the homepage grid
@@ -75,6 +76,11 @@ export const features: Feature[] = [
     title: "Alien Algorithms",
     description: "Bayesian diff strategy, BOCPD resize coalescing, conformal prediction alerts, e-process monitoring. Not heuristics — math.",
     icon: "sparkles",
+  },
+  {
+    title: "Browser Native",
+    description: "Compiles to WASM via wasm-pack and renders at 60fps in Chrome/Edge via WebGPU. Same code, same behavior, new platform.",
+    icon: "globe",
   },
 ];
 
@@ -955,6 +961,10 @@ export const faq: FaqItem[] = [
     question: "What is the 'One-Writer Rule'?",
     answer: "It's the surgical discipline that ensures only one component ever writes to the terminal. By funneling all output through a single serialized gate, we eliminate cursor corruption and race conditions, ensuring the terminal display remains pristine even under heavy stress.",
   },
+  {
+    question: "Does FrankenTUI work in the browser?",
+    answer: "Yes. FrankenTUI compiles to WASM via wasm-pack and renders at 60fps in Chrome and Edge using WebGPU. The same Rust code, the same deterministic rendering pipeline, running directly in the browser with zero DOM overhead. Try the live demo at frankentui.com/web.",
+  },
 ];
 
 // Widget data
@@ -1046,6 +1056,10 @@ export const safetyGuarantees: SafetyGuarantee[] = [
     description: "compute() and compute_dirty() produce identical output when dirty invariants hold, ensuring the optimization is indistinguishable from a full diff.",
     proof: "Theorem 4: Full diff and dirty-row diff are equivalent under invariant.",
   },
+  {
+    title: "Cross-Platform Parity",
+    description: "The WASM build uses the identical render pipeline as the native build. Buffer layout, diff output, and presenter emission are byte-for-byte equivalent across targets.",
+  },
 ];
 
 // Design philosophy
@@ -1074,6 +1088,10 @@ export const designPhilosophy: DesignPrinciple[] = [
   {
     title: "Zero-surprise teardown",
     description: "RAII cleanup, even when apps crash. TerminalSession restores terminal state on drop. Your terminal is never left in a broken state, period.",
+  },
+  {
+    title: "Write once, run everywhere",
+    description: "The same Rust code compiles to native terminal binaries and WASM browser bundles. No separate codepaths, no platform-specific hacks.",
   },
 ];
 
@@ -1831,5 +1849,124 @@ export const flywheelTools: FlywheelTool[] = [
       "Thompson sampling optimizes suggestions",
       "Multi-layer security (ACIP, DCG, path policy)",
     ],
+  },
+];
+
+// ── Browser Terminal Comparison Data ────────────────────────────────
+
+export interface BrowserComparisonRow {
+  feature: string;
+  frankentui: string;
+  xtermjs: string;
+  hterm: string;
+}
+
+export const browserComparisonData: BrowserComparisonRow[] = [
+  {
+    feature: "Rendering approach",
+    frankentui: "GPU canvas via WebGPU",
+    xtermjs: "DOM + canvas renderer",
+    hterm: "DOM-based",
+  },
+  {
+    feature: "Frame rate",
+    frankentui: "60fps deterministic",
+    xtermjs: "Variable (requestAnimationFrame)",
+    hterm: "Variable (DOM reflow)",
+  },
+  {
+    feature: "Input model",
+    frankentui: "Full keyboard/mouse/IME via WASM bridge",
+    xtermjs: "Escape sequence parsing",
+    hterm: "Escape sequence parsing",
+  },
+  {
+    feature: "Architecture",
+    frankentui: "Compiled application kernel (Rust → WASM)",
+    xtermjs: "Terminal emulator + parser (TypeScript)",
+    hterm: "Terminal emulator (JavaScript)",
+  },
+  {
+    feature: "Update protocol",
+    frankentui: "Flat cell-diff patches (binary)",
+    xtermjs: "Escape sequence stream",
+    hterm: "Escape sequence stream",
+  },
+  {
+    feature: "Resize behavior",
+    frankentui: "Instant reflow + re-render (BOCPD coalesced)",
+    xtermjs: "Escape sequence + reparse",
+    hterm: "Escape sequence + reparse",
+  },
+  {
+    feature: "Testing model",
+    frankentui: "Deterministic golden checksums",
+    xtermjs: "Screenshot diffs",
+    hterm: "Integration tests",
+  },
+  {
+    feature: "Memory model",
+    frankentui: "Rust ownership / RAII (no GC pauses)",
+    xtermjs: "JavaScript GC",
+    hterm: "JavaScript GC",
+  },
+  {
+    feature: "Bundle size",
+    frankentui: "~3.4 MB WASM (includes full app)",
+    xtermjs: "~800 KB JS (emulator only)",
+    hterm: "~400 KB JS (emulator only)",
+  },
+];
+
+export interface BrowserAdvantage {
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export const browserAdvantages: BrowserAdvantage[] = [
+  {
+    title: "GPU-Accelerated Rendering",
+    description: "WebGPU draws directly to a canvas at 60fps. No DOM nodes, no layout thrashing, no reflow penalties. The GPU does the work, not the browser's layout engine.",
+    icon: "zap",
+  },
+  {
+    title: "Real Application Kernel",
+    description: "FrankenTUI in the browser is not an emulator parsing escape sequences — it is the actual TUI kernel compiled to WASM. Widgets, layout, diff, and presenter run natively.",
+    icon: "cpu",
+  },
+  {
+    title: "Deterministic Output",
+    description: "Every frame is a pure function of state. The same model state produces identical pixels in native terminals and in the browser. No race conditions, no flickering.",
+    icon: "shield",
+  },
+  {
+    title: "Zero GC Pauses",
+    description: "Rust compiled to WASM uses linear memory with no garbage collector. Frame times are predictable and never interrupted by GC sweeps.",
+    icon: "activity",
+  },
+];
+
+export interface BrowserUseCase {
+  title: string;
+  description: string;
+}
+
+export const browserUseCases: BrowserUseCase[] = [
+  {
+    title: "Web-Based Terminal Apps",
+    description: "Ship full TUI applications in the browser. Dashboards, monitoring tools, and admin interfaces with the same performance as native.",
+  },
+  {
+    title: "Embeddable TUI Widgets",
+    description: "Drop a live terminal widget into any React page. Interactive demos, configuration panels, or status displays without iframes.",
+  },
+  {
+    title: "Interactive Documentation",
+    description: "Let users run real examples inside your docs. Not screenshots, not recordings — the actual application responding to their input.",
+  },
+  {
+    title: "Demo and Showcase Pages",
+    description: "Show your TUI app to the world without requiring installation. One click to experience the full interface in any modern browser.",
   },
 ];

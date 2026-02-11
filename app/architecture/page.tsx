@@ -13,6 +13,7 @@ import {
   Zap,
   Activity,
   Binary,
+  Play,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import {
@@ -326,6 +327,22 @@ export default function ArchitecturePage() {
           ))}
         </div>
       </SectionShell>
+
+      {/* ── Try Live Demo CTA ───────────────────────────── */}
+      <div className="mx-auto max-w-3xl px-6 py-16 text-center">
+        <p className="text-lg text-slate-400 mb-6">
+          See these algorithms running live in your browser.
+        </p>
+        <Link
+          href="/web"
+          className="inline-flex items-center gap-3 px-8 py-4 rounded-2xl bg-green-500 text-black font-black text-lg hover:bg-white transition-all shadow-[0_0_30px_rgba(34,197,94,0.2)] active:scale-95"
+        >
+          <Play className="h-5 w-5" />
+          Try the Live Demo
+          <ArrowRight className="h-5 w-5" />
+        </Link>
+        <p className="mt-3 text-xs text-slate-600">Requires Chrome or Edge (WebGPU)</p>
+      </div>
 
       {/* ── DESIGN DECISIONS ─────────────────────────────── */}
       <SectionShell
