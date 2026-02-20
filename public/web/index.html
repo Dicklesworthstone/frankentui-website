@@ -179,6 +179,11 @@
 	    -webkit-tap-highlight-color: transparent;
 	  }
 	  #touch-zoom button:active { background: rgba(80,80,80,0.85); }
+	  #touch-zoom button[data-active="true"] {
+	    border-color: #4a9;
+	    background: rgba(28, 82, 58, 0.9);
+	    color: #dff7eb;
+	  }
 	  @media (pointer: coarse) {
 	    #touch-zoom { display: flex; }
 	  }
@@ -203,6 +208,7 @@
 <div id="pane-selection-halo" aria-hidden="true"></div>
 <div id="pane-dock-hint" aria-hidden="true"></div>
 <div id="touch-zoom">
+  <button id="mobile-kb-toggle" aria-pressed="false" title="Toggle keyboard mode">KB</button>
   <button id="zoom-out">&minus;</button>
   <button id="zoom-reset">1:1</button>
   <button id="zoom-in">+</button>
@@ -243,6 +249,7 @@ const paneGhostAlt2  = document.getElementById("pane-ghost-alt-2");
 const paneSelectionHalo = document.getElementById("pane-selection-halo");
 const paneGhostAlts  = [paneGhostAlt1, paneGhostAlt2];
 const paneDockHint   = document.getElementById("pane-dock-hint");
+const mobileKbToggle = document.getElementById("mobile-kb-toggle");
 const PANE_WORKSPACE_KEY = "ftui-pane-workspace-v1";
 let paneWorkspaceToken = "";
 const paneActivePointers = new Set();
@@ -1111,6 +1118,41 @@ function shouldUseMobileKeyboardProxy() {
   return Boolean(keyboardProxy) && isCoarsePointerDevice();
 }
 
+let mobileInputMode = "touch";
+
+function updateMobileInputToggleUi() {
+  if (!mobileKbToggle) return;
+  const keyboardMode = mobileInputMode === "keyboard";
+  mobileKbToggle.dataset.active = keyboardMode ? "true" : "false";
+  mobileKbToggle.setAttribute("aria-pressed", keyboardMode ? "true" : "false");
+  mobileKbToggle.title = keyboardMode
+    ? "Keyboard mode enabled (tap to switch to touch mode)"
+    : "Touch mode enabled (tap to switch to keyboard mode)";
+}
+
+function setMobileInputMode(mode, { focusTarget = true } = {}) {
+  const normalized = mode === "keyboard" ? "keyboard" : "touch";
+  if (!shouldUseMobileKeyboardProxy() && normalized === "keyboard") {
+    mobileInputMode = "touch";
+  } else {
+    mobileInputMode = normalized;
+  }
+  updateMobileInputToggleUi();
+  if (!focusTarget) return;
+  if (mobileInputMode === "keyboard") {
+    focusKeyboardProxyInput();
+  } else {
+    if (keyboardProxy && document.activeElement === keyboardProxy) {
+      keyboardProxy.blur();
+    }
+    focusCanvasInput();
+  }
+}
+
+function useMobileKeyboardForPointer(pointerType) {
+  return pointerType !== "mouse" && mobileInputMode === "keyboard" && shouldUseMobileKeyboardProxy();
+}
+
 function focusCanvasInput() {
   try {
     canvas.focus({ preventScroll: true });
@@ -1144,6 +1186,9 @@ function focusTerminalInputTarget(preferMobileKeyboard) {
   if (preferMobileKeyboard && shouldUseMobileKeyboardProxy()) {
     focusKeyboardProxyInput();
     return;
+  }
+  if (keyboardProxy && document.activeElement === keyboardProxy) {
+    keyboardProxy.blur();
   }
   focusCanvasInput();
 }
@@ -1469,7 +1514,7 @@ let dragButton = 0;
 if ("PointerEvent" in window) {
 	  canvas.addEventListener("pointerdown", (e) => {
 	    e.preventDefault();
-	    focusTerminalInputTarget(e.pointerType !== "mouse");
+	    focusTerminalInputTarget(useMobileKeyboardForPointer(e.pointerType));
 	    const pointerId = panePointerIdFromEvent(e);
 	    mouseButtonsDown = e.pointerType === "mouse" ? e.buttons : mouseButtonsDown;
 	    dragButton = e.pointerType === "mouse" ? e.button : dragButton;
@@ -1721,11 +1766,23 @@ if (keyboardProxy) {
     keyboardProxyExpectedInputEcho = null;
     keyboardProxySuppressNextInput = false;
     resetKeyboardProxyValue();
+    if (mobileInputMode === "keyboard" && isCoarsePointerDevice()) {
+      setMobileInputMode("touch", { focusTarget: false });
+    }
     queueMicrotask(syncTerminalFocusFromDom);
   });
   keyboardProxy.addEventListener("beforeinput", handleKeyboardProxyBeforeInput, { capture: true });
   keyboardProxy.addEventListener("input", handleKeyboardProxyInput, { capture: true });
 }
+
+if (mobileKbToggle) {
+  mobileKbToggle.addEventListener("click", (e) => {
+    e.preventDefault();
+    const nextMode = mobileInputMode === "keyboard" ? "touch" : "keyboard";
+    setMobileInputMode(nextMode, { focusTarget: true });
+  });
+}
+setMobileInputMode("touch", { focusTarget: false });
 
 window.addEventListener("blur", () => {
   safeTermInput({ kind: "focus", focused: false });
@@ -1782,17 +1839,17 @@ if (keyboardProxy) {
 document.getElementById("zoom-in").addEventListener("click", () => {
   userZoom = Math.min(3.0, userZoom * 1.15);
   applyZoom();
-  focusTerminalInputTarget(shouldUseMobileKeyboardProxy());
+  focusTerminalInputTarget(useMobileKeyboardForPointer("touch"));
 });
 document.getElementById("zoom-out").addEventListener("click", () => {
   userZoom = Math.max(0.3, userZoom / 1.15);
   applyZoom();
-  focusTerminalInputTarget(shouldUseMobileKeyboardProxy());
+  focusTerminalInputTarget(useMobileKeyboardForPointer("touch"));
 });
 document.getElementById("zoom-reset").addEventListener("click", () => {
   userZoom = 1.0;
   applyZoom();
-  focusTerminalInputTarget(shouldUseMobileKeyboardProxy());
+  focusTerminalInputTarget(useMobileKeyboardForPointer("touch"));
 });
 
 // ── Orientation change + visual viewport scroll pinning ──────────────
@@ -1882,7 +1939,7 @@ function pinchDistance(t0, t1) {
 
 canvas.addEventListener("touchstart", (e) => {
   e.preventDefault();
-  focusTerminalInputTarget(true);
+  focusTerminalInputTarget(useMobileKeyboardForPointer("touch"));
   if ("PointerEvent" in window && paneTouchPointers.size > 0) {
     touchGestureSuppressedByPane = true;
     touchState = TOUCH_IDLE;
