@@ -73,10 +73,12 @@ if ! $DRY_RUN && [[ -f "${DEST}index.html" ]]; then
     echo "Injected <base href=\"/web/\"> into index.html"
   fi
 
-  # 2. Rewrite relative ./pkg/ and ./assets/ paths to absolute /web/ paths.
+  # 2. Rewrite relative WASM/assets paths to absolute /web/ paths.
   #    JavaScript import() and fetch() don't respect <base href>, so relative
   #    paths break when the page is served at /web (no trailing slash) on Vercel.
-  sed -i "s|\./pkg/|/web/pkg/|g; s|\./assets/|/web/assets/|g" "${DEST}index.html"
+  #    Also map source-tree asset paths used by frankentui_showcase_demo.html
+  #    into the deployed /web/assets/ directory.
+  sed -i "s|\./pkg/|/web/pkg/|g; s|\./assets/|/web/assets/|g; s|\./crates/ftui-demo-showcase/data/shakespeare\.txt|/web/assets/shakespeare.txt|g; s|\./crates/ftui-demo-showcase/data/sqlite3\.c|/web/assets/sqlite3.c|g" "${DEST}index.html"
   # Also fix import.meta.url references to use window.location.origin
   sed -i 's|, import\.meta\.url)|, window.location.origin)|g' "${DEST}index.html"
   echo "Rewrote relative paths to absolute /web/ paths"
