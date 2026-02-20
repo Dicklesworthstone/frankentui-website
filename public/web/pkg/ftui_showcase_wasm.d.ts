@@ -19,6 +19,22 @@ export class ShowcaseRunner {
      */
     destroy(): void;
     /**
+     * Length (in `u32` words) of the prepared flat cell payload.
+     */
+    flatCellsLen(): number;
+    /**
+     * Byte-offset pointer to the prepared flat cell payload (`u32` words).
+     */
+    flatCellsPtr(): number;
+    /**
+     * Length (in `u32` words) of the prepared flat span payload.
+     */
+    flatSpansLen(): number;
+    /**
+     * Byte-offset pointer to the prepared flat span payload (`u32` words).
+     */
+    flatSpansPtr(): number;
+    /**
      * Current frame index (monotonic, 0-based).
      */
     frameIdx(): bigint;
@@ -35,6 +51,98 @@ export class ShowcaseRunner {
      */
     constructor(cols: number, rows: number);
     /**
+     * Active pane pointer id tracked by the adapter, or `null`.
+     */
+    paneActivePointerId(): number | undefined;
+    /**
+     * Apply one adaptive pane layout intelligence mode.
+     *
+     * `mode`: `0=focus`, `1=compare`, `2=monitor`, `3=compact`.
+     * `primary_pane_id`: pass `0` to use current selection anchor.
+     */
+    paneApplyLayoutMode(mode: number, primary_pane_id: bigint): boolean;
+    /**
+     * Pane-specific blur path.
+     */
+    paneBlur(): any;
+    /**
+     * Export current pane workspace snapshot JSON.
+     */
+    paneExportWorkspaceSnapshot(): string | undefined;
+    /**
+     * Import pane workspace snapshot JSON.
+     */
+    paneImportWorkspaceSnapshot(json: string): boolean;
+    /**
+     * Live pane layout state (ghost preview + timeline + selection).
+     */
+    paneLayoutState(): any;
+    /**
+     * Pane-specific lost pointer capture path.
+     */
+    paneLostPointerCapture(pointer_id: number): any;
+    /**
+     * Pane-specific pointer-cancel path.
+     *
+     * Pass `0` to represent an unspecified pointer id.
+     */
+    panePointerCancel(pointer_id: number): any;
+    /**
+     * Pane-specific pointer capture acknowledgement path.
+     */
+    panePointerCaptureAcquired(pointer_id: number): any;
+    /**
+     * Pane-specific pointer-down path with direct capture semantics.
+     *
+     * `axis`: `0` = horizontal, `1` = vertical.
+     * `button`: DOM semantics (`0` = primary, `1` = middle, `2` = secondary).
+     * `mods` bitmask: `1=shift`, `2=alt`, `4=ctrl`, `8=meta`.
+     */
+    panePointerDown(split_id: bigint, axis: number, pointer_id: number, button: number, x: number, y: number, mods: number): any;
+    /**
+     * Pane pointer-down path that auto-detects pane/edge/corner from coordinates.
+     */
+    panePointerDownAt(pointer_id: number, button: number, x: number, y: number, mods: number): any;
+    /**
+     * Pane-specific pointer-leave path.
+     */
+    panePointerLeave(pointer_id: number): any;
+    /**
+     * Pane-specific pointer-move path.
+     */
+    panePointerMove(pointer_id: number, x: number, y: number, mods: number): any;
+    /**
+     * Auto-targeted pointer move path.
+     */
+    panePointerMoveAt(pointer_id: number, x: number, y: number, mods: number): any;
+    /**
+     * Pane-specific pointer-up path.
+     *
+     * `button`: DOM semantics (`0` = primary, `1` = middle, `2` = secondary).
+     * `mods` bitmask: `1=shift`, `2=alt`, `4=ctrl`, `8=meta`.
+     */
+    panePointerUp(pointer_id: number, button: number, x: number, y: number, mods: number): any;
+    /**
+     * Auto-targeted pointer-up path.
+     */
+    panePointerUpAt(pointer_id: number, button: number, x: number, y: number, mods: number): any;
+    /**
+     * Redo one pane structural change.
+     */
+    paneRedoLayout(): boolean;
+    /**
+     * Rebuild pane tree from timeline baseline and cursor.
+     */
+    paneReplayLayout(): boolean;
+    /**
+     * Undo one pane structural change.
+     */
+    paneUndoLayout(): boolean;
+    /**
+     * Pane-specific hidden visibility path.
+     */
+    paneVisibilityHidden(): any;
+    /**
      * FNV-1a hash of the last patch batch, or `null`.
      */
     patchHash(): string | undefined;
@@ -42,6 +150,13 @@ export class ShowcaseRunner {
      * Patch upload stats: `{ dirty_cells, patch_count, bytes_uploaded }`, or `null`.
      */
     patchStats(): any;
+    /**
+     * Prepare flat patch buffers in reusable Rust-owned storage.
+     *
+     * Pair this with `flatCellsPtr/flatCellsLen/flatSpansPtr/flatSpansLen`
+     * for a zero-copy JS view over WASM memory.
+     */
+    prepareFlatPatches(): void;
     /**
      * Parse a JSON-encoded input and push to the event queue.
      * Returns `true` if accepted, `false` if unsupported/malformed.
@@ -77,6 +192,8 @@ export class ShowcaseRunner {
     /**
      * Take flat patch batch for GPU upload.
      * Returns `{ cells: Uint32Array, spans: Uint32Array }`.
+     *
+     * Uses reusable internal buffers to avoid per-frame Vec allocation.
      */
     takeFlatPatches(): any;
     /**
@@ -94,12 +211,37 @@ export interface InitOutput {
     readonly __wbg_showcaserunner_free: (a: number, b: number) => void;
     readonly showcaserunner_advanceTime: (a: number, b: number) => void;
     readonly showcaserunner_destroy: (a: number) => void;
+    readonly showcaserunner_flatCellsLen: (a: number) => number;
+    readonly showcaserunner_flatCellsPtr: (a: number) => number;
+    readonly showcaserunner_flatSpansLen: (a: number) => number;
+    readonly showcaserunner_flatSpansPtr: (a: number) => number;
     readonly showcaserunner_frameIdx: (a: number) => bigint;
     readonly showcaserunner_init: (a: number) => void;
     readonly showcaserunner_isRunning: (a: number) => number;
     readonly showcaserunner_new: (a: number, b: number) => number;
+    readonly showcaserunner_paneActivePointerId: (a: number) => number;
+    readonly showcaserunner_paneApplyLayoutMode: (a: number, b: number, c: bigint) => number;
+    readonly showcaserunner_paneBlur: (a: number) => number;
+    readonly showcaserunner_paneExportWorkspaceSnapshot: (a: number, b: number) => void;
+    readonly showcaserunner_paneImportWorkspaceSnapshot: (a: number, b: number, c: number) => number;
+    readonly showcaserunner_paneLayoutState: (a: number) => number;
+    readonly showcaserunner_paneLostPointerCapture: (a: number, b: number) => number;
+    readonly showcaserunner_panePointerCancel: (a: number, b: number) => number;
+    readonly showcaserunner_panePointerCaptureAcquired: (a: number, b: number) => number;
+    readonly showcaserunner_panePointerDown: (a: number, b: bigint, c: number, d: number, e: number, f: number, g: number, h: number) => number;
+    readonly showcaserunner_panePointerDownAt: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly showcaserunner_panePointerLeave: (a: number, b: number) => number;
+    readonly showcaserunner_panePointerMove: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly showcaserunner_panePointerMoveAt: (a: number, b: number, c: number, d: number, e: number) => number;
+    readonly showcaserunner_panePointerUp: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly showcaserunner_panePointerUpAt: (a: number, b: number, c: number, d: number, e: number, f: number) => number;
+    readonly showcaserunner_paneRedoLayout: (a: number) => number;
+    readonly showcaserunner_paneReplayLayout: (a: number) => number;
+    readonly showcaserunner_paneUndoLayout: (a: number) => number;
+    readonly showcaserunner_paneVisibilityHidden: (a: number) => number;
     readonly showcaserunner_patchHash: (a: number, b: number) => void;
     readonly showcaserunner_patchStats: (a: number) => number;
+    readonly showcaserunner_prepareFlatPatches: (a: number) => void;
     readonly showcaserunner_pushEncodedInput: (a: number, b: number, c: number) => number;
     readonly showcaserunner_resize: (a: number, b: number, c: number) => void;
     readonly showcaserunner_setShakespeareText: (a: number, b: number, c: number) => number;

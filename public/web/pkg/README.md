@@ -17,7 +17,7 @@ Minimal, high‑performance terminal UI kernel focused on correctness, determini
 
 ![status](https://img.shields.io/badge/status-WIP-yellow)
 ![rust](https://img.shields.io/badge/rust-nightly-blue)
-![license](https://img.shields.io/badge/license-MIT-green)
+![license](https://img.shields.io/badge/license-MIT%2BOpenAI%2FAnthropic%20Rider-green)
 
 ## Quick Run (from source)
 
@@ -364,7 +364,53 @@ cargo clippy --all-targets -- -D warnings
 ```bash
 ./scripts/e2e_test.sh
 ./scripts/widget_api_e2e.sh
+./scripts/pane_e2e.sh --mode smoke
+./scripts/pane_e2e.sh --mode full
+./tests/e2e/check_pane_traceability.sh
 ```
+
+### doctor_frankentui Verification
+
+Run the full `doctor_frankentui` verification stack locally:
+
+Prerequisites:
+
+- `cargo`
+- `python3`
+- `jq`
+- `rg` (ripgrep)
+- `cargo-llvm-cov` (`cargo install cargo-llvm-cov`)
+- Python TOML parser support:
+  - Python `3.11+` (built-in `tomllib`), or
+  - `python3 -m pip install tomli` for Python `<3.11`
+
+```bash
+# Unit + integration tests
+cargo test -p doctor_frankentui --all-targets -- --nocapture
+
+# Workflow-level E2E
+./scripts/doctor_frankentui_happy_e2e.sh /tmp/doctor_frankentui_ci/happy
+./scripts/doctor_frankentui_failure_e2e.sh /tmp/doctor_frankentui_ci/failure
+
+# Coverage gate
+./scripts/doctor_frankentui_coverage.sh /tmp/doctor_frankentui_ci/coverage
+```
+
+Artifact contract (CI and local):
+
+- `.../happy/meta/summary.json`: happy-path pass/fail and per-step timing.
+- `.../happy/meta/artifact_manifest.json`: checksums, sizes, and mtimes for expected outputs.
+- `.../failure/meta/summary.json`: failure-matrix pass/fail counts.
+- `.../failure/meta/case_results.json`: per-case expected vs actual exits and key artifacts.
+- `.../coverage/coverage_gate_report.json`: machine-readable threshold decision.
+- `.../coverage/coverage_gate_report.txt`: human-readable coverage gate details.
+
+Troubleshooting map:
+
+- `doctor`/`capture`/`suite`/`report` chain failures: inspect `.../happy/logs/*.stderr.log` and `.../happy/meta/command_manifest.txt`.
+- failure-case assertion mismatches: inspect `.../failure/meta/case_results.json` and `.../failure/cases/<case_id>/logs/`.
+- JSON contract regressions: inspect `json_*` case stdout logs under `.../failure/cases/`.
+- coverage regressions: inspect `.../coverage/coverage_gate_report.json` for failing group + threshold delta.
 
 ---
 
@@ -1658,4 +1704,4 @@ let historical_frame = recorder.current();
 
 ## License
 
-MIT © 2026 Jeffrey Emanuel. See `LICENSE`.
+MIT License (with OpenAI/Anthropic Rider) © 2026 Jeffrey Emanuel. See `LICENSE`.

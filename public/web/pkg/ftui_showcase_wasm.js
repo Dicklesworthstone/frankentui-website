@@ -31,6 +31,38 @@ export class ShowcaseRunner {
         wasm.showcaserunner_destroy(this.__wbg_ptr);
     }
     /**
+     * Length (in `u32` words) of the prepared flat cell payload.
+     * @returns {number}
+     */
+    flatCellsLen() {
+        const ret = wasm.showcaserunner_flatCellsLen(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Byte-offset pointer to the prepared flat cell payload (`u32` words).
+     * @returns {number}
+     */
+    flatCellsPtr() {
+        const ret = wasm.showcaserunner_flatCellsPtr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Length (in `u32` words) of the prepared flat span payload.
+     * @returns {number}
+     */
+    flatSpansLen() {
+        const ret = wasm.showcaserunner_flatSpansLen(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * Byte-offset pointer to the prepared flat span payload (`u32` words).
+     * @returns {number}
+     */
+    flatSpansPtr() {
+        const ret = wasm.showcaserunner_flatSpansPtr(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
      * Current frame index (monotonic, 0-based).
      * @returns {bigint}
      */
@@ -64,6 +96,229 @@ export class ShowcaseRunner {
         return this;
     }
     /**
+     * Active pane pointer id tracked by the adapter, or `null`.
+     * @returns {number | undefined}
+     */
+    paneActivePointerId() {
+        const ret = wasm.showcaserunner_paneActivePointerId(this.__wbg_ptr);
+        return ret === 0x100000001 ? undefined : ret;
+    }
+    /**
+     * Apply one adaptive pane layout intelligence mode.
+     *
+     * `mode`: `0=focus`, `1=compare`, `2=monitor`, `3=compact`.
+     * `primary_pane_id`: pass `0` to use current selection anchor.
+     * @param {number} mode
+     * @param {bigint} primary_pane_id
+     * @returns {boolean}
+     */
+    paneApplyLayoutMode(mode, primary_pane_id) {
+        const ret = wasm.showcaserunner_paneApplyLayoutMode(this.__wbg_ptr, mode, primary_pane_id);
+        return ret !== 0;
+    }
+    /**
+     * Pane-specific blur path.
+     * @returns {any}
+     */
+    paneBlur() {
+        const ret = wasm.showcaserunner_paneBlur(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * Export current pane workspace snapshot JSON.
+     * @returns {string | undefined}
+     */
+    paneExportWorkspaceSnapshot() {
+        try {
+            const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+            wasm.showcaserunner_paneExportWorkspaceSnapshot(retptr, this.__wbg_ptr);
+            var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+            var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+            let v1;
+            if (r0 !== 0) {
+                v1 = getStringFromWasm0(r0, r1).slice();
+                wasm.__wbindgen_export2(r0, r1 * 1, 1);
+            }
+            return v1;
+        } finally {
+            wasm.__wbindgen_add_to_stack_pointer(16);
+        }
+    }
+    /**
+     * Import pane workspace snapshot JSON.
+     * @param {string} json
+     * @returns {boolean}
+     */
+    paneImportWorkspaceSnapshot(json) {
+        const ptr0 = passStringToWasm0(json, wasm.__wbindgen_export3, wasm.__wbindgen_export4);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.showcaserunner_paneImportWorkspaceSnapshot(this.__wbg_ptr, ptr0, len0);
+        return ret !== 0;
+    }
+    /**
+     * Live pane layout state (ghost preview + timeline + selection).
+     * @returns {any}
+     */
+    paneLayoutState() {
+        const ret = wasm.showcaserunner_paneLayoutState(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
+     * Pane-specific lost pointer capture path.
+     * @param {number} pointer_id
+     * @returns {any}
+     */
+    paneLostPointerCapture(pointer_id) {
+        const ret = wasm.showcaserunner_paneLostPointerCapture(this.__wbg_ptr, pointer_id);
+        return takeObject(ret);
+    }
+    /**
+     * Pane-specific pointer-cancel path.
+     *
+     * Pass `0` to represent an unspecified pointer id.
+     * @param {number} pointer_id
+     * @returns {any}
+     */
+    panePointerCancel(pointer_id) {
+        const ret = wasm.showcaserunner_panePointerCancel(this.__wbg_ptr, pointer_id);
+        return takeObject(ret);
+    }
+    /**
+     * Pane-specific pointer capture acknowledgement path.
+     * @param {number} pointer_id
+     * @returns {any}
+     */
+    panePointerCaptureAcquired(pointer_id) {
+        const ret = wasm.showcaserunner_panePointerCaptureAcquired(this.__wbg_ptr, pointer_id);
+        return takeObject(ret);
+    }
+    /**
+     * Pane-specific pointer-down path with direct capture semantics.
+     *
+     * `axis`: `0` = horizontal, `1` = vertical.
+     * `button`: DOM semantics (`0` = primary, `1` = middle, `2` = secondary).
+     * `mods` bitmask: `1=shift`, `2=alt`, `4=ctrl`, `8=meta`.
+     * @param {bigint} split_id
+     * @param {number} axis
+     * @param {number} pointer_id
+     * @param {number} button
+     * @param {number} x
+     * @param {number} y
+     * @param {number} mods
+     * @returns {any}
+     */
+    panePointerDown(split_id, axis, pointer_id, button, x, y, mods) {
+        const ret = wasm.showcaserunner_panePointerDown(this.__wbg_ptr, split_id, axis, pointer_id, button, x, y, mods);
+        return takeObject(ret);
+    }
+    /**
+     * Pane pointer-down path that auto-detects pane/edge/corner from coordinates.
+     * @param {number} pointer_id
+     * @param {number} button
+     * @param {number} x
+     * @param {number} y
+     * @param {number} mods
+     * @returns {any}
+     */
+    panePointerDownAt(pointer_id, button, x, y, mods) {
+        const ret = wasm.showcaserunner_panePointerDownAt(this.__wbg_ptr, pointer_id, button, x, y, mods);
+        return takeObject(ret);
+    }
+    /**
+     * Pane-specific pointer-leave path.
+     * @param {number} pointer_id
+     * @returns {any}
+     */
+    panePointerLeave(pointer_id) {
+        const ret = wasm.showcaserunner_panePointerLeave(this.__wbg_ptr, pointer_id);
+        return takeObject(ret);
+    }
+    /**
+     * Pane-specific pointer-move path.
+     * @param {number} pointer_id
+     * @param {number} x
+     * @param {number} y
+     * @param {number} mods
+     * @returns {any}
+     */
+    panePointerMove(pointer_id, x, y, mods) {
+        const ret = wasm.showcaserunner_panePointerMove(this.__wbg_ptr, pointer_id, x, y, mods);
+        return takeObject(ret);
+    }
+    /**
+     * Auto-targeted pointer move path.
+     * @param {number} pointer_id
+     * @param {number} x
+     * @param {number} y
+     * @param {number} mods
+     * @returns {any}
+     */
+    panePointerMoveAt(pointer_id, x, y, mods) {
+        const ret = wasm.showcaserunner_panePointerMoveAt(this.__wbg_ptr, pointer_id, x, y, mods);
+        return takeObject(ret);
+    }
+    /**
+     * Pane-specific pointer-up path.
+     *
+     * `button`: DOM semantics (`0` = primary, `1` = middle, `2` = secondary).
+     * `mods` bitmask: `1=shift`, `2=alt`, `4=ctrl`, `8=meta`.
+     * @param {number} pointer_id
+     * @param {number} button
+     * @param {number} x
+     * @param {number} y
+     * @param {number} mods
+     * @returns {any}
+     */
+    panePointerUp(pointer_id, button, x, y, mods) {
+        const ret = wasm.showcaserunner_panePointerUp(this.__wbg_ptr, pointer_id, button, x, y, mods);
+        return takeObject(ret);
+    }
+    /**
+     * Auto-targeted pointer-up path.
+     * @param {number} pointer_id
+     * @param {number} button
+     * @param {number} x
+     * @param {number} y
+     * @param {number} mods
+     * @returns {any}
+     */
+    panePointerUpAt(pointer_id, button, x, y, mods) {
+        const ret = wasm.showcaserunner_panePointerUpAt(this.__wbg_ptr, pointer_id, button, x, y, mods);
+        return takeObject(ret);
+    }
+    /**
+     * Redo one pane structural change.
+     * @returns {boolean}
+     */
+    paneRedoLayout() {
+        const ret = wasm.showcaserunner_paneRedoLayout(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Rebuild pane tree from timeline baseline and cursor.
+     * @returns {boolean}
+     */
+    paneReplayLayout() {
+        const ret = wasm.showcaserunner_paneReplayLayout(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Undo one pane structural change.
+     * @returns {boolean}
+     */
+    paneUndoLayout() {
+        const ret = wasm.showcaserunner_paneUndoLayout(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * Pane-specific hidden visibility path.
+     * @returns {any}
+     */
+    paneVisibilityHidden() {
+        const ret = wasm.showcaserunner_paneVisibilityHidden(this.__wbg_ptr);
+        return takeObject(ret);
+    }
+    /**
      * FNV-1a hash of the last patch batch, or `null`.
      * @returns {string | undefined}
      */
@@ -90,6 +345,15 @@ export class ShowcaseRunner {
     patchStats() {
         const ret = wasm.showcaserunner_patchStats(this.__wbg_ptr);
         return takeObject(ret);
+    }
+    /**
+     * Prepare flat patch buffers in reusable Rust-owned storage.
+     *
+     * Pair this with `flatCellsPtr/flatCellsLen/flatSpansPtr/flatSpansLen`
+     * for a zero-copy JS view over WASM memory.
+     */
+    prepareFlatPatches() {
+        wasm.showcaserunner_prepareFlatPatches(this.__wbg_ptr);
     }
     /**
      * Parse a JSON-encoded input and push to the event queue.
@@ -158,6 +422,8 @@ export class ShowcaseRunner {
     /**
      * Take flat patch batch for GPU upload.
      * Returns `{ cells: Uint32Array, spans: Uint32Array }`.
+     *
+     * Uses reusable internal buffers to avoid per-frame Vec allocation.
      * @returns {any}
      */
     takeFlatPatches() {
@@ -200,6 +466,12 @@ function __wbg_get_imports() {
         __wbg_call_4708e0c13bdc8e95: function() { return handleError(function (arg0, arg1, arg2) {
             const ret = getObject(arg0).call(getObject(arg1), getObject(arg2));
             return addHeapObject(ret);
+        }, arguments); },
+        __wbg_getRandomValues_1c61fac11405ffdc: function() { return handleError(function (arg0, arg1) {
+            globalThis.crypto.getRandomValues(getArrayU8FromWasm0(arg0, arg1));
+        }, arguments); },
+        __wbg_getRandomValues_2a91986308c74a93: function() { return handleError(function (arg0, arg1) {
+            globalThis.crypto.getRandomValues(getArrayU8FromWasm0(arg0, arg1));
         }, arguments); },
         __wbg_get_b3ed3ad4be2bc8ac: function() { return handleError(function (arg0, arg1) {
             const ret = Reflect.get(getObject(arg0), getObject(arg1));
@@ -303,6 +575,11 @@ function dropObject(idx) {
 function getArrayU32FromWasm0(ptr, len) {
     ptr = ptr >>> 0;
     return getUint32ArrayMemory0().subarray(ptr / 4, ptr / 4 + len);
+}
+
+function getArrayU8FromWasm0(ptr, len) {
+    ptr = ptr >>> 0;
+    return getUint8ArrayMemory0().subarray(ptr / 1, ptr / 1 + len);
 }
 
 let cachedDataViewMemory0 = null;
