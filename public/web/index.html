@@ -230,7 +230,7 @@ const URL_ZOOM        = parseFloat(params.get("zoom")) || 0;
 const LOG_JSONL       = params.get("jsonl") === "1";
 const LOG_PERF        = false;  // Per-frame timing in console
 // Bump when deploying to bypass Cloudflare/browser caches for JS/WASM artifacts.
-const ASSET_VERSION = "2026-02-20.3";
+const ASSET_VERSION = "2026-02-20.4";
 
 // ── DOM refs ───────────────────────────────────────────────────────────
 const canvas         = document.getElementById("terminal-canvas");
@@ -763,6 +763,12 @@ function paneModsFromDomEvent(e) {
   return (e.shiftKey ? 1 : 0) | (e.altKey ? 2 : 0) | (e.ctrlKey ? 4 : 0) | (e.metaKey ? 8 : 0);
 }
 
+function paneButtonFromDomEvent(e) {
+  const raw = Number.isFinite(e?.button) ? Math.trunc(e.button) : 0;
+  if (raw < 0 || raw > 2) return 0;
+  return raw;
+}
+
 function panePointerIdFromEvent(e) {
   if (!e) return 1;
   return clampPointerId(e.pointerId);
@@ -814,7 +820,13 @@ function paneDispatchPointerDown(e) {
   if (typeof runner.panePointerDownAt !== "function") return null;
   const point = domMouseToInput(e, "down");
   const pointerId = panePointerIdFromEvent(e);
-  const dispatch = runner.panePointerDownAt(pointerId, e.button, point.x, point.y, paneModsFromDomEvent(e));
+  const dispatch = runner.panePointerDownAt(
+    pointerId,
+    paneButtonFromDomEvent(e),
+    point.x,
+    point.y,
+    paneModsFromDomEvent(e),
+  );
   return applyPaneCaptureCommand(dispatch);
 }
 
@@ -830,7 +842,13 @@ function paneDispatchPointerUp(e) {
   if (typeof runner.panePointerUpAt !== "function") return null;
   const point = domMouseToInput(e, "up");
   const pointerId = panePointerIdFromEvent(e);
-  const dispatch = runner.panePointerUpAt(pointerId, e.button, point.x, point.y, paneModsFromDomEvent(e));
+  const dispatch = runner.panePointerUpAt(
+    pointerId,
+    paneButtonFromDomEvent(e),
+    point.x,
+    point.y,
+    paneModsFromDomEvent(e),
+  );
   return applyPaneCaptureCommand(dispatch, { skipAcquireAck: true });
 }
 
