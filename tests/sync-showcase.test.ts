@@ -127,7 +127,7 @@ describe("sync-showcase.sh", () => {
   /* (1) Happy path */
   test("happy path: syncs all files from valid dist", () => {
     createFakeDist(FAKE_DIST);
-    const { exitCode, stdout, stderr } = runSync(FAKE_DIST);
+    const { exitCode, stdout } = runSync(FAKE_DIST);
 
     stepLog("happy-path", `exit=${exitCode}, stdout_len=${stdout.length}`);
 
@@ -261,7 +261,7 @@ describe("sync-showcase.sh", () => {
 
     // Record modification time of an unchanged file
     const unchangedFile = join(TEST_DEST, "fonts", "test.woff2");
-    const mtimeBefore = statSync(unchangedFile).mtimeMs;
+    const _mtimeBefore = statSync(unchangedFile).mtimeMs;
 
     // Wait then modify one file
     Bun.sleepSync(1100);

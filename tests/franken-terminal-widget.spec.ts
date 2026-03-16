@@ -89,7 +89,8 @@ async function patchIntersectionObserver(page: Page) {
         if (this.elements.has(target)) return;
         this.elements.add(target);
         const cb = this.callback;
-        const self = this;
+        // eslint-disable-next-line @typescript-eslint/no-this-alias -- needed to pass mock as observer arg
+        const observer = this;
         // Fire callback on next animation frame so React has time to mount
         requestAnimationFrame(() => {
           cb(
@@ -104,7 +105,7 @@ async function patchIntersectionObserver(page: Page) {
                 time: performance.now(),
               } as IntersectionObserverEntry,
             ],
-            self as unknown as IntersectionObserver
+            observer as unknown as IntersectionObserver
           );
         });
       }

@@ -104,7 +104,7 @@ function setupCapture(page: Page) {
   return { consoleEvents, requestFailures, completedRequests };
 }
 
-async function captureFailure(page: Page, testInfo: TestInfo, label: string) {
+async function _captureFailure(page: Page, testInfo: TestInfo, label: string) {
   if (page.isClosed()) return null;
   try {
     const screenshotPath = testInfo.outputPath(`web-demo-${label}-failure.png`);

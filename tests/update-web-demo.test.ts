@@ -194,7 +194,7 @@ describe("update-web-demo.sh", () => {
   test("errors when frankentui path is invalid", () => {
     // Temporarily test by modifying env — but the script has FRANKENTUI_ROOT hardcoded
     // So we test by checking script validates the repo
-    const { exitCode, stdout } = runUpdateScript("--skip-build", "--no-push");
+    const { exitCode } = runUpdateScript("--skip-build", "--no-push");
 
     // If /dp/frankentui exists, this should succeed
     if (distAvailable) {
