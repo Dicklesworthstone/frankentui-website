@@ -66,3 +66,6 @@ windsurf.mcp.json
 # Runtime SQLite databases
 storage.sqlite3
 storage.sqlite3-*
+
+# NTM session state
+.ntm/
