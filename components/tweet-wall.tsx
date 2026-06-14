@@ -7,6 +7,7 @@ import type { Tweet } from "@/lib/content";
 import { FrankenBolt, FrankenStitch } from "./franken-elements";
 import { BorderBeam } from "./motion-wrapper";
 import { motion } from "framer-motion";
+import ErrorBoundary from "@/components/error-boundary";
 
 /* ── Inner content for fallback cards (no outer chrome) ── */
 
@@ -117,10 +118,22 @@ function EmbeddedTweetCard({ tweet, index }: { tweet: Tweet; index: number }) {
     >
       <GlassFrankenCard>
         <div data-theme="dark" className="p-1">
-          <ReactTweet
-            id={tweet.tweetId!}
-            fallback={<FallbackContent tweet={tweet} />}
-          />
+          {/*
+            react-tweet's own `fallback` only covers the fetch/not-found path;
+            a render-phase throw inside the embed (e.g. react-tweet's
+            unguarded `for (const … of tweet.entities.*)` when the X
+            syndication payload omits an entity array — frankentui#82) escapes
+            it. Without a boundary here that throw bubbles to the app-wide
+            ErrorBoundary and replaces the entire page with the
+            "Synaptic_Failure" screen. Isolate each embed so one malformed
+            tweet degrades to its own FallbackContent card instead.
+          */}
+          <ErrorBoundary fallback={<FallbackContent tweet={tweet} />}>
+            <ReactTweet
+              id={tweet.tweetId!}
+              fallback={<FallbackContent tweet={tweet} />}
+            />
+          </ErrorBoundary>
         </div>
       </GlassFrankenCard>
     </motion.div>
