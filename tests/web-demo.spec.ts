@@ -2,6 +2,160 @@ import { appendFileSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { test, expect, type Page, type TestInfo } from "@playwright/test";
 
+type TouchProbe = {
+  cols: number;
+  rows: number;
+  cells: number[];
+  inputs: { kind: string; phase?: string; dy?: number; dx?: number }[];
+  trustedTouches: number;
+};
+
+// Observe the real WASM input and patch boundaries. Every call still runs the
+// original implementation; no renderer, runner, input result, or patch is mocked.
+async function observeTouchDemo(page: Page, screen = 2) {
+  const hostResponse = await page.request.get(`${BASE_URL}/web`);
+  expect(hostResponse.ok()).toBe(true);
+  const hostHtml = await hostResponse.text();
+  const version = hostHtml.match(/const ASSET_VERSION = "([^"]+)"/)?.[1];
+  expect(version).toBeTruthy();
+  const termPath = hostHtml.match(/const termJsUrl = `([^`]+)`/)?.[1];
+  expect(termPath).toBeTruthy();
+  const moduleUrl = new URL(termPath!.replace("${ASSET_VERSION}", version!), hostResponse.url()).href;
+  await page.addInitScript(({ moduleUrl }) => {
+    const probe: TouchProbe = { cols: 0, rows: 0, cells: [], inputs: [], trustedTouches: 0 };
+    (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe = probe;
+    document.addEventListener("touchstart", (event) => {
+      if (event.isTrusted) probe.trustedTouches++;
+    }, { capture: true });
+    void import(moduleUrl).then(({ FrankenTermWeb }) => {
+      const proto = FrankenTermWeb.prototype;
+      const fit = proto.fitToContainer;
+      proto.fitToContainer = function (...args: unknown[]) {
+        const geometry = fit.apply(this, args);
+        if (probe.cols !== geometry.cols || probe.rows !== geometry.rows) probe.cells = [];
+        probe.cols = geometry.cols;
+        probe.rows = geometry.rows;
+        return geometry;
+      };
+      const patch = proto.applyPatchBatchFlat;
+      proto.applyPatchBatchFlat = function (spans: Uint32Array, cells: Uint32Array) {
+        let cursor = 0;
+        for (let i = 0; i < spans.length; i += 2) {
+          for (let j = 0; j < spans[i + 1]; j++) {
+            probe.cells[spans[i] + j] = cells[cursor * 4 + 2];
+            cursor++;
+          }
+        }
+        return patch.call(this, spans, cells);
+      };
+      const input = proto.input;
+      proto.input = function (event: TouchProbe["inputs"][number]) {
+        probe.inputs.push({ ...event });
+        return input.call(this, event);
+      };
+    });
+  }, { moduleUrl });
+  await page.goto(`${BASE_URL}/web?zoom=1&screen=${screen}`);
+  await expect.poll(() => touchDemoText(page)).toContain(screen === 3 ? "Shakespeare" : "Dashboard");
+  if (screen === 3) {
+    // The large text asset loads after the first frame. Wait for usable
+    // content, not just the screen title, before measuring scroll position.
+    await expect.poll(() => touchDemoText(page)).toMatch(/Line \d+\/[1-9]\d*/);
+  }
+}
+
+async function touchDemoText(page: Page) {
+  return page.evaluate(() => {
+    const probe = (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe;
+    return (probe?.cells ?? []).map((value) =>
+      value > 0 && value <= 0x10ffff ? String.fromCodePoint(value) : " "
+    ).join("");
+  });
+}
+
+async function touchDemoCell(page: Page, x: number, y: number) {
+  return page.evaluate(({ x, y }) => {
+    const { cols, rows } = (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe;
+    const rect = document.querySelector("canvas")!.getBoundingClientRect();
+    return { x: rect.left + (x + 0.5) * rect.width / cols, y: rect.top + (y + 0.5) * rect.height / rows };
+  }, { x, y });
+}
+
+test.describe("G. Touch navigation — real WASM", () => {
+  test.skip(({ browserName }) => browserName !== "chromium", "Trusted multi-touch injection uses Chromium CDP");
+  test.use({ hasTouch: true, viewport: { width: 390, height: 844 } });
+
+  for (const viewport of [{ width: 390, height: 844 }, { width: 844, height: 390 }]) {
+    test(`tap navigates and mouse still works at ${viewport.width}x${viewport.height}`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await observeTouchDemo(page);
+      const tour = await touchDemoCell(page, 5, 0);
+      await page.touchscreen.tap(tour.x, tour.y);
+      await expect.poll(() => touchDemoText(page)).toContain("Guided Tour");
+      expect(await page.evaluate(() => (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe.trustedTouches)).toBe(1);
+      const dashboard = await touchDemoCell(page, 15, 0);
+      await page.mouse.click(dashboard.x, dashboard.y);
+      await expect.poll(() => touchDemoText(page)).toContain("FRANKENTUI DASHBOARD");
+      const events = await page.evaluate(() => (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe.inputs);
+      expect(events.filter((e) => e.kind === "mouse" && e.phase === "down")).toHaveLength(2);
+      expect(events.filter((e) => e.kind === "mouse" && e.phase === "up")).toHaveLength(2);
+      await expect(page.locator("#error-overlay")).not.toHaveClass(/visible/);
+    });
+  }
+
+  test("swipe scrolls; cancel and pinch do not click; touch recovers", async ({ page }) => {
+    await observeTouchDemo(page, 3);
+    const session = await page.context().newCDPSession(page);
+    const start = await touchDemoCell(page, 12, 30);
+    const before = await touchDemoText(page);
+    const initialLine = Number(before.match(/Line (\d+)\//)?.[1]);
+    expect(initialLine).toBeGreaterThan(0);
+    const contact = (x: number, y: number, id = 1) => ({ x, y, id });
+    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [contact(start.x, start.y)] });
+    for (let i = 1; i <= 6; i++) {
+      await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [contact(start.x, start.y - i * 20)] });
+    }
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await expect.poll(async () => Number((await touchDemoText(page)).match(/Line (\d+)\//)?.[1])).toBeGreaterThan(initialLine);
+    let events = await page.evaluate(() => (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe.inputs);
+    expect(events.some((e) => e.kind === "wheel" && (e.dy ?? 0) > 0)).toBe(true);
+    expect(events.some((e) => e.kind === "mouse" && e.phase === "down")).toBe(false);
+
+    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [contact(100, 180)] });
+    await session.send("Input.dispatchTouchEvent", { type: "touchCancel", touchPoints: [] });
+    await session.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [contact(100, 180), contact(200, 180, 2)] });
+    await session.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [contact(70, 180), contact(230, 180, 2)] });
+    await expect.poll(() => new URL(page.url()).searchParams.get("zoom")).not.toBe("1");
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [contact(70, 180)] });
+    await session.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    events = await page.evaluate(() => (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe.inputs);
+    expect(events.some((e) => e.kind === "mouse" && e.phase === "down")).toBe(false);
+
+    const tour = await touchDemoCell(page, 5, 0);
+    await page.touchscreen.tap(tour.x, tour.y);
+    await expect.poll(() => touchDemoText(page)).toContain("Guided Tour");
+    await expect(page.locator("#error-overlay")).not.toHaveClass(/visible/);
+  });
+
+  test("desktop hover, drag, and wheel still reach the running showcase", async ({ page }) => {
+    await observeTouchDemo(page, 3);
+    const point = await touchDemoCell(page, 12, 30);
+    const initialLine = Number((await touchDemoText(page)).match(/Line (\d+)\//)?.[1]);
+    expect(initialLine).toBeGreaterThan(0);
+    await page.mouse.move(point.x, point.y);
+    await page.mouse.wheel(0, 160);
+    await expect.poll(async () => Number((await touchDemoText(page)).match(/Line (\d+)\//)?.[1])).toBeGreaterThan(initialLine);
+    await page.mouse.down();
+    await page.mouse.move(point.x + 24, point.y + 24, { steps: 3 });
+    await page.mouse.up();
+    const events = await page.evaluate(() => (window as unknown as { ftuiTouchProbe: TouchProbe }).ftuiTouchProbe.inputs);
+    for (const phase of ["move", "down", "drag", "up"]) {
+      expect(events.some((e) => e.kind === "mouse" && e.phase === phase)).toBe(true);
+    }
+    await expect(page.locator("#error-overlay")).not.toHaveClass(/visible/);
+  });
+});
+
 /* ─── Types ─────────────────────────────────────────────────────── */
 
 type ConsoleEvent = {

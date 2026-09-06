@@ -2,3 +2,6 @@
 # issue_prefix: bd
 # default_priority: 2
 # default_type: task
+# Keep Git-tracked history snapshots: automatic history pruning deletes them.
+sync:
+  history_enabled: false
